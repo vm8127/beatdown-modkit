@@ -9,6 +9,7 @@ Everything learned so far about the US release (SLUS-21150), plus tools to extra
 | `bdkit.py` | Command-line tool (Python 3, no extra packages). Run `python bdkit.py -h`. |
 | `movesets.md` | **Moveset map**: every fighting style ID, who uses it, each fighter's body and move groups, which swaps work, and every style's move list with names and inputs |
 | `CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
+| `MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
 | `codemap.py`, `symbols.tsv`, `symbols/` | Code map helpers: symbol exports for the PCSX2 debugger and Ghidra, command tables with damage, person templates (`python codemap.py -h`) |
 | `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
 | `dumps/persons.txt` | All 602 person templates with level, HP, guard, attack rank and money (`codemap.py persons`) |
@@ -195,6 +196,7 @@ When adding a new mod, add a new `[section]` to that same pnach file, because PC
 
 - **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See CODEMAP.md, "The command table". Frame data and which animation each action plays are still open.
 - **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See CODEMAP.md.
+- **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
 - **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.
 - **SCRIPT.XAF**: entries 0-999 are 964+ byte bytecode files and 1000+ are indexed event lists. The ELF has opcode names like `EXF_SET_SKILL`, `EXF_SET_MOTION` and `EXF_MOVE_STAGE` near `0x004101E8`.

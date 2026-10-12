@@ -92,7 +92,7 @@
 005cab40	data	g_MoveListTable	47 x {u16 first input text, u16 last, u16 first name text, u16 last}
 005d04d0	data	g_AttackRankMul	float[7] {0.5, 1.0, 1.3, 1.6, 1.8, 1.9, 2.0}, indexed by person +81
 005d04f0	data	g_EnemyDamageByDifficulty	float[4] {1.0, 0.8, 1.0, 1.5}, indexed by g_SystemData +4
-005d4250	data	g_StyleReactTable	byte per style, used by Fighter_DamageReaction
+005d4250	data	g_StylePrideMul	byte per style: Pride damage percent (Boxer 120, Negotiator 150, Carlo 200...), see MECHANICS.md
 005febd0	data	g_Party	s16 person IDs of the party (saved, 8 bytes)
 005ffdd8	data	g_PresetData	pointer to CDATA.XAF entry 0 in RAM: 189 presets x 1176 bytes
 0060a680	data	g_EventFlags	1024 bytes = 8192 story/event flags (saved)
@@ -122,3 +122,36 @@
 006d3f8e	data	g_Player_MaxHP	s16 = g_Fighters[0] +0x441E
 0013ca80	func	Fighter_DisplayName	hero presets get the hero name (found by the model-swap work)
 003e0130	data	CodeCave_SwapModel	20 unused zero words before the VU microcode; used by bdkit swap-model
+002fb8d0	func	Fighter_PrideDamage	(defender, base, attacker) Pride loss per hit: base + 30..39, x style %, + 10 - 20 x HP%, x (1 + 0.2 Technique)
+002fbae0	func	Fighter_SubPride	(fighter, amount) fighter +0x4420 -= amount, floor 0
+002f8c00	func	Fighter_GetPride	(fighter) -> float fighter +0x4420
+00314d30	func	Combat_SituationFactor	(defender, attacker, &factor, &flag) low HP x0.8/x0.5, counter x1.5, combo scaling, hold x1.5
+002f9f30	func	Person_IsBoss	(fighter) template +0x0D == 5; bosses take weapon power / 3
+002fa150	func	Fighter_IsAttacking	(fighter) state +0x4378 == 2 (ATTACK)
+002fa170	func	Fighter_IsReeling	(fighter) state +0x4378 & 0x1E0 (damage states)
+002fa180	func	Fighter_IsHolding	(fighter) state +0x4378 == 4 (HOLD)
+002f8ab0	func	Player_GetAbilityLevel	(fighter, 0..2) Stamina/Attack/Technique level for the player, 0 for others
+002afee0	func	Battle_CalcExp	EXP for a fight: per enemy (lvl diff + 1)^2 + 30 (10 if weaker), plus bonus, cap 100
+002b00f0	func	Battle_GiveExp	adds the fight's EXP to the player and party; 100 EXP = 1 level, cap 50
+002b2660	func	Battle_AddBonusExp	(n) adds to the EXP bonus pool at gp-21468, cap 100
+0013dfe0	func	Criminal_Recalc	rebuilds Leadership, Cash Flow and Charisma (0-255) from counters and difficulty weights
+0013df00	func	Criminal_AddLeadership	(n) adds to the Leadership bonus 0x60D34C
+0013df20	func	Criminal_AddCash	(n) adds to the Cash Flow bonus 0x60D34E
+0013df40	func	Criminal_AddCharisma	(n) adds to the Charisma bonus 0x60D350
+0013df60	func	Criminal_AddCashScore	(amount) 0x60D1A8 += amount / 1000 x {0,1,2,3}[difficulty]
+002af450	func	Criminal_GetTitle	-> title 0..27: 7 x (dominant score, 3 = balanced) + tier (thresholds 21/61/101/141/191/241)
+002af640	func	Criminal_GetTitleCategory	title -> 0..4 at gp-21540, probably the ending
+00348020	func	Weapon_RollLoss	chance % = 0x5D7D90[class] + template +0x28 - 10 x Technique; probably weapon break
+003c0d50	func	Ability_ApplyAttack	sets player attack rank (person +0x51) from the Attack ability level
+005d0650	data	g_HitSituation	6 rows x 3 floats: base, HP<1000, HP<300, counter, combo (start, step, min), hold
+005fb170	data	g_AbilityPointsPerLevel	byte per player level: 3 points for levels 2-50
+005fb1a8	data	g_AbilityThresholds	{6,12,17,23,25} points spent for ability level 1-5
+005fea70	data	g_AttackLevelToRank	{1,2,3,4,5,6}: Attack ability level -> attack rank
+0060d352	data	g_AbilityPointsSpent	3 bytes: Stamina, Attack, Technique points spent (0-25)
+0060d355	data	g_AbilityLevel	3 bytes: Stamina, Attack, Technique level (0-5)
+0060d346	data	g_CrimLeadership	s16 0-255
+0060d348	data	g_CrimCashFlow	s16 0-255
+0060d34a	data	g_CrimCharisma	s16 0-255
+0060d16c	data	g_Records	s32 counters shown on the RECORDS screen (1 on 1 wins, group wins, murders, fled...), see MECHANICS.md
+005d7d90	data	g_WeaponLossChance	two byte[4] tables {0,25,50,100}, {0,20,50,80} by weapon class (item +126)
+00509a20	data	g_MinHpByDifficulty	float[4] {0, 0.5, 0.2, 0.2}, fraction of max HP, probably what allies keep after a fight

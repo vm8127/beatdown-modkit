@@ -62,10 +62,10 @@ How a hit becomes lost HP (**confirmed** by reading the code):
    - plus the held weapon's power (item data `+96`; divided by 3 against some targets; weapons with `+145` set always do 1),
    - times the attacker's attack multiplier (`fighter+0x4414`, float),
    - times the defender's defense multiplier (`fighter+0x4418`, float, normally 1.0),
-   - times a situation factor from `0x314D30` (as a percentage),
-   - no damage at all when the defender's guard value (`fighter+0x4420`) is 0, minimum 1 otherwise.
+   - times a situation factor from `0x314D30` (a float: low HP, counter hit, combo scaling; see MECHANICS.md),
+   - times 1.2 when the defender's Pride Gauge (`fighter+0x4420`) is empty and `0x2E37E0` holds, minimum 1.
    The result goes into the defender's pending damage, `fighter+0x44B0`.
-3. `Combat_TakeHit` `0x0030DFD0` adds the pending damage to the knockdown meter (`+0x4426`, threshold `+0x4428` = 500), counts the hit (`+0x44EE`), and calls:
+3. `Combat_TakeHit` `0x0030DFD0` adds the pending damage to the damage/stagger meter (`+0x4426`, capped at max HP; `+0x4428` = 500), counts the hit (`+0x44EE`), and calls:
 4. `Fighter_ApplyDamage` `0x002FB880` (fighter, damage): `HP -= damage`, floored at 0. It does nothing while bit 13 of `fighter+0x471C` is set (an invulnerability flag).
 
 Where the multipliers come from, in `Fighter_Spawn` `0x00304B60`:
@@ -73,7 +73,7 @@ Where the multipliers come from, in `Fighter_Spawn` `0x00304B60`:
 - Attack multiplier = `g_AttackRankMul[person+0x51]` at `0x005D04D0` = `{0.5, 1.0, 1.3, 1.6, 1.8, 1.9, 2.0}`. All five heroes start at rank 1 (x1.0); bosses are 3-4.
 - Then times `person+0x380` / 100 (normally 100).
 - Enemies only: times `g_EnemyDamageByDifficulty[difficulty]` at `0x005D04F0` = `{1.0, 0.8, 1.0, 1.5}`.
-- HP = person `+0x54`, max HP = person `+0x4E` plus bonus `+0x382`, both capped at 9999. Tired meter max = 1.5 x max HP. Guard comes from person `+0x3A6` capped by the template's guard (`Fighter_SetGuard` `0x2FB780`).
+- HP = person `+0x54`, max HP = person `+0x4E` plus bonus `+0x382`, both capped at 9999. Tired meter max = 1.5 x max HP. The Pride Gauge (called guard here before; see MECHANICS.md) comes from person `+0x3A6` capped by the template's value (`Fighter_SetGuard` `0x2FB780`).
 
 A debug overlay, `Debug_FighterInfo` `0x00302260`, prints most of these (HP, DAMAGE, TIRED, REV, LENGTH, motion category such as "ATTACK DAMAGE"); it isn't reachable in normal play.
 
@@ -157,7 +157,7 @@ So the **model/outfit** comes from the template's preset (`+4`), and the **moves
 | `+0x380` | s16 | attack percent (100) | |
 | `+0x382` | s16 | bonus max HP | |
 | `+0x390` | 16 bytes | two starting entries applied at spawn (`0x2FBC50`), probably weapons | `+0x34` |
-| `+0x3A6` | s16 | guard | `+0x12` |
+| `+0x3A6` | s16 | Pride Gauge max ("guard" in dumps/persons.txt) | `+0x12` |
 | `+0x3B4` | s16 | bonus max HP (Person_RecalcMaxHP) | |
 
 `Person_RecalcMaxHP` `0x002AFD60`: for NPCs, max HP = base + (level - template level) x 80 + bonus; for the player, base + n x (100n + 200) + (level - 1) x 30 + bonus, where n is the byte at `0x60D355` (probably a max-HP-up count).
@@ -186,8 +186,8 @@ Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind 
 | `+0x4418` | defense multiplier, float |
 | `+0x441C` | **HP**, s16 (player: `0x006D3F8C`) |
 | `+0x441E` | **max HP**, s16 (player: `0x006D3F8E`) |
-| `+0x4420` / `+0x4424` | guard value (float) / guard max |
-| `+0x4426` / `+0x4428` | knockdown meter / threshold (500) |
+| `+0x4420` / `+0x4424` | Pride Gauge (float) / max |
+| `+0x4426` / `+0x4428` | damage/stagger meter (capped at max HP) / 500 |
 | `+0x442A` / `+0x442C` | tired meter / max |
 | `+0x44B0` | pending damage |
 | `+0x44EE` | hit counter |
