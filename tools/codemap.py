@@ -3,13 +3,13 @@
 
 Python 3 standard library only. Needs bdkit.py in the same folder.
 
-  python codemap.py symbols   SLUS_211.50 out_dir         # PCSX2 .sym, Ghidra script, CSV
-  python codemap.py commands  SLUS_211.50 CDATA.XAF 0x13  # a style's input -> action -> damage table
-  python codemap.py commands  SLUS_211.50 CDATA.XAF all > dumps/commands.txt
-  python codemap.py hits      SLUS_211.50 1805            # hit records (damage) of one action
-  python codemap.py persons   SLUS_211.50 > dumps/persons.txt
+  python tools/codemap.py symbols   ISO/SLUS_211.50 symbols           # PCSX2 .sym, Ghidra script, CSV
+  python tools/codemap.py commands  ISO/SLUS_211.50 ISO/XAF/CDATA.XAF 0x13  # a style's input -> action -> damage table
+  python tools/codemap.py commands  ISO/SLUS_211.50 ISO/XAF/CDATA.XAF all > dumps/commands.txt
+  python tools/codemap.py hits      ISO/SLUS_211.50 1805            # hit records (damage) of one action
+  python tools/codemap.py persons   ISO/SLUS_211.50 > dumps/persons.txt
 
-Symbols live in symbols.tsv next to this file (tab separated: addr, kind, name, comment).
+Symbols live in symbols/symbols.tsv (tab separated: addr, kind, name, comment).
 Add new names there and re-run `symbols`.
 """
 import argparse
@@ -20,7 +20,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bdkit  # noqa: E402
 
-SYMBOLS_TSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "symbols.tsv")
+SYMBOLS_TSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "symbols", "symbols.tsv")
 
 STYLE_COMMANDS = 0x00515C10   # u32[48], per style: list of {u32 cond, u32 seq}, seq 0 ends the list
 ACTION_HITS = 0x00580A40      # u32[2004], per action: 16-byte hit records, +8 u16 base damage, +14 u16 flags

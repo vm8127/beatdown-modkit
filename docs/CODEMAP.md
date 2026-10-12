@@ -21,7 +21,7 @@ Status words used below: **confirmed** means the code was read and the data chec
 
 ## Using the symbols
 
-`symbols.tsv` is the list of every name in this file (address, kind, name, comment). `python codemap.py symbols SLUS_211.50 symbols` regenerates three exports in `symbols/`:
+`symbols/symbols.tsv` is the list of every name in this file (address, kind, name, comment). `python tools/codemap.py symbols ISO/SLUS_211.50 symbols` regenerates three exports in `symbols/`:
 
 | File | For |
 |---|---|

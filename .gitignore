@@ -1,5 +1,6 @@
-# Raw game data stays out of the repo (copyright and size).
-# Extract these yourself from your own disc; see CLAUDE.md and kit/README.md.
+# Game files stay out of the repo: they are copyrighted (sharing them can be
+# illegal) and huge. Unpack your own disc into ISO/ (see README.md).
+ISO/
 *.iso
 *.ISO
 *.XAF

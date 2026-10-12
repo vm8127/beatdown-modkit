@@ -2,15 +2,57 @@
 
 Everything learned so far about the US release (SLUS-21150), plus tools to extract files and make patches. Start here before any new mod.
 
-**What's in this folder**
+## Before you start: unpack your own disc into `ISO/`
+
+The kit works on files from the game disc, which are **not** in this repository (they are copyrighted, and `ISO/` is in `.gitignore` so they can't be committed by accident). You need your own copy of exactly this release:
+
+| | |
+|---|---|
+| Game | Beat Down: Fists of Vengeance |
+| Region | USA, NTSC-U |
+| Serial | SLUS-21150 (boot file `SLUS_211.50`), version 1.02 |
+| Disc image | 3,317,039,104 bytes, volume `BEATDOWN` |
+| ELF check | PCSX2 CRC `C9F6EF9A`; `SLUS_211.50` is 5,238,064 bytes, MD5 `b2e575877da83f07d039f888db446697` |
+
+Other regions (PAL, Japan) have different code addresses, so the patches and addresses here don't apply to them.
+
+Unpack the whole disc, keeping its folder layout, into `ISO/` at the top of this workspace:
+
+```
+python tools/bdkit.py iso-extract "Beat Down - Fists of Vengeance (USA).iso" ISO
+```
+
+Afterwards you should have:
+
+| File | Bytes | MD5 |
+|---|---|---|
+| `ISO/SLUS_211.50` | 5,238,064 | `b2e575877da83f07d039f888db446697` |
+| `ISO/XAF/CDATA.XAF` | 57,597,952 | `e54e4b47496fad24d933e027b9a0a554` |
+| `ISO/XAF/DATA.XAF` | 195,262,464 | `7f783e16416d582be0880467e80522a7` |
+| `ISO/XAF/FSCENE.XAF` | 15,722,496 | `42ecfc5de6ac1e298638600b833cd40f` |
+| `ISO/XAF/FSTAGE.XAF` | 101,451,776 | `9332532ecc2ef385b402c0ec1f01ce65` |
+| `ISO/XAF/GRAPH.XAF` | 64,227,328 | `75ae7e230fcde017a7b49a0707a6a481` |
+| `ISO/XAF/SCRIPT.XAF` | 8,400,896 | `e9415720cfb21ed8ccc753ec7e880006` |
+| `ISO/XAF/STAGE.XAF` | 46,284,800 | `7e68e323c79246b0ac4c2c0b1c3b75ac` |
+| `ISO/XAF/ARCHIVE.XAF`, `FBGM.XAF`, `SOUND.XAF` | 1,011,259,392 / 837,335,040 / 30,087,168 | |
+| `ISO/MOVIES/`, `ISO/MODULES/`, `ISO/ICON/`, `ISO/IOPRP300.IMG`, `ISO/SYSTEM.CNF` | | |
+
+The full file list with sizes is in `dumps/iso_files.txt`. Only `SLUS_211.50` and the XAF archives are needed for the tools. If the MD5 of `ISO/SLUS_211.50` matches, you have the right release.
+
+All commands below are run from the top of the workspace.
+
+## What's in this workspace
 
 | Path | What it is |
 |---|---|
-| `bdkit.py` | Command-line tool (Python 3, no extra packages). Run `python bdkit.py -h`. |
-| `movesets.md` | **Moveset map**: every fighting style ID, who uses it, each fighter's body and move groups, which swaps work, and every style's move list with names and inputs |
-| `CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
-| `MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
-| `codemap.py`, `symbols.tsv`, `symbols/` | Code map helpers: symbol exports for the PCSX2 debugger and Ghidra, command tables with damage, person templates (`python codemap.py -h`) |
+| `CLAUDE.md` | How Claude works in this folder (rules, workflow) |
+| `ISO/` | Your unpacked disc. Never committed, never modified. |
+| `tools/bdkit.py` | Command-line tool (Python 3, no extra packages). Run `python tools/bdkit.py -h`. |
+| `tools/codemap.py` | Code map helpers: symbol exports, command tables with damage, person templates (`python tools/codemap.py -h`) |
+| `docs/movesets.md` | **Moveset map**: every fighting style ID, who uses it, each fighter's body and move groups, which swaps work, and every style's move list with names and inputs |
+| `docs/CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
+| `docs/MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
+| `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
 | `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
 | `dumps/persons.txt` | All 602 person templates with level, HP, guard, attack rank and money (`codemap.py persons`) |
 | `dumps/characters.txt` | Every fighter: class row, address, body size, style, animation groups |
@@ -19,7 +61,7 @@ Everything learned so far about the US release (SLUS-21150), plus tools to extra
 | `dumps/iso_files.txt` | Every file on the disc with sector (LBA) and size |
 | `dumps/xaf_*.txt` | Index of every XAF archive: entry number, offset, size, asset type |
 | `dumps/xaf_ARCHIVE.txt` | Outfit and body part names (HAI_ hair, EYE_, MOU_ mouth, WEA_ weapons...) |
-| `mods/` | Finished patches (PCSX2 `.pnach`) |
+| `mods/SLUS-21150_C9F6EF9A.pnach` | Finished patches (PCSX2 cheats), one `[section]` per mod |
 
 ## Quick facts
 
@@ -105,7 +147,7 @@ Name table at `0x00589AF0` (52 pointers). Type IDs:
 ```
 +0  u32 body        0 = small, 1 = medium, 2 = large (which skeleton/body animations)
 +4  u32 style       fighting style ID; selects the move set
-+8  u32 skeleton    action remap table, one per body size (S 0x50C230, M 0x50B990, L 0x50BDE0); see CODEMAP.md
++8  u32 skeleton    action remap table, one per body size (S 0x50C230, M 0x50B990, L 0x50BDE0); see docs/CODEMAP.md
 +C  u32 groups      pointer to a list of animation group IDs ending in 9999
 ```
 
@@ -121,9 +163,9 @@ The five heroes:
 
 Every list also contains the shared groups `159, 15, 16, 39, 38, 19, 21, 22, 23, 27, 30, 31, 34` and two body groups (S `164,165`, M `160,161`, L `162,163`). The generic enemy styles are `0x01`-`0x08`, gang `0x24`, police `0x0D`, and their move groups are 166-173, 201 and 178. See `movesets.md` for every style, its fighters and its full move list.
 
-**To give fighter A the moves of fighter B**, copy B's `style` (+4) and `groups` (+C) into A's row. Keep A's body and skeleton. That only works cleanly when both have the same body size. `bdkit.py swap-moveset SLUS_211.50 A B` prints the patch lines for you and warns when the bodies differ.
+**To give fighter A the moves of fighter B**, copy B's `style` (+4) and `groups` (+C) into A's row. Keep A's body and skeleton. That only works cleanly when both have the same body size. `python tools/bdkit.py swap-moveset ISO/SLUS_211.50 A B` prints the patch lines for you and warns when the bodies differ.
 
-**When the body sizes differ** (say Aaron M gets Jason G's L moves), use `bdkit.py swap-moveset SLUS_211.50 A B --keep-body`. Style move groups don't depend on body size (BOXER S/M/L all load group 166, and PERFECT loads every style group on an M body), so instead of borrowing B's list, A's own list is edited in place: A's move group is swapped for B's, B's extra groups are added into the zero padding after the 9999 terminator, and A keeps its own body groups. Each hero's list is used by that hero's row only (Aaron's list at `0x0050D100` has one reference, at `0x0050D8BC`).
+**When the body sizes differ** (say Aaron M gets Jason G's L moves), use `python tools/bdkit.py swap-moveset ISO/SLUS_211.50 A B --keep-body`. Style move groups don't depend on body size (BOXER S/M/L all load group 166, and PERFECT loads every style group on an M body), so instead of borrowing B's list, A's own list is edited in place: A's move group is swapped for B's, B's extra groups are added into the zero padding after the 9999 terminator, and A keeps its own body groups. Each hero's list is used by that hero's row only (Aaron's list at `0x0050D100` has one reference, at `0x0050D8BC`).
 
 ### Fighter records: the model switch
 
@@ -152,7 +194,7 @@ Table at `0x004FB4C0`, 8 bytes per group: `{s16 STAGE.XAF entry, s16 0, u32 poin
 
 ## Known code addresses
 
-The full map of functions, tables and structs is in `CODEMAP.md`; this is the short list.
+The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is the short list.
 
 | Address | What |
 |---|---|
@@ -179,7 +221,7 @@ The full map of functions, tables and structs is in `CODEMAP.md`; this is the sh
 
 - The ELF has one LOAD segment: EE address `0x00100000` = file offset `0x80`. So **ELF offset = address - 0x100000 + 0x80**.
 - `SLUS_211.50` starts at ISO sector 1156876, so **ISO offset = 1156876 x 2048 + ELF offset**.
-- `python bdkit.py addr 0x50D8B4` does both conversions.
+- `python tools/bdkit.py addr 0x50D8B4` does both conversions.
 - PCSX2 pnach line for a 32-bit write: `patch=1,EE,2XXXXXXX,extended,VALUE`, where `XXXXXXX` is the address without its top digit. A `[Section name]` header makes it a cheat you can toggle under Game Properties, Cheats.
 
 ## Mods so far
@@ -194,10 +236,10 @@ When adding a new mod, add a new `[section]` to that same pnach file, because PC
 
 ## Open questions and next targets
 
-- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See CODEMAP.md, "The command table". Frame data and which animation each action plays are still open.
-- **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See CODEMAP.md.
-- **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
-- **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See CODEMAP.md, "Character loading".
+- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See docs/CODEMAP.md, "The command table". Frame data and which animation each action plays are still open.
+- **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See docs/CODEMAP.md.
+- **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See docs/MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
+- **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See docs/CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.
 - **SCRIPT.XAF**: entries 0-999 are 964+ byte bytecode files and 1000+ are indexed event lists. The ELF has opcode names like `EXF_SET_SKILL`, `EXF_SET_MOTION` and `EXF_MOVE_STAGE` near `0x004101E8`.
-- **Ghidra**: couldn't be downloaded in Claude's environment. If you install it locally with the `ghidra-emotionengine-reloaded` extension, load `SLUS_211.50` at `0x00100000` and import the addresses above as labels.
+- **Ghidra**: couldn't be downloaded in Claude's environment. If you install it locally with the `ghidra-emotionengine-reloaded` extension, load `ISO/SLUS_211.50` at `0x00100000` and import the addresses above as labels.
