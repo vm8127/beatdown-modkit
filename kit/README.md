@@ -188,7 +188,7 @@ The full map of functions, tables and structs is in `CODEMAP.md`; this is the sh
 |---|---|---|
 | Aaron uses Raven's moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12) |
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
-| Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: untested |
+| Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: works in-game with name and model (tested by Daniel, 2026-10-12) |
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory).
 
