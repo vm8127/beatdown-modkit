@@ -1,0 +1,25 @@
+gametitle=Beat Down - Fists of Vengeance (USA) [SLUS-21150]
+
+[Aaron uses Raven's moveset]
+author=Claude for Daniel
+description=Points Aaron's character class (row 33 of the class table at 0x0050D6A0) at Raven's fighting style 0x11 and Raven's animation groups. Aaron keeps his own model.
+patch=1,EE,2050D8B4,extended,00000011
+patch=1,EE,2050D8BC,extended,0050D150
+
+[Aaron uses Jason G's moveset]
+author=Claude for Daniel
+description=Aaron fights with Jason G's style 0x12. Aaron is medium and Jason G is large, so Aaron keeps his medium body animations: his own group list at 0x0050D100 gets Jason G's move group 183 in place of 184, plus Jason G's group 209. Turn on only one Aaron cheat at a time, and restart the game after switching.
+patch=1,EE,2050D8B4,extended,00000012
+patch=1,EE,2050D8BC,extended,0050D100
+patch=1,EE,2050D13C,extended,000000B7
+patch=1,EE,2050D144,extended,000000D1
+patch=1,EE,2050D148,extended,0000270F
+
+[Aaron uses Ignacy's moveset and Chester's model]
+author=Claude for Daniel
+description=Aaron fights with Ignacy's style 0x0C and Ignacy's animation groups (both medium bodies, so a plain swap). Aaron's three fighter records in the table at 0x00413134 (the playable one, 68, plus 153 and 590) get Chester's outfit preset 23, which selects his model and outfit parts. Aaron keeps his class row, so his body animations stay medium. Turn on only one Aaron cheat at a time, and restart the game after switching.
+patch=1,EE,2050D8B4,extended,0000000C
+patch=1,EE,2050D8BC,extended,0050D290
+patch=1,EE,20414454,extended,00210017
+patch=1,EE,20415C3C,extended,00210017
+patch=1,EE,2041D724,extended,00210017

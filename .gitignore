@@ -1,0 +1,15 @@
+# Raw game data stays out of the repo (copyright and size).
+# Extract these yourself from your own disc; see CLAUDE.md and kit/README.md.
+*.iso
+*.ISO
+*.XAF
+*.xaf
+*.PSS
+*.IMG
+*.BIN
+SLUS_211.50
+*.elf
+
+# Python
+__pycache__/
+*.pyc
