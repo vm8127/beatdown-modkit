@@ -15,7 +15,7 @@ Usage examples (run `python bdkit.py -h` for the full list):
   python bdkit.py swap-moveset SLUS_211.50 AARON RAVEN       # prints a pnach section
   python bdkit.py swap-moveset SLUS_211.50 AARON JASON_G --keep-body   # for different body sizes
   python bdkit.py fighters  SLUS_211.50                      # fighter records: outfit preset (model) + class row
-  python bdkit.py swap-model SLUS_211.50 AARON CHESTER       # prints a pnach section (model only)
+  python bdkit.py swap-model SLUS_211.50 AARON CHESTER       # prints a pnach section (model only, keeps the name)
   python bdkit.py moves     SLUS_211.50 CDATA.XAF 0x13           # move list (names + inputs) of a style
   python bdkit.py style-map SLUS_211.50 CDATA.XAF > movesets.md  # styles, fighters, swaps, move lists
   python bdkit.py read      SLUS_211.50 0x50D8B0 16          # hex dump at a game address
@@ -59,6 +59,9 @@ FIGHTER_COUNT = 602
 HERO_SELECT = 0x004334B0      # s16[5] fighter IDs of the playable heroes: Raven 107, Jason G 53, Aaron 68, Lola 22, Gina 108
 # Outfit presets are CDATA.XAF entry 0: 189 records of 0x498 bytes = 22 slots of {u32 slot, s16 parts[16] ending -1},
 # then params at +0x318. Fighter init 0x0013B490 copies the preset's slots into the fighter (+0x68) to build its model.
+PRESET_LOOKUP = 0x002A8720    # (preset, 1 = parts | 2 = params) -> pointer into CDATA.XAF entry 0
+MODEL_HOOK_SITES = [0x0013B54C, 0x0013B55C]   # the two jal PRESET_LOOKUP in fighter init
+MODEL_HOOK = 0x003E0130       # 20 unused zero words between the last code and the VU microcode
 
 
 # ---------------------------------------------------------------------------
@@ -414,7 +417,13 @@ def cmd_fighters(a):
 
 
 def cmd_swap_model(a):
-    """Give every fighter record of class A the outfit preset (model) of class B. A keeps its class row."""
+    """Give class A the outfit parts (model) of class B by hooking the preset lookup in fighter init.
+
+    A's fighter records keep their own preset number, because the game checks the preset number to
+    recognise the heroes (HP bar name, and more). Only the two lookups in fighter init (parts at
+    0x0013B54C, params at 0x0013B55C) are sent through a hook in unused padding at MODEL_HOOK, which
+    swaps A's presets for B's before calling 0x002A8720.
+    """
     e = Elf(a.elf)
     dst, src = find_class(e, a.target), find_class(e, a.source)
     if dst["body"] != src["body"]:
@@ -428,12 +437,26 @@ def cmd_swap_model(a):
         if not ps:
             sys.exit(f"no fighter record uses {src['name']}")
         preset = max(set(ps), key=ps.count)
+    mine = sorted({f["preset"] for f in fs if f["row"] == dst["row"]})
+    if not 1 <= len(mine) <= 5:
+        sys.exit(f"{dst['name']} has {len(mine)} presets; the hook has room for 5")
+    # for each target preset: addiu t0,zero,P / beq a0,t0,use / nop; then j lookup / nop;
+    # use: addiu a0,zero,src / j lookup / nop
+    use = 3 * len(mine) + 2
+    words = []
+    for p in mine:
+        k = len(words)
+        words += [0x24080000 | p, 0x10880000 | (use - (k + 2)), 0]
+    words += [0x08000000 | (PRESET_LOOKUP >> 2), 0]
+    words += [0x24040000 | preset, 0x08000000 | (PRESET_LOOKUP >> 2), 0]
+    jal = 0x0C000000 | (MODEL_HOOK >> 2)
     print(f"[{dst['name'].title()} uses {src['name'].title()}'s model]")
-    print(f"description=Every {dst['name']} fighter record (table 0x{FIGHTER_TABLE:08X}) gets outfit preset {preset} "
-          f"from {src['name']}; class row {dst['row']} (moveset) is kept")
-    for f in fs:
-        if f["row"] == dst["row"]:
-            print(f"patch=1,EE,2{f['addr']:07X},extended,{(dst['row'] << 16) | (preset & 0xFFFF):08X}")
+    print(f"description=Fighter init builds {dst['name']} (presets {', '.join(map(str, mine))}) from {src['name']}'s "
+          f"outfit preset {preset}; {dst['name']} keeps its own preset number, name and class row")
+    for i, w in enumerate(words):
+        print(f"patch=1,EE,2{MODEL_HOOK + 4 * i:07X},extended,{w:08X}")
+    for site in MODEL_HOOK_SITES:
+        print(f"patch=1,EE,2{site:07X},extended,{jal:08X}")
 
 
 def cmd_moves(a):

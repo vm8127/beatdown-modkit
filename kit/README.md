@@ -8,6 +8,10 @@ Everything learned so far about the US release (SLUS-21150), plus tools to extra
 |---|---|
 | `bdkit.py` | Command-line tool (Python 3, no extra packages). Run `python bdkit.py -h`. |
 | `movesets.md` | **Moveset map**: every fighting style ID, who uses it, each fighter's body and move groups, which swaps work, and every style's move list with names and inputs |
+| `CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
+| `codemap.py`, `symbols.tsv`, `symbols/` | Code map helpers: symbol exports for the PCSX2 debugger and Ghidra, command tables with damage, person templates (`python codemap.py -h`) |
+| `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
+| `dumps/persons.txt` | All 602 person templates with level, HP, guard, attack rank and money (`codemap.py persons`) |
 | `dumps/characters.txt` | Every fighter: class row, address, body size, style, animation groups |
 | `dumps/fighters.txt` | Every fighter spawn record: outfit preset (model) and class row (`bdkit.py fighters`) |
 | `dumps/anim_groups.txt` | All 317 animation groups: which STAGE.XAF pack and which animation IDs |
@@ -100,7 +104,7 @@ Name table at `0x00589AF0` (52 pointers). Type IDs:
 ```
 +0  u32 body        0 = small, 1 = medium, 2 = large (which skeleton/body animations)
 +4  u32 style       fighting style ID; selects the move set
-+8  u32 skeleton    pointer, one per body size (S 0x50C230, M 0x50B990, L 0x50BDE0)
++8  u32 skeleton    action remap table, one per body size (S 0x50C230, M 0x50B990, L 0x50BDE0); see CODEMAP.md
 +C  u32 groups      pointer to a list of animation group IDs ending in 9999
 ```
 
@@ -135,7 +139,7 @@ The playable heroes' fighter IDs are at `0x004334B0`: Raven 107, Jason G 53, **A
 
 Outfit presets are CDATA.XAF entry 0: 189 records of `0x498` bytes, read through `0x002A8720(preset, 1 = parts | 2 = params)`. Each record is 22 slots of `{u32 slot id, s16 parts[16] ending in -1}`, which init copies into the fighter at `+0x68`, then params at `+0x318`. Boss presets (Chester's 23) set param `+0x18` = 1, which sets fighter flag 8.
 
-**To give fighter A the look of fighter B**, write B's preset into the `+0` of every record of A, keeping A's class row: `bdkit.py swap-model SLUS_211.50 A B` prints the 32-bit pnach writes. Keep body sizes equal (A's class row still picks the body animations); the tool warns when they differ.
+**To give fighter A the look of fighter B**, don't change A's preset number: the game checks preset numbers to recognise the heroes (the HP bar name `0x0013CA80`, name ID `0x002F9930`, and at least 7 other functions with the same preset switch), so a hero given a boss preset loses its name. Instead, `bdkit.py swap-model SLUS_211.50 A B` prints a hook: 14 words in unused padding at `0x003E0130` that swap A's presets for B's, and both `jal 0x002A8720` in fighter init (`0x0013B54C` parts, `0x0013B55C` params) are pointed at it. A keeps its preset number, name and class row. Keep body sizes equal (A's class row still picks the body animations); the tool warns when they differ.
 
 ### Move lists (names and inputs)
 
@@ -146,6 +150,8 @@ Table at `0x005CAB40`, 8 bytes per style, row = style - 1: `{u16 first input tex
 Table at `0x004FB4C0`, 8 bytes per group: `{s16 STAGE.XAF entry, s16 0, u32 pointer to s16 animation IDs ending in -1}`. Group N loads STAGE.XAF entry `stage_entry`, and the animations in that pack are numbered by the ID list in order. The loader is `0x002DC360`, and the per-fighter loop is `0x002DC550`. See `dumps/anim_groups.txt`.
 
 ## Known code addresses
+
+The full map of functions, tables and structs is in `CODEMAP.md`; this is the short list.
 
 | Address | What |
 |---|---|
@@ -164,6 +170,9 @@ Table at `0x004FB4C0`, 8 bytes per group: `{s16 STAGE.XAF entry, s16 0, u32 poin
 | `0x001107C8` | Debug print (probably printf) |
 | `0x0013B490` | Fighter init `(slot, fighter_id, 0)`: reads the fighter table at `0x00413134`, copies the outfit preset |
 | `0x002A8720` | Outfit preset record `(preset, 1 = parts, 2 = params)` from CDATA.XAF entry 0 |
+| `0x0013CA80` | Fighter display name; hero presets (`0x18, 0x3F, 0x4E, 0x71, 0x73, 0x99-0x9D`) get the hero name |
+| `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
+| `0x003E0130` | 20 unused zero words before the VU microcode; used as the code cave for `swap-model` |
 
 ## Addresses, offsets and patching
 
@@ -178,15 +187,15 @@ Table at `0x004FB4C0`, 8 bytes per group: `{s16 STAGE.XAF entry, s16 0, u32 poin
 |---|---|---|
 | Aaron uses Raven's moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12) |
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
-| Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested |
+| Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: untested |
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory).
 
 ## Open questions and next targets
 
-- **What a style ID controls.** Styles select the move list (`0x005CAB40`, mapped in `movesets.md`), but the command table (button input to move, damage, frame data) hasn't been found yet. Search for tables indexed by style.
-- **Fighter stats** (health, power, speed): not located yet. Look near the class table or in CDATA.
-- **CDATA.XAF entry 0**: 189 records of 1176 bytes, probably one per character model (models are entries 196-384, textures 7-195). Each record holds 14 slots of `{u16 id, u16 0, u16 DATA.XAF texture index x16}`, which look like texture/face overrides.
+- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See CODEMAP.md, "The command table". Frame data and which animation each action plays are still open.
+- **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See CODEMAP.md.
+- **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.
 - **SCRIPT.XAF**: entries 0-999 are 964+ byte bytecode files and 1000+ are indexed event lists. The ELF has opcode names like `EXF_SET_SKILL`, `EXF_SET_MOTION` and `EXF_MOVE_STAGE` near `0x004101E8`.
 - **Ghidra**: couldn't be downloaded in Claude's environment. If you install it locally with the `ghidra-emotionengine-reloaded` extension, load `SLUS_211.50` at `0x00100000` and import the addresses above as labels.

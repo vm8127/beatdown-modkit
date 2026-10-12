@@ -17,9 +17,22 @@ patch=1,EE,2050D148,extended,0000270F
 
 [Aaron uses Ignacy's moveset and Chester's model]
 author=Claude for Daniel
-description=Aaron fights with Ignacy's style 0x0C and Ignacy's animation groups (both medium bodies, so a plain swap). Aaron's three fighter records in the table at 0x00413134 (the playable one, 68, plus 153 and 590) get Chester's outfit preset 23, which selects his model and outfit parts. Aaron keeps his class row, so his body animations stay medium. Turn on only one Aaron cheat at a time, and restart the game after switching.
+description=Aaron fights with Ignacy's style 0x0C and Ignacy's animation groups (all medium bodies, so a plain swap). For the model, a small hook at 0x003E0130 makes fighter init (0x0013B54C and 0x0013B55C) load Chester's outfit preset 23 whenever it builds Aaron (presets 78, 79, 153). Aaron keeps his own preset number, so the game still recognises him as Aaron (HP bar name). Turn on only one Aaron cheat at a time, and restart the game after switching.
 patch=1,EE,2050D8B4,extended,0000000C
 patch=1,EE,2050D8BC,extended,0050D290
-patch=1,EE,20414454,extended,00210017
-patch=1,EE,20415C3C,extended,00210017
-patch=1,EE,2041D724,extended,00210017
+patch=1,EE,203E0130,extended,2408004E
+patch=1,EE,203E0134,extended,10880009
+patch=1,EE,203E0138,extended,00000000
+patch=1,EE,203E013C,extended,2408004F
+patch=1,EE,203E0140,extended,10880006
+patch=1,EE,203E0144,extended,00000000
+patch=1,EE,203E0148,extended,24080099
+patch=1,EE,203E014C,extended,10880003
+patch=1,EE,203E0150,extended,00000000
+patch=1,EE,203E0154,extended,080AA1C8
+patch=1,EE,203E0158,extended,00000000
+patch=1,EE,203E015C,extended,24040017
+patch=1,EE,203E0160,extended,080AA1C8
+patch=1,EE,203E0164,extended,00000000
+patch=1,EE,2013B54C,extended,0C0F804C
+patch=1,EE,2013B55C,extended,0C0F804C
