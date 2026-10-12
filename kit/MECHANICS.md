@@ -4,7 +4,7 @@ What the game's stats and meters do, with the formulas as the code computes them
 
 **Status words**: **read** means the formula was taken straight from the code. **Probably** means the code was read but what it is for in play is a guess. Nothing here has been tested in-game yet.
 
-`difficulty` below is the byte at `0x0060C704` (g_SystemData +4). The options menu labels it from the table at `0x509CF0`: 1 = EASY, 2 = NORMAL, 3 = HARD. Many tables are 4 entries long and indexed by it, so entry 0 is unused.
+`difficulty` below is the byte at `0x0060C704` (g_SystemData +4): 1 = EASY, 2 = NORMAL, 3 = HARD (labels at `0x509CF0`). **The US game has no difficulty option you can see**: the DIFFICULTY entry exists in the options menu table (`0x509D90`) with default 2, but it is switched off (see [Difficulty](#difficulty)), so normal play is always NORMAL. Many tables are 4 entries long and indexed by it, so entry 0 is unused.
 
 ## Contents
 
@@ -192,7 +192,9 @@ These are shown by the unused debug overlay `Debug_FighterInfo` `0x00302260`.
 
 ## Difficulty
 
-`0x0060C704`, 1 = EASY, 2 = NORMAL, 3 = HARD. Everything indexed by it:
+`0x0060C704`, 1 = EASY, 2 = NORMAL, 3 = HARD. It is a **hidden option**. The options menu items are 32-byte records; the DIFFICULTY record at `0x509D90` (label `0x5CF550`, text id `0x232D`) has default value 2 (byte `+20`), but bytes `+24` and `+27` are 0 where the visible SUBTITLES and MAP records (`0x509DB0`, `0x509DD0`) have 1. **Probably** one of those bytes shows the item; that would put DIFFICULTY back in the menu. Until then the game always plays on NORMAL, so the EASY and HARD values below are cut content. A pnach can also just set `0x0060C704`.
+
+Everything indexed by it:
 
 | What | EASY | NORMAL | HARD | Where |
 |---|---|---|---|---|
