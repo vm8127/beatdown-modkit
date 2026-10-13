@@ -1,6 +1,6 @@
 # Mod plan: negotiation menu on knockout
 
-Status: **test v1 built and tested 2026-10-13; v2 (CANCEL = normal knockout) next** (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
+Status: **v1 tested 2026-10-13; test v2 (CANCEL = normal knockout) built, untested**. The pnach section is now `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
 
 ## What the mod would do
 
@@ -47,7 +47,7 @@ Read from the ELF; not run yet. `g_Battle` is the battle context pointer at `gp-
 - **Battle state machine** `Battle_Update` `0x002DD500`: state at `g_Battle +0x10`. State 0 is the fight. When a side goes down, `Battle_OnFighterDown` `0x002E2F60` records it (`+0xB8`) and the fight moves to state 2 with the winner at `+0x60` and the loser at `+0x64`.
 - **After a knockout** (state 2): if the player lost with Pride at 0 the game starts the beg scene. Otherwise, if `Battle_CanTalkAfterKO` `0x002E38D0` passes (story mode, the loser is not a boss and not one of 8 ally people), it calls `Battle_StartTalk(1)` at `0x002DE478`: a short after-KO talk that ends the fight.
 - **The threaten button** goes through `Battle_RequestTalk` `0x002DE540` (called from the fighter input code at `0x0032482C`): it works when your target is DOWN or GUARDING, or during a threaten grab, and ends in `Battle_StartTalk(0)`.
-- **The talk scene** `Talk_Update` `0x002DE850` runs both. Kind 0 opens the menu (`Talk_OpenMenu` `0x002E0150`, items from `0x005A90F0`) and branches on the choice (steps 1000, 1150, 1200, 1250). ROB and INTERROGATE check `Fighter_HasPride` `0x002FB120` on the target: empty Pride leads to step 1300, otherwise 1350. The 4th choice (step 1250) returns outcome 5, which resumes the fight in a "beat down" mode (`g_Battle +0x9C` bit 0). Kind 1 skips the menu and goes 1600, 1601, 800.
+- **The talk scene** `Talk_Update` `0x002DE850` runs both. Kind 0 opens the menu (`Talk_OpenMenu` `0x002E0150`, menu descriptor at `0x005990F0`) and branches on the choice (measured in PCSX2): RECRUIT 0 and ROB 1 -> step 1000, INTERROGATE 2 -> 1150, BEATDOWN 3 -> 1200, CANCEL 4 -> 1250. INTERROGATE and BEATDOWN check `Fighter_HasPride` `0x002FB120` on the target (1300/1350 and 1500/1550). CANCEL (step 1250) returns outcome 5, which resumes the fight (`g_Battle +0x9C` bit 0); with a knocked-out enemy that just reopens the menu. Kind 1 skips the menu and goes 1600, 1601, 800.
 - **Pride bar shown** `Battle_PrideHudShown` `0x002E3A20`: not VS mode, game flag `0x0076EA90` bit 9 clear, the target's person record `+0x388` bit 31 clear, and battle type `0x0076EAA0` not 3 (probably group fights; Daniel says you can't threaten there).
 
 ## Test v1 (built)
@@ -84,18 +84,33 @@ Story mode, 1-on-1 street fight with Miles (Pride bar shown), from Daniel's save
 4. Backing out: **doesn't work**. CANCEL reopens the same menu with the cursor on RECRUIT; Triangle, Circle, Start and Select do nothing.
 5. Boss and group fights: not tested (no save state for one).
 
-## Probe for v2 (CANCEL), to run in PCSX2
+## Probe results (PCSX2, 2026-10-13)
 
-Statically the kind 0 choice dispatch (step 2, `0x002DEF2C`) is: choice 0 or 1 -> step 1000, 2 -> 1150, 3 -> 1200, 4 -> 1250, anything else -> 1000. The choice is the menu widget's result (`Talk_PollMenu` copies widget `+0xC` at `B+0xF8` to `B+0x94`; step 1 copies it to `B+0x58` and to the byte at `0x006004DC`). Where CANCEL loops back is not visible, so log it live. `B` = word at `0x005FFC6C`.
+- The menu descriptor is at `0x005990F0` (the widget at `B+0xEC` points to it from `B+0xFC`), not `0x005A90F0`. `+0xC` is the item Triangle jumps to; it is `0xFFFF` (none), which is why Triangle does nothing. Items are text ids 0x17, 0x18, 0x19, 0x1A, 0x1D.
+- Cursor values: RECRUIT 0, ROB 1, INTERROGATE 2, BEATDOWN 3, CANCEL 4.
+- CANCEL: step 1 -> 2 (choice 4) -> 1250 -> 0 -> 1 and the menu opens again on RECRUIT. ROB: step 1 -> 2 -> 1000 -> 1001 -> 1002.
 
-1. With the menu open: 0x50 bytes at `0x005A90F0` (menu descriptor; `+0xC` is the Triangle/cancel item, `+8` the mode), words `B+0x28..B+0x44`, `B+0x6C` (talk kind).
-2. Widget at `B+0xEC`: halfwords `B+0xF4` (state), `B+0xF6` (cursor), `B+0xF8` (result), `B+0xFA` (item count). Note the cursor value for each visible label.
-3. Pick CANCEL and sample as often as possible for about 2 s: step `B+0x12` (halfword), `B+0x58`, `B+0x94`, byte `0x006004DC`, `B+0xF8`. Same for ROB (first few steps only).
-4. Does Triangle at the menu change any of these?
+## Test v2 (built)
+
+```
+0x002DEF70  j     0x00218F00          (the choice-4 branch of step 2)
+0x00218F00  jal   Fighter_IsAlive     a0 = s1, the target
+0x00218F08  beqz  v0,ko
+            (alive: the vanilla CANCEL code, then step 1250)
+ko:         sw    1, g_Battle+0x6C    talk kind 1 (after-KO talk)
+            sb    zero,-18196(gp)     clear the stored choice
+            sw    zero,g_Battle+0x58
+            step = 1600               the normal after-KO ending
+0x005990FC  word 4                    Triangle jumps to CANCEL
+```
+
+So CANCEL on a knocked-out enemy (only the mod opens the menu on one) ends the fight like a normal knockout, and a manual threaten's CANCEL stays vanilla. The cave `0x00218F00`-`0x00218F40` is at the end of the unused library function whose start the roster uses.
+
+What to check: CANCEL and Triangle after a knockout end the fight with the normal BATTLE RESULT; the other four choices still work; a manual threaten's CANCEL still resumes the fight.
 
 ## What's left after the test
 
-- **Cancel = normal knockout.** The menu has a CANCEL item that currently loops back to the menu. In v2, CANCEL (only when the mod opened the menu) goes to the kind 1 ending (step 1600).
+- Test v2.
 - **BEATDOWN** already keeps its vanilla meaning (tested); no change needed.
 - Check why ROB paid only $3 (compare with a manual threaten on the same enemy).
 - Add a `bdkit.py` command if the hook needs parameters (it doesn't yet).

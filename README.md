@@ -222,7 +222,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x0013CA80` | Fighter display name; hero presets (`0x18, 0x3F, 0x4E, 0x71, 0x73, 0x99-0x9D`) get the hero name |
 | `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
 | `0x003E0130` | 20 unused zero words before the VU microcode. `swap-model` uses `0x003E0130`-`0x003E0164`; the negotiation-on-knockout mod uses `0x003E0168`-`0x003E017C` |
-| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to; code space for the roster hooks |
+| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to; code space for the roster hooks (from the start); the negotiation-on-knockout mod uses `0x00218F00`-`0x00218F40` at its end |
 
 ## Addresses, offsets and patching
 
@@ -239,7 +239,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
 | Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: works in-game with name and model (tested by Daniel, 2026-10-12) |
 | Story roster: Aaron is Chester with Ignacy's moves (built by `bdkit.py roster` from `mods/roster.json`; HP bar says Chester) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Replaces the older Aaron cheats: turn those off |
-| Negotiation menu on knockout (test v1) | `mods/SLUS-21150_C9F6EF9A.pnach` | Tested in PCSX2 2026-10-13 (Miles, 1-on-1 street fight): the menu opens on knockout and RECRUIT, ROB, INTERROGATE and BEATDOWN all work with no freezes. CANCEL doesn't back out yet (it reopens the menu), so you must pick one of the four. See docs/PLAN-auto-negotiation.md, "Test v1 results" |
+| Negotiation menu on knockout (test v2) | `mods/SLUS-21150_C9F6EF9A.pnach` | v1 tested in PCSX2 2026-10-13 (Miles, 1-on-1 street fight): the menu opens on knockout and RECRUIT, ROB, INTERROGATE and BEATDOWN all work with no freezes. v2 adds CANCEL (and Triangle) = normal knockout; untested. See docs/PLAN-auto-negotiation.md |
 | Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): DEBUG menu, scene player and language select all work. See docs/CUTCONTENT.md, Test results |
 | Cut content: all six languages in the debug LANGUAGE menu | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): German gives German text and menu graphics. Needs the DEBUG title cheat; left/right picks, Cross confirms |
 | Cut content: developer debug mode (switch 5) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): the 10-page fighter overlay works (hold L2 + press R2 to show it, hold L2 + click L3 to page). The R1 speed-up can't be used because R1 is grab |
