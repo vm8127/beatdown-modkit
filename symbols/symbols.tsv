@@ -182,3 +182,6 @@
 0019f370	func	Debug_HeadStart	story setup: only with debug switch 18, adds to about 70 g_StoryVars
 005ffe30	data	g_DebugOverlayOn	u8, switch 5 fighter overlay shown (toggled by L2+R2)
 005ffe44	data	g_DebugOverlayPage	u8, switch 5 overlay page 0-9 (L2+L3)
+00216538	func	Unused_DmaGsUpload	library DMA/GS upload code nothing calls or points to; code cave for bdkit roster hooks
+0031b210	func	HpBar_Build	(side) builds one side's HP bar, one name line per team member; called from 0x3184D4; jal Fighter_DisplayName at 0x31B3E4 (hooked by bdkit roster)
+0013c5c0	func	Team_GetMember	(side, i) -> person id from the team lists 0x76EAC8 (side 0) / 0x76EAD0 (side 1), s16 ending -1

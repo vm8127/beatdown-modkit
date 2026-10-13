@@ -17,6 +17,7 @@ Usage examples (run `python tools/bdkit.py -h` for the full list):
   python tools/bdkit.py swap-moveset ISO/SLUS_211.50 AARON JASON_G --keep-body   # for different body sizes
   python tools/bdkit.py fighters  ISO/SLUS_211.50                     # fighter records: outfit preset (model) + class row
   python tools/bdkit.py swap-model ISO/SLUS_211.50 AARON CHESTER      # prints a pnach section (model only, keeps the name)
+  python tools/bdkit.py roster    ISO/SLUS_211.50 mods/roster.json    # story heroes recast from a roster file
   python tools/bdkit.py moves     ISO/SLUS_211.50 ISO/XAF/CDATA.XAF 0x13   # move list (names + inputs) of a style
   python tools/bdkit.py style-map ISO/SLUS_211.50 ISO/XAF/CDATA.XAF > docs/movesets.md
   python tools/bdkit.py read      ISO/SLUS_211.50 0x50D8B0 16         # hex dump at a game address
@@ -63,6 +64,14 @@ HERO_SELECT = 0x004334B0      # s16[5] fighter IDs of the playable heroes: Raven
 PRESET_LOOKUP = 0x002A8720    # (preset, 1 = parts | 2 = params) -> pointer into CDATA.XAF entry 0
 MODEL_HOOK_SITES = [0x0013B54C, 0x0013B55C]   # the two jal PRESET_LOOKUP in fighter init
 MODEL_HOOK = 0x003E0130       # 20 unused zero words between the last code and the VU microcode
+HERO_TEMPLATES = {"AARON": 68, "RAVEN": 107, "JASON_G": 53, "LOLA": 22, "GINA": 108}  # story heroes' fighter IDs
+ROSTER_CAVE = 0x00216538      # 10,936-byte library function nothing calls or points to; the roster hooks live here
+ROSTER_CAVE_SIZE = 10936
+PERSON_GET = 0x0013C960       # Person_Get(person id) -> person record (preset at +0x44)
+DISPLAY_NAME = 0x0013CA80     # Fighter_DisplayName(person id) -> name string
+TEXT_GET = 0x00387980         # Text_Get(text id, 0) -> string
+NAME_TEXT_BASE = 11001        # a fighter's name is text 11001 + its fighter ID (11069 Aaron, 11021 Chester)
+HP_BAR_NAME_SITE = 0x0031B3E4 # jal DISPLAY_NAME in HpBar_Build 0x0031B210 (one line per team member)
 
 
 # ---------------------------------------------------------------------------
@@ -365,50 +374,46 @@ def own_groups(c):
     return [g for g in c["groups"] if g not in SHARED_GROUPS and g not in body]
 
 
-def cmd_swap_moveset(a):
-    e = Elf(a.elf)
-    dst, src = find_class(e, a.target), find_class(e, a.source)
-    if a.keep_body:
-        return swap_keep_body(e, dst, src)
-    if dst["skeleton"] != src["skeleton"]:
-        print(f"; WARNING: {dst['name']} and {src['name']} use different skeletons; animations may break. "
-              f"Use --keep-body instead.", file=sys.stderr)
-    print(f"[{dst['name'].title()} uses {src['name'].title()}'s moveset]")
-    print(f"description=Style 0x{src['style']:02X} and anim groups of {src['name']} on {dst['name']}")
-    print(f"patch=1,EE,2{dst['addr'] + 4:07X},extended,{src['style']:08X}")
-    print(f"patch=1,EE,2{dst['addr'] + 12:07X},extended,{src['groups_ptr']:08X}")
-
-
-def swap_keep_body(e, dst, src):
-    """Give dst src's style while dst keeps its own body groups.
-
-    Edits dst's own group list in place: its move-set group is replaced by src's, and src's other
-    style groups are appended (into the zero padding after the 9999 terminator). Style move groups
-    are body-size independent (BOXER S/M/L all load group 166), so this avoids loading body
-    animations for the wrong skeleton.
-    """
+def moveset_patch(e, dst, src, keep_body=False):
+    """(description, pnach lines) giving class dst the moves of class src."""
+    if not keep_body:
+        if dst["skeleton"] != src["skeleton"]:
+            print(f"; WARNING: {dst['name']} and {src['name']} use different skeletons; animations may break. "
+                  f"Use --keep-body instead.", file=sys.stderr)
+        return (f"Style 0x{src['style']:02X} and anim groups of {src['name']} on {dst['name']}",
+                [f"patch=1,EE,2{dst['addr'] + 4:07X},extended,{src['style']:08X}",
+                 f"patch=1,EE,2{dst['addr'] + 12:07X},extended,{src['groups_ptr']:08X}"])
+    # Keep dst's body groups: edit dst's own group list in place. Its move-set group is replaced by
+    # src's, and src's other style groups are appended (into the zero padding after the 9999
+    # terminator). Style move groups are body-size independent (BOXER S/M/L all load group 166), so
+    # this avoids loading body animations for the wrong skeleton.
     d_own, s_own = own_groups(dst), own_groups(src)
     if not d_own or not s_own:
         sys.exit("one of the fighters has no style groups of its own")
     new = [s_own[0] if g == d_own[0] else g for g in dst["groups"]]
     new += [g for g in s_own[1:] if g not in new]
     ptr = dst["groups_ptr"]
-    old = dst["groups"]
-    room = len(old) + 1
+    room = len(dst["groups"]) + 1
     while e.u32(ptr + 4 * room) == 0:
         room += 1
     if len(new) + 1 > room:
         sys.exit(f"new list needs {len(new) + 1} words but only {room} fit at 0x{ptr:08X}")
+    lines = [f"patch=1,EE,2{dst['addr'] + 4:07X},extended,{src['style']:08X}",
+             f"patch=1,EE,2{dst['addr'] + 12:07X},extended,{ptr:08X}"]
+    for i, w in enumerate(new + [GROUP_LIST_END]):
+        if e.u32(ptr + 4 * i) != w:
+            lines.append(f"patch=1,EE,2{ptr + 4 * i:07X},extended,{w:08X}")
+    return (f"Style 0x{src['style']:02X} of {src['name']} on {dst['name']}; keeps "
+            f"{dst['name']}'s body groups. List at 0x{ptr:08X} becomes {new}", lines)
+
+
+def cmd_swap_moveset(a):
+    e = Elf(a.elf)
+    dst, src = find_class(e, a.target), find_class(e, a.source)
+    desc, lines = moveset_patch(e, dst, src, a.keep_body)
     print(f"[{dst['name'].title()} uses {src['name'].title()}'s moveset]")
-    print(f"description=Style 0x{src['style']:02X} of {src['name']} on {dst['name']}; keeps "
-          f"{dst['name']}'s body groups. List at 0x{ptr:08X} becomes {new}")
-    print(f"patch=1,EE,2{dst['addr'] + 4:07X},extended,{src['style']:08X}")
-    print(f"patch=1,EE,2{dst['addr'] + 12:07X},extended,{ptr:08X}")
-    words = new + [GROUP_LIST_END]
-    for i, w in enumerate(words):
-        cur = e.u32(ptr + 4 * i)
-        if cur != w:
-            print(f"patch=1,EE,2{ptr + 4 * i:07X},extended,{w:08X}")
+    print(f"description={desc}")
+    print("\n".join(lines))
 
 
 def cmd_fighters(a):
@@ -464,6 +469,145 @@ def cmd_swap_model(a):
         print(f"patch=1,EE,2{MODEL_HOOK + 4 * i:07X},extended,{w:08X}")
     for site in MODEL_HOOK_SITES:
         print(f"patch=1,EE,2{site:07X},extended,{jal:08X}")
+
+
+def find_fighter(e, spec, fs=None):
+    """A fighter record from 'NAME' (that class's most common record) or 'fighter:ID'."""
+    fs = fs or e.fighters()
+    if spec.lower().startswith("fighter:"):
+        return fs[int(spec.split(":", 1)[1], 0)]
+    c = find_class(e, spec)
+    recs = [f for f in fs if f["row"] == c["row"]]
+    if not recs:
+        sys.exit(f"no fighter record uses {c['name']}")
+    best = max({f["preset"] for f in recs}, key=lambda p: sum(f["preset"] == p for f in recs))
+    return next(f for f in recs if f["preset"] == best)
+
+
+def preset_hook(table_addr):
+    """Table-driven replacement for PRESET_LOOKUP: looks a0 up in {s16 from, s16 to} pairs ending -1."""
+    hi, lo = (table_addr + 0x8000) >> 16, table_addr & 0xFFFF
+    j = 0x08000000 | (PRESET_LOOKUP >> 2)
+    return [0x3C080000 | hi,  # lui   t0, hi(table)
+            0x25080000 | lo,  # addiu t0, t0, lo(table)
+            0x85090000,       # loop: lh t1, 0(t0)
+            0x05200009,       # bltz  t1, done
+            0,
+            0x15240004,       # bne   t1, a0, next
+            0,
+            0x85040002,       # lh    a0, 2(t0)      replacement preset
+            0x10000004,       # b     done
+            0,
+            0x25080004,       # next: addiu t0, t0, 4
+            0x1000FFF6,       # b     loop
+            0,
+            j,                # done: j PRESET_LOOKUP
+            0]
+
+
+def name_hook(table_addr):
+    """Replacement for DISPLAY_NAME at the HP bar: if the person's preset is in {s16 preset, s16 text id}
+    pairs ending -1, return that text, otherwise fall through to DISPLAY_NAME."""
+    hi, lo = (table_addr + 0x8000) >> 16, table_addr & 0xFFFF
+    return [0x27BDFFF0,                           # addiu sp, sp, -16
+            0xFFBF0000,                           # sd    ra, 0(sp)
+            0x0C000000 | (PERSON_GET >> 2),       # jal   Person_Get
+            0xFFA40008,                           # sd    a0, 8(sp)
+            0x844A0044,                           # lh    t2, 0x44(v0)   preset
+            0xDFA40008,                           # ld    a0, 8(sp)
+            0xDFBF0000,                           # ld    ra, 0(sp)
+            0x27BD0010,                           # addiu sp, sp, 16
+            0x3C080000 | hi,                      # lui   t0, hi(table)
+            0x25080000 | lo,                      # addiu t0, t0, lo(table)
+            0x85090000,                           # loop: lh t1, 0(t0)
+            0x05200009,                           # bltz  t1, miss
+            0,
+            0x152A0004,                           # bne   t1, t2, next
+            0,
+            0x85040002,                           # lh    a0, 2(t0)      text id
+            0x08000000 | (TEXT_GET >> 2),         # j     Text_Get
+            0x0000282D,                           # daddu a1, zero, zero
+            0x25080004,                           # next: addiu t0, t0, 4
+            0x1000FFF6,                           # b     loop
+            0,
+            0x08000000 | (DISPLAY_NAME >> 2),     # miss: j DISPLAY_NAME
+            0]
+
+
+def cmd_roster(a):
+    """Build one pnach section from a roster file that recasts the story heroes.
+
+    Each story hero keeps its own fighter ID, preset number and class row, so story events, items and
+    dialogue still see that hero. What changes is what the player sees and plays:
+      model  - fighter init builds the hero from another fighter's outfit preset (table-driven hook)
+      moves  - the hero's class row gets another fighter's style and animation groups
+      name   - the HP bar shows another fighter's name (defaults to the model's; "keep" keeps the hero's)
+      stats  - the hero template's HP and attack rank (new games only; person records are saved)
+    """
+    import json
+    e = Elf(a.elf)
+    cfg = json.load(open(a.roster, encoding="utf-8"))
+    fs = e.fighters()
+    remap, names, lines, notes = [], [], [], []
+    for hero, want in cfg.get("heroes", {}).items():
+        hero = hero.upper()
+        if hero not in HERO_TEMPLATES:
+            sys.exit(f"{hero} is not a story hero; pick one of {', '.join(HERO_TEMPLATES)}")
+        dst = find_class(e, hero)
+        tid = HERO_TEMPLATES[hero]
+        if want.get("model"):
+            src = find_fighter(e, want["model"], fs)
+            src_cls = next(c for c in e.classes() if c["row"] == src["row"])
+            if src_cls["body"] != dst["body"]:
+                print(f"; WARNING: {hero} is {BODY_NAMES[dst['body']]} and {want['model']} is "
+                      f"{BODY_NAMES[src_cls['body']]}; the model plays {hero}'s body animations", file=sys.stderr)
+            for p in sorted({f["preset"] for f in fs if f["row"] == dst["row"]}):
+                remap.append((p, src["preset"]))
+            notes.append(f"{hero} looks like {want['model']} (preset {src['preset']})")
+        name_spec = want.get("name", want.get("model"))
+        if name_spec and str(name_spec).lower() != "keep":
+            src = find_fighter(e, name_spec, fs)
+            for p in sorted({f["preset"] for f in fs if f["row"] == dst["row"]}):
+                names.append((p, NAME_TEXT_BASE + src["id"]))
+            notes.append(f"{hero}'s HP bar says {name_spec}'s name (text {NAME_TEXT_BASE + src['id']})")
+        if want.get("moves"):
+            src = find_class(e, want["moves"])
+            keep = want.get("keep_body", src["body"] != dst["body"])
+            desc, ml = moveset_patch(e, dst, src, keep)
+            lines += ml
+            notes.append(f"{hero} fights as {src['name']}" + (" (keeps its body groups)" if keep else ""))
+        if want.get("stats"):
+            src = find_fighter(e, want["stats"], fs)
+            t = e.fighters()[tid]["addr"]
+            hp, rank = e.s16(src["addr"] + 0xC), e.d[e.v2o(src["addr"] + 0x11)]
+            lines.append(f"patch=1,EE,1{t + 0xC:07X},extended,{hp & 0xFFFF:08X}")
+            lines.append(f"patch=1,EE,0{t + 0x11:07X},extended,{rank:08X}")
+            notes.append(f"{hero} starts with {want['stats']}'s HP {hp} and attack rank {rank} (new game)")
+    if remap:
+        code = preset_hook(ROSTER_CAVE + 0x40)
+        table = [w for f, t in remap for w in (f, t)] + [-1, -1]
+        for i, w in enumerate(code):
+            lines.append(f"patch=1,EE,2{ROSTER_CAVE + 4 * i:07X},extended,{w:08X}")
+        for i in range(0, len(table), 2):
+            w = (table[i] & 0xFFFF) | ((table[i + 1] & 0xFFFF) << 16)
+            lines.append(f"patch=1,EE,2{ROSTER_CAVE + 0x40 + 2 * i:07X},extended,{w:08X}")
+        jal = 0x0C000000 | (ROSTER_CAVE >> 2)
+        for site in MODEL_HOOK_SITES:
+            lines.append(f"patch=1,EE,2{site:07X},extended,{jal:08X}")
+    if names:
+        code_at, table_at = ROSTER_CAVE + 0x100, ROSTER_CAVE + 0x180
+        table = [w for p, t in names for w in (p, t)] + [-1, -1]
+        for i, w in enumerate(name_hook(table_at)):
+            lines.append(f"patch=1,EE,2{code_at + 4 * i:07X},extended,{w:08X}")
+        for i in range(0, len(table), 2):
+            w = (table[i] & 0xFFFF) | ((table[i + 1] & 0xFFFF) << 16)
+            lines.append(f"patch=1,EE,2{table_at + 2 * i:07X},extended,{w:08X}")
+        lines.append(f"patch=1,EE,2{HP_BAR_NAME_SITE:07X},extended,{0x0C000000 | (code_at >> 2):08X}")
+    name = cfg.get("name", "Story roster")
+    print(f"[{name}]")
+    print("author=" + cfg.get("author", "bdkit roster"))
+    print("description=" + "; ".join(notes) + ". Built by bdkit roster; turn off other cheats that write these heroes.")
+    print("\n".join(lines))
 
 
 def cmd_moves(a):
@@ -612,6 +756,7 @@ def main():
     x = s.add_parser("swap-model"); x.add_argument("elf"); x.add_argument("target"); x.add_argument("source")
     x.add_argument("--preset", help="use this outfit preset instead of the source's most common one")
     x.set_defaults(fn=cmd_swap_model)
+    x = s.add_parser("roster"); x.add_argument("elf"); x.add_argument("roster"); x.set_defaults(fn=cmd_roster)
     x = s.add_parser("moves"); x.add_argument("elf"); x.add_argument("cdata"); x.add_argument("style")
     x.add_argument("--lang", default="en", choices=sorted(MOVE_TEXT_ENTRY)); x.set_defaults(fn=cmd_moves)
     x = s.add_parser("style-map"); x.add_argument("elf"); x.add_argument("cdata")

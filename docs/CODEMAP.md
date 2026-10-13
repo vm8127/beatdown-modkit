@@ -136,6 +136,8 @@ From a person to a fighter on screen (**confirmed**):
 
 So the **model/outfit** comes from the template's preset (`+4`), and the **moveset** from the template's class row (`+6`). They are independent, which is why a model swap and a moveset swap can be done separately. One catch: about nine functions also test preset numbers to recognise the heroes (`Fighter_DisplayName` `0x0013CA80`, `Person_GetHeroDefId` below), so changing a hero's preset number loses its name; the README's model-swap section has the workaround.
 
+**HP bar names** (traced live in PCSX2, 2026-10-13): `HpBar_Build` `0x0031B210(side)`, called from `0x003184D4`, draws one name line per team member. The person IDs come from `Team_GetMember` `0x0013C5C0(side, i)` (team lists at `0x0076EAC8` and `0x0076EAD0`, s16 ending -1), and the name from `jal Fighter_DisplayName` at `0x0031B3E4`. `Fighter_DisplayName` `0x0013CA80(person)` returns text(11001 + `Person_GetHeroDefId`) for hero presets (154, 113, 157, 24, 153, 78, 156, 63, 155, 115) and text(11001 + person `+0x3E`) for everyone else, so a boss shows its own name (Chester = 11021). In story mode the second line under the hero is a recruited party member, not a surname ("McQueen" is template 43's name). `bdkit.py roster` hooks only the call at `0x0031B3E4`.
+
 `Person_GetHeroDefId` `0x002F9930` maps hero presets back to the hero templates: preset 78 or 153 → 68 (Aaron), 115/155 → 107 (Raven), 113/154 → 108 (Gina), 63/156 → 53 (Jason G), 24/157 → 22 (Lola). Templates 153-157 are second copies of the five heroes.
 
 ## People: stats, level, money

@@ -53,6 +53,7 @@ All commands below are run from the top of the workspace.
 | `docs/CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
 | `docs/MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
 | `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
+| `docs/ROSTER.md` | **Story roster**: recast the five story heroes (model, moves, HP bar name, starting stats) from one file, `mods/roster.json`, with `bdkit.py roster` |
 | `docs/PLAN-auto-negotiation.md` | **Mod plan (not built)**: open the negotiation menu (RECRUIT, ROB, INTERROGATE, BEATDOWN) automatically when you knock out an enemy you could negotiate with |
 | `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
 | `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
@@ -64,6 +65,7 @@ All commands below are run from the top of the workspace.
 | `dumps/xaf_*.txt` | Index of every XAF archive: entry number, offset, size, asset type |
 | `dumps/xaf_ARCHIVE.txt` | Outfit and body part names (HAI_ hair, EYE_, MOU_ mouth, WEA_ weapons...) |
 | `mods/SLUS-21150_C9F6EF9A.pnach` | Finished patches (PCSX2 cheats), one `[section]` per mod |
+| `mods/roster.json` | The story roster `bdkit.py roster` builds its cheat section from (see docs/ROSTER.md) |
 
 ## Quick facts
 
@@ -186,6 +188,8 @@ Outfit presets are CDATA.XAF entry 0: 189 records of `0x498` bytes, read through
 
 **To give fighter A the look of fighter B**, don't change A's preset number: the game checks preset numbers to recognise the heroes (the HP bar name `0x0013CA80`, name ID `0x002F9930`, and at least 7 other functions with the same preset switch), so a hero given a boss preset loses its name. Instead, `bdkit.py swap-model SLUS_211.50 A B` prints a hook: 14 words in unused padding at `0x003E0130` that swap A's presets for B's, and both `jal 0x002A8720` in fighter init (`0x0013B54C` parts, `0x0013B55C` params) are pointed at it. A keeps its preset number, name and class row. Keep body sizes equal (A's class row still picks the body animations); the tool warns when they differ.
 
+For story heroes, prefer the **roster** (`docs/ROSTER.md`): `bdkit.py roster ISO/SLUS_211.50 mods/roster.json` does model, moves, HP bar name and starting stats for any of the five heroes in one section, with a table-driven hook in the unused library function at `0x00216538`.
+
 ### Move lists (names and inputs)
 
 Table at `0x005CAB40`, 8 bytes per style, row = style - 1: `{u16 first input text, u16 last input text, u16 first name text, u16 last name text}` (`0xFFFF` = none; only style 0x09 TESTER). 47 rows cover styles `0x01`-`0x2F`: `0x1C`-`0x23` are short versions of the generic styles and `0x25`-`0x2F` are weapon lists, none of them used by a class row. The text lives in CDATA.XAF entries 397-402 (JP, EN, FR, DE, ES, IT), format `{u32 size, u16 count, u16 language, count x {u16 id, u16 len, u32 offset}}` then UTF-8 strings in full-width characters. Buttons in the inputs: 〆 punch, ◎ kick, ◇ guard, 4 action. `bdkit.py moves SLUS_211.50 CDATA.XAF 0x13` prints one style; `bdkit.py style-map SLUS_211.50 CDATA.XAF > movesets.md` regenerates the map. This is the in-game MOVE LIST screen; which animation each move plays is still unknown.
@@ -218,6 +222,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x0013CA80` | Fighter display name; hero presets (`0x18, 0x3F, 0x4E, 0x71, 0x73, 0x99-0x9D`) get the hero name |
 | `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
 | `0x003E0130` | 20 unused zero words before the VU microcode; used as the code cave for `swap-model` |
+| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to; code space for the roster hooks |
 
 ## Addresses, offsets and patching
 
@@ -233,6 +238,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | Aaron uses Raven's moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12) |
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
 | Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: works in-game with name and model (tested by Daniel, 2026-10-12) |
+| Story roster: Aaron is Chester with Ignacy's moves (built by `bdkit.py roster` from `mods/roster.json`; HP bar says Chester) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Replaces the older Aaron cheats: turn those off |
 | Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): DEBUG menu, scene player and language select all work. See docs/CUTCONTENT.md, Test results |
 | Cut content: all six languages in the debug LANGUAGE menu | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): German gives German text and menu graphics. Needs the DEBUG title cheat; left/right picks, Cross confirms |
 | Cut content: developer debug mode (switch 5) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): the 10-page fighter overlay works (hold L2 + press R2 to show it, hold L2 + click L3 to page). The R1 speed-up can't be used because R1 is grab |

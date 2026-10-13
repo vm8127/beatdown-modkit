@@ -11,6 +11,7 @@
 0013A950 SaveData_Pack
 0013AAB0 SaveData_Unpack
 0013B490 Person_Init
+0013C5C0 Team_GetMember
 0013C960 Person_Get
 0013CA80 Fighter_DisplayName
 0013CC70 Person_SetMoney
@@ -35,6 +36,7 @@
 001DB720 Save_BuildGameFile
 001DD1F0 Load_ApplyGameFile
 001DD370 MemCard_PrintVersion
+00216538 Unused_DmaGsUpload
 0029BA10 Xaf_OpenAll
 0029BC40 Xaf_QueueLoad
 0029CD10 Xaf_LoadAnimation
@@ -90,6 +92,7 @@
 00314D30 Combat_SituationFactor
 00317BC0 Style_GetCommandList
 00317BE0 Style_GetWeaponCommandList
+0031B210 HpBar_Build
 0031F120 Fighter_SetAction
 003340D0 Debug_ShopSelect
 0033D7A0 Title_Main
