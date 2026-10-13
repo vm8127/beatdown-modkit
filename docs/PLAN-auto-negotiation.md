@@ -13,9 +13,10 @@ With the mod you just fight. When you knock out an enemy that the game would let
 | RECRUIT | they join you as an ally |
 | ROB | you get money ("YOU GOT MONEY") |
 | INTERROGATE | you get info (missions and shop leads need this) |
-| BEATDOWN | you finish them, same as a normal knockout |
+| BEATDOWN | the game's own BEATDOWN outcome, unchanged |
+| CANCEL (or backing out) | **a normal knockout**: the enemy goes down as if the mod weren't there |
 
-Enemies you can't negotiate with go down as normal. The threaten button keeps working, so you can still negotiate early by hand.
+Cancelling is the way to get a plain knockout. Enemies you can't negotiate with go down as normal. The threaten button keeps working, so you can still negotiate early by hand.
 
 ## How the game works today (from our notes)
 
@@ -39,7 +40,7 @@ Defaults marked; each is a small switch in the patch.
 2. **Group fights.**
    - **Default: open on each negotiable knockout**, like threatening mid-fight does today. Needs a check in-game of what a success does to the enemies still standing.
    - Last enemy only: the menu opens only when the final enemy drops.
-3. **Failed negotiation** ("TRY AGAIN?"). **Default: a fail counts as BEATDOWN**, so the enemy is finished as a normal knockout. Alternative: keep the vanilla retry.
+3. **Failed negotiation** ("TRY AGAIN?"). **Default: keep the vanilla retry**; answering NO (or cancelling) gives the normal knockout, same as CANCEL. Alternative: a fail goes straight to the normal knockout.
 
 ## How it would be built
 
@@ -48,6 +49,7 @@ A PCSX2 pnach section, same style as the Chester model mod (a hook into a code c
 1. Hook the point where an enemy's HP reaches 0 from a hit (after `Fighter_ApplyDamage` `0x002FB880`, before the knockout state is set).
 2. In the cave: if the fighter is an enemy, not already in negotiation, and the game's negotiation check passes, then set HP to 1, set Pride (`+0x4420`) to 0, and start negotiation on that fighter the same way the threaten button does.
 3. Otherwise run the original code, so the knockout happens normally.
+4. When the menu is cancelled (CANCEL `0x2713`, or backing out) for a fighter the mod held at 1 HP, finish the knockout: set HP to 0 and let the normal KO path run. BEATDOWN and the other choices are left to the game.
 
 Code areas to trace first:
 
@@ -58,6 +60,7 @@ Code areas to trace first:
 | Negotiation screens (RECRUIT/ROB/INTERROGATE/BEATDOWN, "NEGOTIATION OK!") | `0x001C2000`-`0x001C8000`, e.g. `0x001C6010` (called from `0x00301410`), `0x001C29F0` | **probably** |
 | Pride refill timer | `0x00313F90` | **probably** |
 | Where a knockout is decided | after `0x0030DFD0` | not traced |
+| Where CANCEL / back-out closes the menu | inside the battle menu code above | not traced |
 | Free space for the hook | the Chester mod uses `0x003E0130`; needs a separate spot | to pick |
 
 ## Risks
