@@ -15,6 +15,7 @@ Usage examples (run `python tools/bdkit.py -h` for the full list):
   python tools/bdkit.py groups    ISO/SLUS_211.50                     # animation groups
   python tools/bdkit.py swap-moveset ISO/SLUS_211.50 AARON RAVEN      # prints a pnach section
   python tools/bdkit.py swap-moveset ISO/SLUS_211.50 AARON JASON_G --keep-body   # for different body sizes
+  python tools/bdkit.py mix-moveset ISO/SLUS_211.50 AARON JASON_G --take grab   # keep A's moves, take B's grabs
   python tools/bdkit.py fighters  ISO/SLUS_211.50                     # fighter records: outfit preset (model) + class row
   python tools/bdkit.py swap-model ISO/SLUS_211.50 AARON CHESTER      # prints a pnach section (model only, keeps the name)
   python tools/bdkit.py roster    ISO/SLUS_211.50 mods/roster.json    # story heroes recast from a roster file
@@ -72,6 +73,15 @@ DISPLAY_NAME = 0x0013CA80     # Fighter_DisplayName(person id) -> name string
 TEXT_GET = 0x00387980         # Text_Get(text id, 0) -> string
 NAME_TEXT_BASE = 11001        # a fighter's name is text 11001 + its fighter ID (11069 Aaron, 11021 Chester)
 HP_BAR_NAME_SITE = 0x0031B3E4 # jal DISPLAY_NAME in HpBar_Build 0x0031B210 (one line per team member)
+STYLE_COMMANDS = 0x00515C10   # u32 per style: list of {u32 condition, u32 sequence}, sequence 0 ends it (docs/CODEMAP.md)
+MIX_CAVE = 0x00217000         # mixed command lists go here: free part of ROSTER_CAVE (roster uses +0..+0x200,
+MIX_CAVE_END = 0x00218F00     # the negotiation mod 0x218F00-0x218F40)
+# Input families for mix-moveset, by a command's last input code. Grabs: 0x2F GRAB P, 0x32 GRAB K, 0x29-0x34 the
+# grab + direction/button variants (0x2B/0x2C GRAB →/←P, 0x2D GRAB ↑P, 0x2E GRAB ↓P, 0x33 GRAB G, 0x29 GRAB ∫∫P),
+# 0x6B/0x6C rear grabs, 0x70-0x73 grabs near a wall.
+INPUT_FAMILIES = {
+    "grab": set(range(0x29, 0x35)) | {0x6B, 0x6C, 0x70, 0x71, 0x72, 0x73},
+}
 
 
 # ---------------------------------------------------------------------------
@@ -405,6 +415,80 @@ def moveset_patch(e, dst, src, keep_body=False):
             lines.append(f"patch=1,EE,2{ptr + 4 * i:07X},extended,{w:08X}")
     return (f"Style 0x{src['style']:02X} of {src['name']} on {dst['name']}; keeps "
             f"{dst['name']}'s body groups. List at 0x{ptr:08X} becomes {new}", lines)
+
+
+def command_list(e, style):
+    """A style's command list as [(condition ptr, sequence ptr, [input codes], action)]."""
+    out, p = [], e.u32(STYLE_COMMANDS + 4 * style)
+    while e.u32(p + 4):
+        cond, seq = e.u32(p), e.u32(p + 4)
+        codes, action = [], 0
+        while e.u32(seq) != 0xFFFFFFFF:
+            codes.append(e.u32(seq))
+            action = e.s16(seq + 4)
+            seq += 8
+        out.append((cond, e.u32(p + 4), codes, action))
+        p += 8
+    return out
+
+
+def mix_patch(e, dst, src, take):
+    """(description, pnach lines) giving class dst the src commands whose last input is in `take`.
+
+    dst's own commands with those inputs are replaced by src's (same input, same place in the list), dst's that src
+    lacks are dropped, and src's extra ones go at the end. The new list is written to MIX_CAVE and dst's style
+    pointer moved there; src's style groups are added to dst's group list so the new moves have their animations."""
+    d_cmds, s_cmds = command_list(e, dst["style"]), command_list(e, src["style"])
+    fam = lambda c: c[2] and c[2][-1] in take
+    s_fam = [c for c in s_cmds if fam(c)]
+    if not s_fam:
+        sys.exit(f"{src['name']} has no commands with those inputs")
+    used, new, dropped = set(), [], []
+    for c in d_cmds:
+        if not fam(c):
+            new.append(c)
+            continue
+        m = next((i for i, x in enumerate(s_fam) if x[2] == c[2] and i not in used), None)
+        if m is None:
+            dropped.append(c)
+        else:
+            used.add(m)
+            new.append(s_fam[m])
+    new += [x for i, x in enumerate(s_fam) if i not in used]
+    if MIX_CAVE + 8 * (len(new) + 1) > MIX_CAVE_END:
+        sys.exit("mixed list doesn't fit in the cave")
+    lines = [f"patch=1,EE,2{dst['addr'] + 4:07X},extended,{dst['style']:08X}",      # dst's own style and group
+             f"patch=1,EE,2{dst['addr'] + 12:07X},extended,{dst['groups_ptr']:08X}",  # list, as in the original game
+             f"patch=1,EE,2{STYLE_COMMANDS + 4 * dst['style']:07X},extended,{MIX_CAVE:08X}"]
+    for i, (cond, seq, _, _) in enumerate(new + [(0, 0, [], 0)]):
+        lines.append(f"patch=1,EE,2{MIX_CAVE + 8 * i:07X},extended,{cond:08X}")
+        lines.append(f"patch=1,EE,2{MIX_CAVE + 8 * i + 4:07X},extended,{seq:08X}")
+    groups = dst["groups"] + [g for g in own_groups(src) if g not in dst["groups"]]
+    ptr, room = dst["groups_ptr"], len(dst["groups"]) + 1
+    while e.u32(ptr + 4 * room) == 0:
+        room += 1
+    if len(groups) + 1 > room:
+        sys.exit(f"group list needs {len(groups) + 1} words but only {room} fit at 0x{ptr:08X}")
+    for i, w in enumerate(groups + [GROUP_LIST_END]):   # the whole list, in case another Aaron cheat changed it
+        lines.append(f"patch=1,EE,2{ptr + 4 * i:07X},extended,{w:08X}")
+    taken = sum(1 for c in new if c in s_fam)
+    desc = (f"Style 0x{dst['style']:02X} list rebuilt at 0x{MIX_CAVE:08X}: {len(new)} commands, {taken} from "
+            f"{src['name']}" + (f", {len(dropped)} of {dst['name']}'s dropped" if dropped else "") +
+            f". Group list at 0x{ptr:08X} becomes {groups}")
+    return desc, lines
+
+
+def cmd_mix_moveset(a):
+    e = Elf(a.elf)
+    dst, src = find_class(e, a.target), find_class(e, a.source)
+    take = set()
+    for t in a.take.split(","):
+        take |= INPUT_FAMILIES[t] if t in INPUT_FAMILIES else {int(t, 16)}
+    desc, lines = mix_patch(e, dst, src, take)
+    title = lambda c: c["name"].replace("_", " ").title()
+    print(f"[{title(dst)} uses {title(src)}'s {a.take} moves (one {title(dst)} cheat at a time)]")
+    print(f"description={desc}")
+    print("\n".join(lines))
 
 
 def cmd_swap_moveset(a):
@@ -752,6 +836,9 @@ def main():
     x = s.add_parser("swap-moveset"); x.add_argument("elf"); x.add_argument("target"); x.add_argument("source")
     x.add_argument("--keep-body", action="store_true", help="keep the target's body groups (needed when body sizes differ)")
     x.set_defaults(fn=cmd_swap_moveset)
+    x = s.add_parser("mix-moveset"); x.add_argument("elf"); x.add_argument("target"); x.add_argument("source")
+    x.add_argument("--take", required=True, help="input family (" + ", ".join(INPUT_FAMILIES) + ") or hex input codes, comma-separated")
+    x.set_defaults(fn=cmd_mix_moveset)
     x = s.add_parser("fighters"); x.add_argument("elf"); x.set_defaults(fn=cmd_fighters)
     x = s.add_parser("swap-model"); x.add_argument("elf"); x.add_argument("target"); x.add_argument("source")
     x.add_argument("--preset", help="use this outfit preset instead of the source's most common one")

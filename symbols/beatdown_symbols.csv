@@ -43,6 +43,7 @@ address,kind,name,comment
 0x0029CD10,func,Xaf_LoadAnimation,"chunk type 0x1B"
 0x0029ED70,func,Xaf_LoadAnimPack,"STAGE.XAF pack plus ID list"
 0x002A5B80,func,Fighter_PickWeaponMove,"uses the style and held weapon"
+0x002A63A0,func,Cmd_CheckCondition,"(fighter, command condition) -> 1 if the fighter's stat levels meet it"
 0x002A6720,func,Cmd_MatchSequence,"(fighter, input history, style cmd list) -> action ID or 0"
 0x002A68B0,func,Cmd_MatchSingle,"(fighter, input code, style cmd list, out) -> action ID or 0"
 0x002A85B0,func,Person_CheckOutfit,"checks outfit slots against tables 0x5016D0/0x501860"

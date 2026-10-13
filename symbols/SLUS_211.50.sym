@@ -42,6 +42,7 @@
 0029CD10 Xaf_LoadAnimation
 0029ED70 Xaf_LoadAnimPack
 002A5B80 Fighter_PickWeaponMove
+002A63A0 Cmd_CheckCondition
 002A6720 Cmd_MatchSequence
 002A68B0 Cmd_MatchSingle
 002A85B0 Person_CheckOutfit

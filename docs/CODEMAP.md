@@ -94,7 +94,7 @@ action ─> g_ActionHits[action]             0x00580A40, 2004 pointers: hit reco
                                            (+0x3FD4/+0x3FD8) and sets +0x4346 = action
 ```
 
-The matching is done by `Cmd_MatchSequence` `0x002A6720` (input history at `+0`, count at `+256`) and `Cmd_MatchSingle` `0x002A68B0`. Weapon moves probably use a second set of lists chosen by weapon kind, `Style_GetWeaponCommandList` `0x00317BE0` (28 lists).
+The matching is done by `Cmd_MatchSequence` `0x002A6720` (input history at `+0`, count at `+256`) and `Cmd_MatchSingle` `0x002A68B0`. A non-zero condition is a 16-byte record `{u16 move list index, then required stat levels}`; `Cmd_CheckCondition` `0x002A63A0` (fighter, condition) compares bytes `+2`.. with the fighter's stat levels from `0x002F8B40`, so these are the "learn at level" gates on hero moves (read from the code, not tested). They don't name a hero, so a command keeps working when copied into another style's list (`bdkit.py mix-moveset`). `Fighter_RemapAction` only touches negative action IDs, and command lists hold positive ones. Weapon moves probably use a second set of lists chosen by weapon kind, `Style_GetWeaponCommandList` `0x00317BE0` (28 lists).
 
 Input codes, from Aaron's list:
 

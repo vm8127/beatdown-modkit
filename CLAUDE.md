@@ -31,6 +31,7 @@ Run every command from this folder, for example `python tools/bdkit.py chars ISO
 
 Common recipes:
 - Moveset: `python tools/bdkit.py swap-moveset ISO/SLUS_211.50 A B`. Add `--keep-body` when the body sizes differ (the tool warns). See docs/movesets.md for body sizes and compatible swaps.
+- Mixed moveset: `python tools/bdkit.py mix-moveset ISO/SLUS_211.50 A B --take grab` keeps A's moves and takes B's grabs. See README.md, "To mix two movesets".
 - Model: `python tools/bdkit.py swap-model ISO/SLUS_211.50 A B`. See README.md, "Fighter records: the model switch".
 - Several mods write the same row (all the Aaron cheats do), so only one of those may be on at a time; say so in the section name.
 

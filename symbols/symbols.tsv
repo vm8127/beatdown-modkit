@@ -29,6 +29,7 @@
 0029ed70	func	Xaf_LoadAnimPack	STAGE.XAF pack plus ID list
 002a5b80	func	Fighter_PickWeaponMove	uses the style and held weapon
 002a6720	func	Cmd_MatchSequence	(fighter, input history, style cmd list) -> action ID or 0
+002a63a0	func	Cmd_CheckCondition	(fighter, command condition) -> 1 if the fighter's stat levels meet it
 002a68b0	func	Cmd_MatchSingle	(fighter, input code, style cmd list, out) -> action ID or 0
 002a85b0	func	Person_CheckOutfit	checks outfit slots against tables 0x5016D0/0x501860
 002a8720	func	Preset_Get	(preset, part) part 1 = outfit slots (+0), 2 = body params (+792); CDATA.XAF entry 0
