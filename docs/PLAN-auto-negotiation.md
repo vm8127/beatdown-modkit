@@ -1,6 +1,6 @@
 # Mod plan: negotiation menu on knockout
 
-Status: **v1 tested 2026-10-13; test v2 (CANCEL = normal knockout) built, untested**. The pnach section is now `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
+Status: **v1 tested 2026-10-13; test v2 (CANCEL = normal knockout) built and tested the same day**. The pnach section is now `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
 
 ## What the mod would do
 
@@ -108,9 +108,15 @@ So CANCEL on a knocked-out enemy (only the mod opens the menu on one) ends the f
 
 What to check: CANCEL and Triangle after a knockout end the fight with the normal BATTLE RESULT; the other four choices still work; a manual threaten's CANCEL still resumes the fight.
 
+## Test v2 results (PCSX2, 2026-10-13)
+
+1. CANCEL after a knockout: steps 1 -> 2 -> (kind 1) -> 801 -> 803 -> 804 -> 805; the normal after-KO talk, BATTLE RESULT (EXP 12), back on the street. No loop, no freeze.
+2. Triangle after a knockout: cursor jumps to CANCEL, then the same ending.
+3. ROB ("Please! That's all I got, man.", BATTLE RESULT) and BEATDOWN (finisher scene) still work. RECRUIT and INTERROGATE not rechecked; v2 doesn't touch them.
+4. Manual threaten (Miles alive, 3152 HP, Pride 0): CANCEL goes to step 1250 and the fight resumes, as in vanilla. Triangle now does the same (in vanilla it did nothing).
+
 ## What's left after the test
 
-- Test v2.
 - **BEATDOWN** already keeps its vanilla meaning (tested); no change needed.
 - Check why ROB paid only $3 (compare with a manual threaten on the same enemy).
 - Add a `bdkit.py` command if the hook needs parameters (it doesn't yet).
