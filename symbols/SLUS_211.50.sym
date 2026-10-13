@@ -26,8 +26,12 @@
 00172BD0 StoryVar_Add
 00176130 Fighter_FindNpcSlot
 0019F370 Debug_HeadStart
+001C5BA0 MoveList_Count
+001C5BF0 MoveList_NameText
 001C5C00 MoveList_GetName
 001C5C30 MoveList_GetInput
+001C5C30 MoveList_InputText
+001C5C70 MoveList_Color
 001C89A0 ScenePlayer_Main
 001D02B0 Pad_RemapButtons
 001D1810 Boot_LoadModules
@@ -111,6 +115,7 @@
 00314D30 Combat_SituationFactor
 00317BC0 Style_GetCommandList
 00317BE0 Style_GetWeaponCommandList
+00317E50 MoveList_IsLearned
 0031B210 HpBar_Build
 0031F120 Fighter_SetAction
 003340D0 Debug_ShopSelect

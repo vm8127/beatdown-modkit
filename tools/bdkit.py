@@ -74,13 +74,25 @@ TEXT_GET = 0x00387980         # Text_Get(text id, 0) -> string
 NAME_TEXT_BASE = 11001        # a fighter's name is text 11001 + its fighter ID (11069 Aaron, 11021 Chester)
 HP_BAR_NAME_SITE = 0x0031B3E4 # jal DISPLAY_NAME in HpBar_Build 0x0031B210 (one line per team member)
 STYLE_COMMANDS = 0x00515C10   # u32 per style: list of {u32 condition, u32 sequence}, sequence 0 ends it (docs/CODEMAP.md)
-MIX_CAVE = 0x00217000         # mixed command lists go here: free part of ROSTER_CAVE (roster uses +0..+0x200,
-MIX_CAVE_END = 0x00218F00     # the negotiation mod 0x218F00-0x218F40)
-# Input families for mix-moveset, by a command's last input code. Grabs: 0x2F GRAB P, 0x32 GRAB K, 0x29-0x34 the
-# grab + direction/button variants (0x2B/0x2C GRAB →/←P, 0x2D GRAB ↑P, 0x2E GRAB ↓P, 0x33 GRAB G, 0x29 GRAB ∫∫P),
-# 0x6B/0x6C rear grabs, 0x70-0x73 grabs near a wall.
+MIX_CAVE = 0x00217000         # mix-moveset's area: free part of ROSTER_CAVE (the roster uses +0..+0x200,
+MIX_CAVE_END = 0x00218F00     # the negotiation mod 0x218F00-0x218F40). Layout:
+MIX_LIST = MIX_CAVE           #   mixed command list, up to 191 commands
+MIX_CONDS = 0x00217600        #   copies of condition records with their move list line renumbered (16 bytes each)
+MIX_HOOKS = 0x00217A00        #   move list hooks (code)
+MIX_MOVELIST = 0x00217C00     #   move list override: {u8 style, u8 lines, u16 0, u32 ptr} rows ending style 0,
+MIX_LINES = 0x00217C10        #   then the lines, {u8 style, u8 line} each: which style's text each line shows
+# The MOVE LIST screen reads a style's lines through four small functions (a = style, i = line):
+MOVELIST_COUNT = 0x001C5BA0   # (?, a) -> number of lines
+MOVELIST_NAME = 0x001C5BF0    # (?, a, i) -> name text
+MOVELIST_INPUT = 0x001C5C30   # (?, a, i) -> input text
+MOVELIST_COLOR = 0x001C5C70   # (a, i) -> 1 for the second text colour (depends on the text and a few hard-coded lines)
+# Lines are hidden until learned: MoveList_IsLearned 0x00317E50 (fighter, style, line) finds the command whose
+# condition's u16 +0 equals the line and checks it, so mixed lists renumber those condition records.
+# Input families for mix-moveset: commands by their last input code, move list lines by their input text.
+# Grabs: 0x2F GRAB P, 0x32 GRAB K, 0x29-0x34 the grab + direction/button variants (0x2B/0x2C GRAB →/←P,
+# 0x2D GRAB ↑P, 0x2E GRAB ↓P, 0x33 GRAB G, 0x29 GRAB ∫∫P), 0x6B/0x6C rear grabs, 0x70-0x73 grabs near a wall.
 INPUT_FAMILIES = {
-    "grab": set(range(0x29, 0x35)) | {0x6B, 0x6C, 0x70, 0x71, 0x72, 0x73},
+    "grab": (set(range(0x29, 0x35)) | {0x6B, 0x6C, 0x70, 0x71, 0x72, 0x73}, lambda inp: "GRAB" in inp),
 }
 
 
@@ -432,59 +444,165 @@ def command_list(e, style):
     return out
 
 
-def mix_patch(e, dst, src, take):
-    """(description, pnach lines) giving class dst the src commands whose last input is in `take`.
+def mips_hook_code(base, table):
+    """The four move list hooks, assembled at `base`. Each one looks the style up in `table`; the count hook
+    returns the override's line count, the others swap (style, line) for the line's source and run the original
+    function. Returns (words, {function: hook address})."""
+    def i_type(op, rs, rt, imm):
+        return op << 26 | rs << 21 | rt << 16 | imm & 0xFFFF
+    T0, T1, T2, T3, V0, RA = 8, 9, 10, 11, 2, 31
+    hi, lo = (table + 0x8000) >> 16, table & 0xFFFF
+    words, entry = [], {}
+    for fn, style, line in [(MOVELIST_COUNT, 5, None), (MOVELIST_NAME, 5, 6), (MOVELIST_INPUT, 5, 6),
+                            (MOVELIST_COLOR, 4, 5)]:
+        entry[fn] = base + 4 * len(words)
+        code = [i_type(0x0F, 0, T0, hi),                  # lui   t0, hi(table)
+                i_type(0x09, T0, T0, lo),                 # addiu t0, t0, lo(table)
+                i_type(0x24, T0, T1, 0)]                  # loop: lbu t1, 0(t0)
+        found = ([0x03E00008,                             # jr    ra
+                  i_type(0x24, T0, V0, 1)]                # lbu   v0, 1(t0)   line count
+                 if line is None else
+                 [i_type(0x23, T0, T3, 4),                # lw    t3, 4(t0)   lines
+                  i_type(0x0C, line, T2, 0xFF),           # andi  t2, line, 0xff
+                  T2 << 16 | T2 << 11 | 1 << 6,           # sll   t2, t2, 1
+                  T3 << 21 | T2 << 16 | T3 << 11 | 0x21,  # addu  t3, t3, t2
+                  i_type(0x24, T3, style, 0),             # lbu   style, 0(t3)
+                  i_type(0x04, 0, 0, 3),                  # b     done
+                  i_type(0x24, T3, line, 1)])             # lbu   line, 1(t3)
+        n_found = len(found)
+        code += [i_type(0x04, T1, 0, 4 + n_found + 2),    # beq   t1, zero, done
+                 0,
+                 i_type(0x0C, style, T2, 0xFF),           # andi  t2, style, 0xff
+                 i_type(0x05, T1, T2, n_found + 1),       # bne   t1, t2, next
+                 0] + found
+        code += [i_type(0x04, 0, 0, -(len(code) - 2 + 1)),  # next: b loop
+                 i_type(0x09, T0, T0, 8)]                 # addiu t0, t0, 8
+        code += [None, None,                              # done: the function's first two instructions
+                 0x08000000 | ((fn + 8) >> 2 & 0x3FFFFFF),  # j     function + 8
+                 0]
+        words += code
+    return words, entry
 
-    dst's own commands with those inputs are replaced by src's (same input, same place in the list), dst's that src
-    lacks are dropped, and src's extra ones go at the end. The new list is written to MIX_CAVE and dst's style
-    pointer moved there; src's style groups are added to dst's group list so the new moves have their animations."""
+
+def mix_patch(e, dst, src, take, moves=None):
+    """(description, pnach lines) giving class dst the src commands of one input family.
+
+    dst's own commands in the family are replaced by src's (same input, same place in the list), dst's that src
+    lacks are dropped, and src's extra ones go at the end. The new list is written to MIX_LIST and dst's style
+    pointer moved there; src's style groups are added to dst's group list so the new moves have their animations.
+    With `moves` (style_moves() output) and a family that knows its move list lines, the MOVE LIST screen is fixed
+    too: dst's family lines are swapped for src's, through the move list hooks."""
+    codes, line_test = take
     d_cmds, s_cmds = command_list(e, dst["style"]), command_list(e, src["style"])
-    fam = lambda c: c[2] and c[2][-1] in take
+    fam = lambda c: c[2] and c[2][-1] in codes
     s_fam = [c for c in s_cmds if fam(c)]
     if not s_fam:
         sys.exit(f"{src['name']} has no commands with those inputs")
     used, new, dropped = set(), [], []
     for c in d_cmds:
         if not fam(c):
-            new.append(c)
+            new.append((dst["style"], c))
             continue
         m = next((i for i, x in enumerate(s_fam) if x[2] == c[2] and i not in used), None)
         if m is None:
             dropped.append(c)
         else:
             used.add(m)
-            new.append(s_fam[m])
-    new += [x for i, x in enumerate(s_fam) if i not in used]
-    if MIX_CAVE + 8 * (len(new) + 1) > MIX_CAVE_END:
+            new.append((src["style"], s_fam[m]))
+    new += [(src["style"], x) for i, x in enumerate(s_fam) if i not in used]
+    if MIX_LIST + 8 * (len(new) + 1) > MIX_CONDS:
         sys.exit("mixed list doesn't fit in the cave")
-    lines = [f"patch=1,EE,2{dst['addr'] + 4:07X},extended,{dst['style']:08X}",      # dst's own style and group
-             f"patch=1,EE,2{dst['addr'] + 12:07X},extended,{dst['groups_ptr']:08X}",  # list, as in the original game
-             f"patch=1,EE,2{STYLE_COMMANDS + 4 * dst['style']:07X},extended,{MIX_CAVE:08X}"]
-    for i, (cond, seq, _, _) in enumerate(new + [(0, 0, [], 0)]):
-        lines.append(f"patch=1,EE,2{MIX_CAVE + 8 * i:07X},extended,{cond:08X}")
-        lines.append(f"patch=1,EE,2{MIX_CAVE + 8 * i + 4:07X},extended,{seq:08X}")
+    w = lambda addr, val: f"patch=1,EE,2{addr:07X},extended,{val:08X}"
+    lines = [w(dst["addr"] + 4, dst["style"]),           # dst's own style and group list, as in the original game
+             w(dst["addr"] + 12, dst["groups_ptr"]),
+             w(STYLE_COMMANDS + 4 * dst["style"], MIX_LIST)]
+
+    # Move list: dst's lines, with its family lines replaced by src's where the first of them was.
+    menu, note = None, "MOVE LIST not changed"
+    if moves and line_test and moves.get(dst["style"]) and moves.get(src["style"]):
+        d_lines = [(dst["style"], i) for i, (_, inp) in enumerate(moves[dst["style"]]) if not line_test(inp)]
+        s_lines = [(src["style"], i) for i, (_, inp) in enumerate(moves[src["style"]]) if line_test(inp)]
+        first = next((i for i, (_, inp) in enumerate(moves[dst["style"]]) if line_test(inp)), len(d_lines))
+        menu = d_lines[:first] + s_lines + d_lines[first:]
+        if len(menu) > 255:
+            sys.exit("move list too long")
+        note = f"MOVE LIST shows {len(menu)} lines, {len(s_lines)} of them {src['name']}'s"
+
+    # Commands, with condition records copied and renumbered to the new move list lines.
+    conds = []
+    for n, (style, (cond, seq, _, _)) in enumerate(new):
+        if cond and menu:
+            rec = e.d[e.v2o(cond):e.v2o(cond) + 16]
+            old = struct.unpack_from("<H", rec)[0]
+            line = menu.index((style, old)) if (style, old) in menu else 0xFFFF
+            if line != old:
+                rec = struct.pack("<H", line) + rec[2:]
+                at = next((MIX_CONDS + 16 * k for k, r in enumerate(conds) if r == rec), None)
+                if at is None:
+                    at = MIX_CONDS + 16 * len(conds)
+                    conds.append(rec)
+                cond = at
+        lines += [w(MIX_LIST + 8 * n, cond), w(MIX_LIST + 8 * n + 4, seq)]
+    lines += [w(MIX_LIST + 8 * len(new), 0), w(MIX_LIST + 8 * len(new) + 4, 0)]
+    if MIX_CONDS + 16 * len(conds) > MIX_HOOKS:
+        sys.exit("too many condition records")
+    for k, rec in enumerate(conds):
+        for j in range(4):
+            lines.append(w(MIX_CONDS + 16 * k + 4 * j, struct.unpack_from("<I", rec, 4 * j)[0]))
+
+    if menu:
+        code, entry = mips_hook_code(MIX_HOOKS, MIX_MOVELIST)
+        fns = list(entry)
+        k = 0
+        for i, word in enumerate(code):
+            if word is None:   # copy of the hooked function's first two instructions
+                word = e.u32(fns[k // 2] + 4 * (k % 2))
+                k += 1
+            lines.append(w(MIX_HOOKS + 4 * i, word))
+        table = [dst["style"] | len(menu) << 8, MIX_LINES, 0, 0]   # one row, then the style 0 end row
+        for i, v in enumerate(table):
+            lines.append(w(MIX_MOVELIST + 4 * i, v))
+        data = b"".join(bytes(x) for x in menu) + b"\0" * (-2 * len(menu) % 4)
+        for i in range(0, len(data), 4):
+            lines.append(w(MIX_LINES + i, struct.unpack_from("<I", data, i)[0]))
+        for fn, at in entry.items():   # hooked last, once the code is in place
+            lines += [w(fn, 0x08000000 | (at >> 2 & 0x3FFFFFF)), w(fn + 4, 0)]
+
     groups = dst["groups"] + [g for g in own_groups(src) if g not in dst["groups"]]
     ptr, room = dst["groups_ptr"], len(dst["groups"]) + 1
     while e.u32(ptr + 4 * room) == 0:
         room += 1
     if len(groups) + 1 > room:
         sys.exit(f"group list needs {len(groups) + 1} words but only {room} fit at 0x{ptr:08X}")
-    for i, w in enumerate(groups + [GROUP_LIST_END]):   # the whole list, in case another Aaron cheat changed it
-        lines.append(f"patch=1,EE,2{ptr + 4 * i:07X},extended,{w:08X}")
-    taken = sum(1 for c in new if c in s_fam)
-    desc = (f"Style 0x{dst['style']:02X} list rebuilt at 0x{MIX_CAVE:08X}: {len(new)} commands, {taken} from "
+    for i, v in enumerate(groups + [GROUP_LIST_END]):   # the whole list, in case another Aaron cheat changed it
+        lines.append(w(ptr + 4 * i, v))
+    taken = sum(1 for st, _ in new if st == src["style"])
+    desc = (f"Style 0x{dst['style']:02X} list rebuilt at 0x{MIX_LIST:08X}: {len(new)} commands, {taken} from "
             f"{src['name']}" + (f", {len(dropped)} of {dst['name']}'s dropped" if dropped else "") +
-            f". Group list at 0x{ptr:08X} becomes {groups}")
+            f". {note}. Group list at 0x{ptr:08X} becomes {groups}")
     return desc, lines
 
 
 def cmd_mix_moveset(a):
     e = Elf(a.elf)
     dst, src = find_class(e, a.target), find_class(e, a.source)
-    take = set()
+    codes, line_test = set(), None
     for t in a.take.split(","):
-        take |= INPUT_FAMILIES[t] if t in INPUT_FAMILIES else {int(t, 16)}
-    desc, lines = mix_patch(e, dst, src, take)
+        if t in INPUT_FAMILIES:
+            codes |= INPUT_FAMILIES[t][0]
+            line_test = INPUT_FAMILIES[t][1]
+        else:
+            codes.add(int(t, 16))
+    if line_test and any(t not in INPUT_FAMILIES for t in a.take.split(",")):
+        line_test = None   # can't tell which move list lines raw input codes belong to
+    moves = None
+    if os.path.exists(a.cdata):
+        moves = style_moves(e, a.cdata)
+    else:
+        print(f"; {a.cdata} not found, so the MOVE LIST screen is left alone", file=sys.stderr)
+    if not line_test:
+        print("; raw input codes: the MOVE LIST screen is left alone", file=sys.stderr)
+    desc, lines = mix_patch(e, dst, src, (codes, line_test), moves)
     title = lambda c: c["name"].replace("_", " ").title()
     print(f"[{title(dst)} uses {title(src)}'s {a.take} moves (one {title(dst)} cheat at a time)]")
     print(f"description={desc}")
@@ -838,6 +956,7 @@ def main():
     x.set_defaults(fn=cmd_swap_moveset)
     x = s.add_parser("mix-moveset"); x.add_argument("elf"); x.add_argument("target"); x.add_argument("source")
     x.add_argument("--take", required=True, help="input family (" + ", ".join(INPUT_FAMILIES) + ") or hex input codes, comma-separated")
+    x.add_argument("--cdata", default=os.path.join("ISO", "XAF", "CDATA.XAF"), help="for the MOVE LIST text (default ISO/XAF/CDATA.XAF)")
     x.set_defaults(fn=cmd_mix_moveset)
     x = s.add_parser("fighters"); x.add_argument("elf"); x.set_defaults(fn=cmd_fighters)
     x = s.add_parser("swap-model"); x.add_argument("elf"); x.add_argument("target"); x.add_argument("source")

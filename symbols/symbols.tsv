@@ -29,6 +29,10 @@
 0029ed70	func	Xaf_LoadAnimPack	STAGE.XAF pack plus ID list
 002a5b80	func	Fighter_PickWeaponMove	uses the style and held weapon
 002a6720	func	Cmd_MatchSequence	(fighter, input history, style cmd list) -> action ID or 0
+001c5ba0	func	MoveList_Count	(?, style) -> number of MOVE LIST lines (move list table 0x5CAB40)
+001c5bf0	func	MoveList_NameText	(?, style, line) -> move name text
+001c5c30	func	MoveList_InputText	(?, style, line) -> move input text
+001c5c70	func	MoveList_Color	(style, line) -> 1 for the second text colour
 002a63a0	func	Cmd_CheckCondition	(fighter, command condition) -> 1 if the fighter's stat levels meet it
 002a68b0	func	Cmd_MatchSingle	(fighter, input code, style cmd list, out) -> action ID or 0
 002a85b0	func	Person_CheckOutfit	checks outfit slots against tables 0x5016D0/0x501860
@@ -64,6 +68,7 @@
 0030dfd0	func	Combat_TakeHit	applies pending damage, knockdown meter, calls Fighter_ApplyDamage
 00317bc0	func	Style_GetCommandList	(style) -> g_StyleCommands[style]
 00317be0	func	Style_GetWeaponCommandList	(weapon kind 0..27) -> command list
+00317e50	func	MoveList_IsLearned	(fighter, style, line) -> 0 if a command gated on this line isn't learned yet
 0031f120	func	Fighter_SetAction	(fighter, action, ?) starts an action from g_ActionScripts
 0034be50	func	ZenFS_OpenXafIndex
 0034c0a0	func	ZenFS_OpenArchive
