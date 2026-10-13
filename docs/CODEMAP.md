@@ -261,3 +261,8 @@ Untested starting points. RAM values are rewritten by the game, so a pnach cheat
 - **Script interpreter** for SCRIPT.XAF 0-999, so EXF commands can be traced to their handlers.
 - **Shops** (see above) and level-up / EXP code (strings "LEVEL: ", "EXP: " near `0x5B83F8`).
 - **Item index to name** mapping, and the item table's remaining fields.
+
+## Battle flow and the talk scene
+
+Traced 2026-10-13 for the negotiation-on-knockout mod; full notes in docs/PLAN-auto-negotiation.md. `g_Battle` (`gp-20356`, `0x005FFC6C`; gp is `0x00604BF0`) points at the battle context. `Battle_Update` `0x002DD500` is the battle state machine (state at `+0x10`), `Battle_OnFighterDown` `0x002E2F60` records a knockout, `Battle_RequestTalk` `0x002DE540` is the threaten button, `Battle_StartTalk` `0x002DE6E0` starts a talk scene (kind 0 threaten menu, 1 after a knockout, 3 beg for your life) and `Talk_Update` `0x002DE850` runs it. `Battle_PrideHudShown` `0x002E3A20` decides whether Pride bars are shown.
+

@@ -56,7 +56,19 @@
 002DC360 Anim_LoadGroup
 002DC550 Anim_LoadGroupList
 002DC680 Anim_LoadClassGroups
+002DD500 Battle_Update
+002DE540 Battle_RequestTalk
+002DE6E0 Battle_StartTalk
+002DE850 Talk_Update
+002E0150 Talk_OpenMenu
+002E0310 Talk_PollMenu
+002E2F60 Battle_OnFighterDown
+002E37E0 Battle_IsStoryTalkBattle
+002E38D0 Battle_CanTalkAfterKO
+002E3A20 Battle_PrideHudShown
 002E9590 Options_SetMode
+002F8990 Fighter_IsAlive
+002F8990 Fighter_IsAlive
 002F8990 Fighter_IsAlive
 002F8A30 Fighter_RemapAction
 002F8A60 Fighter_RemapActionNeg
@@ -65,7 +77,11 @@
 002F8BB0 Fighter_GetMaxHP
 002F8BC0 Fighter_GetHPRatio
 002F8C00 Fighter_GetGuard
+002F8C00 Fighter_GetGuard
 002F8C00 Fighter_GetPride
+002F8C00 Fighter_GetPride
+002F8C00 Fighter_GetPride
+002F8C20 Fighter_GetPrideRatio
 002F8C80 Fighter_GetPos
 002F8DC0 Person_GetBody
 002F8E00 Fighter_GetStyle
@@ -78,6 +94,7 @@
 002FA150 Fighter_IsAttacking
 002FA170 Fighter_IsReeling
 002FA180 Fighter_IsHolding
+002FB120 Fighter_HasPride
 002FB780 Fighter_SetGuard
 002FB880 Fighter_ApplyDamage
 002FB8D0 Fighter_DamageReaction
@@ -89,6 +106,7 @@
 00304B60 Fighter_Spawn
 00305CC0 Combat_ResolveHit
 0030DFD0 Combat_TakeHit
+00313F90 Fighter_PrideRegen
 00314D30 Combat_SituationFactor
 00317BC0 Style_GetCommandList
 00317BE0 Style_GetWeaponCommandList
@@ -156,6 +174,7 @@
 005FB1A8 g_AbilityThresholds
 005FEA70 g_AttackLevelToRank
 005FEBD0 g_Party
+005FFC6C g_Battle
 005FFDD8 g_PresetData
 005FFE30 g_DebugOverlayOn
 005FFE44 g_DebugOverlayPage

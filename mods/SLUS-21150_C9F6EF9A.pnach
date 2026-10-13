@@ -126,3 +126,18 @@ patch=1,EE,202166BC,extended,2B0D004F
 patch=1,EE,202166C0,extended,2B0D0099
 patch=1,EE,202166C4,extended,FFFFFFFF
 patch=1,EE,2031B3E4,extended,0C08598E
+
+[Negotiation menu on knockout (test v1)]
+author=Claude for Daniel
+description=When you knock out a non-boss enemy in story mode, the game normally plays a short after-KO talk (Battle_StartTalk kind 1). This turns it into the threaten talk (kind 0), so the RECRUIT/ROB/INTERROGATE/BEATDOWN menu opens, but only when that enemy shows a Pride bar (Battle_PrideHudShown 0x002E3A20, which also rules out group fights). The knocked-out enemy's Pride is set to 0 first. Hook at 0x002DE478, code cave 0x003E0168-0x003E017C (after the Chester cave, so both can be on). Untested. See docs/PLAN-auto-negotiation.md.
+patch=1,EE,203E0168,extended,03E0882D
+patch=1,EE,203E016C,extended,0C0B8E88
+patch=1,EE,203E0170,extended,00000000
+patch=1,EE,203E0174,extended,0220F82D
+patch=1,EE,203E0178,extended,080B79B8
+patch=1,EE,203E017C,extended,2C440001
+patch=1,EE,202DE478,extended,AE404420
+patch=1,EE,202DE47C,extended,0C0F805A
+patch=1,EE,202DE480,extended,00000000
+patch=1,EE,202DE484,extended,10000001
+patch=1,EE,202DE488,extended,00000000

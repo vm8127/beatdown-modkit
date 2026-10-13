@@ -1,6 +1,6 @@
 # Mod plan: negotiation menu on knockout
 
-Status: **idea, not built**. Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
+Status: **test v1 built, untested** (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
 
 ## What the mod would do
 
@@ -40,37 +40,48 @@ Defaults marked; each is a small switch in the patch.
 2. **Group fights.** Settled: Daniel says you can't threaten in group fights (up to 3 enemies). Because the mod reuses the game's own threaten check, group-fight knockouts stay normal knockouts. Confirm this when the check is traced.
 3. **Failed negotiation** ("TRY AGAIN?"). **Default: keep the vanilla retry**; answering NO (or cancelling) gives the normal knockout, same as CANCEL. Alternative: a fail goes straight to the normal knockout.
 
-## How it would be built
+## What the code does (traced 2026-10-13)
 
-A PCSX2 pnach section, same style as the Chester model mod (a hook into a code cave):
+Read from the ELF; not run yet. `g_Battle` is the battle context pointer at `gp-20356` (`0x005FFC6C`).
 
-1. Hook the point where an enemy's HP reaches 0 from a hit (after `Fighter_ApplyDamage` `0x002FB880`, before the knockout state is set).
-2. In the cave: if the fighter is an enemy, not already in negotiation, and the game's negotiation check passes, then set HP to 1, set Pride (`+0x4420`) to 0, and start negotiation on that fighter the same way the threaten button does.
-3. Otherwise run the original code, so the knockout happens normally.
-4. When the menu is cancelled (CANCEL `0x2713`, or backing out) for a fighter the mod held at 1 HP, finish the knockout: set HP to 0 and let the normal KO path run. BEATDOWN and the other choices are left to the game.
+- **Battle state machine** `Battle_Update` `0x002DD500`: state at `g_Battle +0x10`. State 0 is the fight. When a side goes down, `Battle_OnFighterDown` `0x002E2F60` records it (`+0xB8`) and the fight moves to state 2 with the winner at `+0x60` and the loser at `+0x64`.
+- **After a knockout** (state 2): if the player lost with Pride at 0 the game starts the beg scene. Otherwise, if `Battle_CanTalkAfterKO` `0x002E38D0` passes (story mode, the loser is not a boss and not one of 8 ally people), it calls `Battle_StartTalk(1)` at `0x002DE478`: a short after-KO talk that ends the fight.
+- **The threaten button** goes through `Battle_RequestTalk` `0x002DE540` (called from the fighter input code at `0x0032482C`): it works when your target is DOWN or GUARDING, or during a threaten grab, and ends in `Battle_StartTalk(0)`.
+- **The talk scene** `Talk_Update` `0x002DE850` runs both. Kind 0 opens the menu (`Talk_OpenMenu` `0x002E0150`, items from `0x005A90F0`) and branches on the choice (steps 1000, 1150, 1200, 1250). ROB and INTERROGATE check `Fighter_HasPride` `0x002FB120` on the target: empty Pride leads to step 1300, otherwise 1350. The 4th choice (step 1250) returns outcome 5, which resumes the fight in a "beat down" mode (`g_Battle +0x9C` bit 0). Kind 1 skips the menu and goes 1600, 1601, 800.
+- **Pride bar shown** `Battle_PrideHudShown` `0x002E3A20`: not VS mode, game flag `0x0076EA90` bit 9 clear, the target's person record `+0x388` bit 31 clear, and battle type `0x0076EAA0` not 3 (probably group fights; Daniel says you can't threaten there).
 
-Code areas to trace first:
+## Test v1 (built)
 
-| What | Where | Status |
-|---|---|---|
-| Threaten button → negotiation start, and its availability check | not found yet; pad bits: Circle `0x200` (CUTCONTENT.md) | **next step** |
-| Battle menu state machine (NEGOTIATION/ESCAPE/CHANGE/CANCEL) | `0x00300390`, menu context pointer at `gp-19936`, buffer `0x0071F3F0` (1568 bytes) | **probably** |
-| Negotiation screens (RECRUIT/ROB/INTERROGATE/BEATDOWN, "NEGOTIATION OK!") | `0x001C2000`-`0x001C8000`, e.g. `0x001C6010` (called from `0x00301410`), `0x001C29F0` | **probably** |
-| Pride refill timer | `0x00313F90` | **probably** |
-| Where a knockout is decided | after `0x0030DFD0` | not traced |
-| Where CANCEL / back-out closes the menu | inside the battle menu code above | not traced |
-| Free space for the hook | the Chester mod uses `0x003E0130`; needs a separate spot | to pick |
+The cheat changes the after-KO call at `0x002DE478` so that, when the Pride bar is shown, the after-KO talk is the threaten talk (kind 0) instead of kind 1. The loser's Pride is set to 0 first, so ROB and INTERROGATE take the empty-Pride branch.
+
+```
+0x002DE478  sw    zero,0x4420(s2)     loser's Pride = 0
+0x002DE47C  jal   0x003E0168
+0x002DE480  nop
+0x002DE484  b     0x002DE48C          (the original "li v0,5; b; sh" tail)
+0x003E0168  move  s1,ra               s1 is reloaded right after, so it's free here
+0x003E016C  jal   Battle_PrideHudShown
+0x003E0174  move  ra,s1
+0x003E0178  j     Battle_StartTalk
+0x003E017C  sltiu a0,v0,1             kind = 0 if the Pride bar is shown, else 1
+```
+
+What to check in PCSX2 (story mode, a 1-on-1 street fight with a Pride bar):
+
+1. Knock the enemy out. Does the RECRUIT/ROB/INTERROGATE/BEATDOWN menu open?
+2. Try each choice on a different enemy. Does RECRUIT add an ally, ROB give money, INTERROGATE give info?
+3. BEATDOWN: what happens? The code resumes the fight in "beat down" mode, but this enemy is already at 0 HP.
+4. Is there a way to back out of the menu (Triangle or X)? I didn't find a cancel in the code yet.
+5. A boss and a group fight: these should end as normal knockouts with no menu.
+
+## What's left after the test
+
+- **Cancel = normal knockout.** If the menu has a cancel, send it to the kind 1 ending (step 1600). If it doesn't, decide with Daniel which button should do it.
+- **BEATDOWN** must keep its vanilla meaning. If resuming the fight with a 0-HP enemy misbehaves, give the enemy 1 HP back before the menu.
+- Add a `bdkit.py` command if the hook needs parameters (it doesn't yet).
 
 ## Risks
 
-- Bosses whose defeat starts a cutscene or ends a chapter: the mod must leave these alone, which it will if the game's own check refuses negotiation there.
-- The knockout animation and the menu could fight over the fighter's state; clamping HP before the KO state is set should avoid that.
-- Throws and finishers that do big damage in one go must also take the hook path.
-- VS mode and the tournament must stay untouched.
-
-## Steps
-
-1. Trace the threaten button to the negotiation start and its availability check. Add names to `symbols/symbols.tsv` and CODEMAP.md.
-2. Trace where the knockout is decided.
-3. Build the hook as a test pnach section and try it in PCSX2: a street fight, a mission fight, a boss, and a group fight to confirm nothing happens there.
-4. Settle the three choices above, then add the section to `mods/` and the README mod list with test results.
+- A choice that resumes the fight (BEATDOWN) with the enemy already at 0 HP is the main unknown.
+- Bosses and scripted fights are excluded by `Battle_CanTalkAfterKO`, and group fights by `Battle_PrideHudShown`.
+- The cave uses the last 6 free words at `0x003E0168`; the Chester `swap-model` hook uses the 14 words before it, so both can be on. The new roster system uses `0x00216538` and doesn't touch these addresses.

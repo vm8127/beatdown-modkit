@@ -254,7 +254,7 @@ Charisma rewards winning, especially killing, on harder difficulties, and punish
 
 If all three tiers are equal, title = 21 + tier (a balanced title). Otherwise the highest score wins (ties go to Leadership, then Cash Flow) and title = 7 x (0 Leadership, 1 Cash Flow, 2 Charisma) + that score's tier. So there are 28 titles, 7 per kind.
 
-`0x002AF640` turns the title into one of 5 categories, stored at gp-21540 (`0x005FF8CC`): tier 3-6 Leadership → 0, tier 3-6 Cash Flow → 1, tier 3-6 balanced → 2, tier 3-6 Charisma → 3 or 4 (depends on `0x00396B70`), anything at tier 0-2 → 4. **Probably** this picks the ending; it is called from `0x002AE82C` and `0x0038F3B4`.
+`0x002AF640` turns the title into one of 5 categories, stored at gp-21540 (`0x005FF7CC`; gp is `0x00604BF0`): tier 3-6 Leadership → 0, tier 3-6 Cash Flow → 1, tier 3-6 balanced → 2, tier 3-6 Charisma → 3 or 4 (depends on `0x00396B70`), anything at tier 0-2 → 4. **Probably** this picks the ending; it is called from `0x002AE82C` and `0x0038F3B4`.
 
 ## Records
 

@@ -185,3 +185,22 @@
 00216538	func	Unused_DmaGsUpload	library DMA/GS upload code nothing calls or points to; code cave for bdkit roster hooks
 0031b210	func	HpBar_Build	(side) builds one side's HP bar, one name line per team member; called from 0x3184D4; jal Fighter_DisplayName at 0x31B3E4 (hooked by bdkit roster)
 0013c5c0	func	Team_GetMember	(side, i) -> person id from the team lists 0x76EAC8 (side 0) / 0x76EAD0 (side 1), s16 ending -1
+002f8990	func	Fighter_IsAlive	HP > 0
+002f8c00	func	Fighter_GetGuard	float at +0x4420; 0 means damage is ignored
+002f8c00	func	Fighter_GetPride	(fighter) -> float fighter +0x4420
+002dd500	func	Battle_Update	battle state machine, state at g_Battle +0x10 (12 states, jump table 0x5CF240): 0 fight, 2 after a KO, 3-5 talk scene, 6 resume fight, 10 end
+002de540	func	Battle_RequestTalk	(fighter, kind) threaten button: allowed when the target is DOWN or GUARD, or during threaten grabs; sets g_Battle +0x144 bit 4, +0x60 = fighter, +0x5C = kind
+002de6e0	func	Battle_StartTalk	(kind) starts the talk scene: 0 = threaten (RECRUIT/ROB/INTERROGATE/BEATDOWN menu), 1 = after knocking out a non-boss, 3 = beg for your life
+002de850	func	Talk_Update	talk scene steps at g_Battle +0x12; returns an outcome code that Battle_Update turns into a result (table 0x5CF210)
+002e0150	func	Talk_OpenMenu	builds the negotiation menu from 0x5A90F0 (kind 3 uses 0x5A9160)
+002e0310	func	Talk_PollMenu	waits for a menu choice; the choice goes to g_Battle +0x94
+002e2f60	func	Battle_OnFighterDown	(fighter, flag) records the downed fighter at g_Battle +0xB8 and sets +0x144 bit 8
+002e37e0	func	Battle_IsStoryTalkBattle	story mode, not VS, g_Battle +0x144 bit 1; the empty-Pride x1.2 damage condition
+002e38d0	func	Battle_CanTalkAfterKO	(winner, loser) story battle, loser not a boss and not one of 8 ally person ids
+002e3a20	func	Battle_PrideHudShown	Pride bars shown: not VS, not flag 0x200, target's person +0x388 bit 31 clear, battle type (0x76EAA0) not 3
+002f8990	func	Fighter_IsAlive	HP > 0
+002f8c00	func	Fighter_GetPride	current Pride (float, fighter +0x4420)
+002f8c20	func	Fighter_GetPrideRatio	Pride / max Pride
+002fb120	func	Fighter_HasPride	1 when Pride is not 0
+00313f90	func	Fighter_PrideRegen	refills Pride from a timer after it hits 0
+005ffc6c	data	g_Battle	pointer to the battle context (gp-20356): +4/+8 the two sides' fighters, +0x10 state, +0x12 talk step, +0x60 winner/talker, +0x64 loser, +0x6C talk kind, +0x144 flags
