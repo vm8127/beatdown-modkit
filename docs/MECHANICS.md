@@ -4,7 +4,7 @@ What the game's stats and meters do, with the formulas as the code computes them
 
 **Status words**: **read** means the formula was taken straight from the code. **Probably** means the code was read but what it is for in play is a guess. Nothing here has been tested in-game yet.
 
-`difficulty` below is the byte at `0x0060C704` (g_SystemData +4): 1 = EASY, 2 = NORMAL, 3 = HARD (labels at `0x509CF0`). **The US game has no difficulty option you can see**: the DIFFICULTY entry exists in the options menu table (`0x509D90`) with default 2, but it is switched off (see [Difficulty](#difficulty)), so normal play is always NORMAL. Many tables are 4 entries long and indexed by it, so entry 0 is unused.
+`difficulty` below is the byte at `0x0060C704` (g_SystemData +4): 1 = EASY, 2 = NORMAL, 3 = HARD (labels at `0x509CF0`). DIFFICULTY is an option in the title-screen OPTIONS (seen in-game 2026-10-13), but not in the pause menu (see [Difficulty](#difficulty)); the default is NORMAL. Many tables are 4 entries long and indexed by it, so entry 0 is unused.
 
 ## Contents
 
@@ -192,7 +192,7 @@ These are shown by the unused debug overlay `Debug_FighterInfo` `0x00302260`.
 
 ## Difficulty
 
-`0x0060C704`, 1 = EASY, 2 = NORMAL, 3 = HARD. It is a **hidden option**. The options menu items are 32-byte records; the DIFFICULTY record at `0x509D90` (label `0x5CF550`, text id `0x232D`) has default value 2 (byte `+20`), but bytes `+24` and `+27` are 0 where the visible SUBTITLES and MAP records (`0x509DB0`, `0x509DD0`) have 1. Update (docs/CUTCONTENT.md): byte `+26` decides whether an item shows in the title-screen OPTIONS and `+27` in the pause-menu options (`Options_SetMode` `0x2E9590`). DIFFICULTY has `+26` = 1 and `+27` = 0, so by the code it should be in the title-screen OPTIONS and only missing from the pause menu; this still needs checking in-game. Until then the game always plays on NORMAL, so the EASY and HARD values below are cut content. A pnach can also just set `0x0060C704`.
+`0x0060C704`, 1 = EASY, 2 = NORMAL, 3 = HARD. It is in the title-screen OPTIONS but not the pause menu. The options menu items are 32-byte records; the DIFFICULTY record at `0x509D90` (label `0x5CF550`, text id `0x232D`) has default value 2 (byte `+20`), but bytes `+24` and `+27` are 0 where the visible SUBTITLES and MAP records (`0x509DB0`, `0x509DD0`) have 1. Update (docs/CUTCONTENT.md): byte `+26` decides whether an item shows in the title-screen OPTIONS and `+27` in the pause-menu options (`Options_SetMode` `0x2E9590`). DIFFICULTY has `+26` = 1 and `+27` = 0: it is in the title-screen OPTIONS (seen in-game: left/right sets EASY, NORMAL, HARD) and only missing from the pause menu, which the cheat `Cut content: DIFFICULTY in the pause menu options` fixes (seen in-game). So the EASY and HARD values below are reachable in normal play. A pnach can also just set `0x0060C704`.
 
 Everything indexed by it:
 

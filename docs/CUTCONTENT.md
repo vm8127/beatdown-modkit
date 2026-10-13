@@ -1,12 +1,13 @@
 # Cut content and unreachable code
 
-What the US release (SLUS-21150) still carries that normal play can't reach, how each piece was found, and how to bring it back. The cheats named here are sections in `mods/SLUS-21150_C9F6EF9A.pnach`. **None of them has been tested in-game yet.**
+What the US release (SLUS-21150) still carries that normal play can't reach, how each piece was found, and how to bring it back. The cheats named here are sections in `mods/SLUS-21150_C9F6EF9A.pnach`. All six cheats were run in PCSX2 on 2026-10-13 and work; see [Test results](#test-results-2026-10-13).
 
-Confidence words: **confirmed** = read in the code or data; **probably** = inferred from the code, not run.
+Confidence words: **confirmed** = read in the code or data; **probably** = inferred from the code, not run; **seen in-game** = run in PCSX2.
 
 ## Contents
 
 1. [Summary](#summary)
+1. [Test results (2026-10-13)](#test-results-2026-10-13)
 2. [DEBUG item on the title menu](#debug-item-on-the-title-menu)
 3. [The DEBUG menu: scene player and language select](#the-debug-menu-scene-player-and-language-select)
 4. [Labels for debug tools that were removed](#labels-for-debug-tools-that-were-removed)
@@ -24,16 +25,36 @@ Confidence words: **confirmed** = read in the code or data; **probably** = infer
 
 | Find | Status | Cheat |
 |---|---|---|
-| DEBUG item on the title menu, and the DEBUG menu behind it (scene player, language select) | Code and data complete, only the menu entry is missing (**confirmed**) | `Cut content: DEBUG on the title screen` |
-| Language select limited to Japanese and English; French, German, Spanish and Italian text is on the disc | **confirmed** | `Cut content: all six languages in the debug LANGUAGE menu` |
-| Developer debug switch table with nothing writing it; switch 5 = fighter info overlay, fast movement, collision skip | **probably** (read in code) | `Cut content: developer debug mode (switch 5)` |
-| DIFFICULTY option: shown on the title-screen OPTIONS by the data, hidden in the pause menu | **probably**; conflicts with what was seen in-game, needs a check | `Cut content: DIFFICULTY in the pause menu options` |
-| TESTER style 0x09 (67 commands) and TESTER S/M/L classes, used by no fighter | **confirmed** | `Aaron uses the cut TESTER moveset` |
-| Eight short generic styles 0x1C-0x23 with command lists, used by no class | **confirmed** | `Cut content: boxers use the short boxer style 0x1C` |
+| DEBUG item on the title menu, and the DEBUG menu behind it (scene player, language select) | **Seen in-game**: the item, the menu, the scene player and the language select all work | `Cut content: DEBUG on the title screen` |
+| Language select limited to Japanese and English; French, German, Spanish and Italian text is on the disc | **Seen in-game**: German switches the text and the menu graphics | `Cut content: all six languages in the debug LANGUAGE menu` |
+| Developer debug switch table with nothing writing it; switch 5 = fighter info overlay, fast movement, collision skip | **Seen in-game**: the 10-page overlay works (hold L2, press R2). The R1 speed-up can't be used (R1 is grab) | `Cut content: developer debug mode (switch 5)` |
+| DIFFICULTY option: shown on the title-screen OPTIONS by the data, hidden in the pause menu | **Seen in-game**: it is already in the title-screen OPTIONS; the cheat adds it to the pause menu's CONFIG. page | `Cut content: DIFFICULTY in the pause menu options` |
+| TESTER style 0x09 (67 commands) and TESTER S/M/L classes, used by no fighter | **Seen in-game**: Aaron plays TESTER's actions | `Aaron uses the cut TESTER moveset` |
+| Eight short generic styles 0x1C-0x23 with command lists, used by no class | **Seen in-game** for 0x1C, on a stand-in fighter (see the test notes) | `Cut content: boxers use the short boxer style 0x1C` |
 | Classes no fighter record uses: PERFECT, JUGGLER_L, STRIDER_L, POLICE_S, POLICE_M | **confirmed** | swap-moveset recipe |
 | Labels for 7 removed debug tools (SCRIPT VIEWER, ARCHIVE MAKER, SCENE EDITOR, ...) | Text only; code is gone | none |
 | Debug shop picker "[SELECT SHOP]" | Code present, only reached with no shop number set | none yet |
 | Dummy items, "???" item descriptions, Xbox texts, test graphics (END_BGTEST_A/B, CHS_NTEST01, WIN_TEST) | Data only | none |
+
+## Test results (2026-10-13)
+
+Claude ran every cut-content cheat in PCSX2 v2.9 on Daniel's PC, in a separate copy of the emulator folder (Daniel's settings, memory cards and save states were never touched), sending key presses by script and reading memory through PCSX2's PINE interface. The switch 5 overlay shows each fighter's current action ID (its `TASK` line), which made the move checks exact.
+
+| Cheat | Result |
+|---|---|
+| `Cut content: DEBUG on the title screen` | **Works.** The title menu reads NEW GAME, LOAD GAME, VS MODE NORMAL, DEBUG, OPTIONS. DEBUG opens SCENE PLAYER / LANGUAGE / EXIT (Circle runs an item). In the scene player, left/right picks the scene and Cross confirms (Circle does nothing there); PLAY ran scene 05 with the chosen hero. |
+| `Cut content: all six languages in the debug LANGUAGE menu` | **Works.** Left/right cycles JAPANESE, ENGLISH, FRANCE, GERMANY, SPAIN, ITALY (wrapping); Cross confirms. GERMANY wrote 3 to `0x60C710` and restarted the game from the warning screen in German: subtitles, menus (NEUES SPIEL, SPIEL LADEN, KONTRAMODUS NORMAL, OPTIONEN) and the localized title graphics ("Figur Auswählen"). The DEBUG item keeps its ASCII label. |
+| `Cut content: developer debug mode (switch 5)` | **The overlay works**, with different buttons from what this doc first said: **hold L2 and press R2** to show or hide it, **hold L2 and click L3** to page through it (10 pages, wrapping). It shows in fights and in free roam, one column per fighter. Pages: 0 CAT/SCAT/STANCE, FRAME, TASK (current action ID), MOT (motion ID), MSPEED, Pos, Dir, Combo_Hit, Combo_Duration, AI, pworkID; 1 POS and DISP POS, HP, DAMAGE, TIRED, REV, LENGTH, last DAMAGE, ATTACK; 2 INJURY by body part (FACE, BODY, ARM, LEG, TOTAL); 3 ATTACK (5 values out of 880); 4 DEFENCE (3 values out of 880); 5 STATE 01 (STIFF, HIT...); 6 STATE 02; 7 PCTRL 01 (CONTROL); 8 PCTRL 02; 9 [ ANIM RESOURCE ] TotalNum and TotalSize of the loaded animations. The R1 speed-up didn't show: R1 is the grab button, so holding it starts a grab (CAT HOLD) instead of walking, and the speed code only runs while walking. The collision skip (L1+R1+Square) wasn't tried. |
+| `Cut content: DIFFICULTY in the pause menu options` | **Works.** Without any cheat, DIFFICULTY is already the first item of the title-screen OPTIONS, and left/right changes it (NORMAL to HARD seen). With the cheat it also tops the pause menu's OPTIONS, CONFIG. page in story mode; setting HARD there and leaving through EXIT wrote 3 to `0x60C704`. So the option was only ever missing from the pause menu. (The highlighted row is drawn in faint grey, which can make it look missing.) |
+| `Aaron uses the cut TESTER moveset` | **Works.** In VS mode Aaron starts with a knife, and weapon moves ignore the style, so the knife was cleared from memory for the check. Unarmed normal Aaron's P, up+P and right+K gave actions 1805, 1810 and 1812 (Blade Cut, Uppercut, Whip Kick). With the cheat, P, K, up+P, right+K and down+P gave 408, 793, 138, 791 and 170, exactly TESTER's command list, with animations playing. His idle stance changes too. |
+| `Cut content: boxers use the short boxer style 0x1C` | **The style works.** No boxer is selectable in VS mode on a fresh profile and none was near the save state, so a stand-in was used: Jason G's class row was given BOXER_L's style (0x1C, from the cheat) and BOXER_L's animation groups. K then gave 1600 (Boxer Step; the full boxer style gives 147, Step Kick), P gave 15 (Jab), and right+P and down+P fell back to the Jab because 0x1C has no such commands (the full style gives 422 and 142). The cheat's three writes to the BOXER rows were confirmed in memory. Combos (P P ...) didn't chain from scripted presses under either style, so they weren't checked. Real street boxers with the cheat on still need a playthrough. |
+
+Also learned along the way:
+
+- **The style is read live.** Writing a different style into a class row in the middle of a fight changed the moves on the next button press. Animations are still loaded only when the fighter is set up, so a new style needs its animation groups already in the row's list.
+- **The overlay's TASK is the action ID and MOT is the motion ID**, so it answers "which animation does action N play", one move at a time.
+- **VS mode heroes start armed**: Aaron holds item 2 (a knife) at fighter `+0x432C`, with flag `0x4000` at `+0x4388`. Damage per hit was the same 360 for every input while armed.
+- The VS character select doesn't read `g_VsRoster` `0x589A40` when it is drawn (changing an entry in memory changed nothing), so the roster is copied or filtered by unlocks elsewhere.
 
 ## DEBUG item on the title menu
 
@@ -102,21 +123,30 @@ No code uses these IDs, so the tools themselves were cut. The ELF still has the 
 
 ## Developer debug switches
 
-**Probably.** `g_DebugSwitches` `0x00599000` is 48 u32 switches read only by `Debug_GetSwitch` `0x0039BA00` (`n -> switch[n] != 0`). No code writes them, so they are compile-time settings. In the retail ELF, switches 1-3 are 100 and 6, 11, 23, 26, 30, 39, 40 and 41 are 1. The code checks switches 5, 8, 10, 11, 16, 17, 18 and 39.
+**Switch 5 seen in-game; the others probably.** `g_DebugSwitches` `0x00599000` is 48 u32 switches read only by `Debug_GetSwitch` `0x0039BA00` (`n -> switch[n] != 0`). No code writes them, so they are compile-time settings. In the retail ELF, switches 1-3 are 100 and 6, 11, 23, 26, 30, 39, 40 and 41 are 1. The code checks switches 5, 8, 10, 11, 16, 17, 18 and 39.
 
-**Switch 5 is a developer debug mode.** With it on (from the code, not run yet):
+**Switch 5 is a developer debug mode.** With it on (the overlay was run in PCSX2, see [Test results](#test-results-2026-10-13)):
 
 | Effect | Where | Buttons |
 |---|---|---|
-| Fighter info overlay in fights: `Debug_FighterInfo` `0x00302260` (HP, DAMAGE, TIRED, REV, LENGTH, motion state), 10 pages | `0x0030B1C4` | hold L2 and click L3 to change page |
-| Faster movement: speed x2.45 and a value of 2.72 at fighter +0x3FE8 | `0x0030CCEC` | hold R1 |
+| Fighter info overlay: `Debug_FighterInfo` `0x00302260`, 10 pages. On/off byte `0x005FFE30` (gp-19904), page byte `0x005FFE44` (gp-19884) | toggle `0x0030AFD4`, draw `0x0030B1C4` | hold L2 and press R2 to show or hide; hold L2 and click L3 to change page |
+| Faster movement: speed x2.45 and a value of 2.72 at fighter +0x3FE8, only while walking | `0x0030CCEC` | hold R1 (but R1 is grab, so it can't be reached with the normal controls) |
 | Three collision-type checks return "no hit" early (probably walking through walls or objects) | `0x00160790`, `0x003D19E0`, `0x003D1B70` | hold L1 + R1 + Square (or L3) |
 
 The buttons come from `Pad_RemapButtons` `0x001D02B0`, which turns the raw pad into the game's own bits (held at `0x00685454`, newly pressed at `0x00685458`): Left 1, Right 2, Up 4, Down 8, Start 0x10, Select 0x20, Triangle 0x40, Cross 0x80, Square 0x100, Circle 0x200, L1 0x400, L2 0x800, R1 0x1000, R2 0x2000, L3 0x4000, R3 0x8000.
 
 **Restore (cheat):** `Cut content: developer debug mode (switch 5)` = `patch=1,EE,20599014,extended,00000001`.
 
-Other switches, not traced further: 17 passes pad 2's state (`0x006854D0`) to the fighter input routine `0x0030A5A0` at `0x0030B068` (maybe driving a fighter from the second controller); 10 adds a call to `0x001C8270` before `0x002B2610` (`0x002C9820`) and gates a block at `0x0032258C`; 8, 16, 18 and 39 are each checked once (`0x0031676C`, `0x002E3E88`, `0x0019F37C`, `0x001BD34C`). These are good next targets: set switch n with a 32-bit write to `0x00599000 + 4n` and watch what changes.
+The same input code also cycles a byte at `0x005FFE34` (gp-19900) through 0-2 with R1 held and L2 pressed, but nothing reads it.
+
+Other switches, traced on 2026-10-13 (not run unless stated):
+
+- **18 gives a debug head start.** `0x0019F370`, called while a story game is set up (`0x00198B9C`), does nothing unless switch 18 is on. Then it calls `StoryVar_Add` `0x00172BD0` for about 70 entries of the saved script variable array `g_StoryVars` `0x0060C990` (128 x s16, capped at 99, read by the script interpreter at `0x0039D2B0`): +2 for variables 5-44, -2 for 6, 7, 8, 24, 32, 37, 42, 43, 44, 46 and 47, and +1 for 1, 2, 4, 91-98, 103 and 108-112. What those variables mean isn't known yet; starting a new game with `patch=1,EE,20599048,extended,00000001` would show it.
+- **17 lets controller 2 drive enemies.** At `0x0030B068`, for fighters whose byte `+0x17` is 2 or more (NPC slots; VS mode's player 2 is 1 and isn't affected), the fighter input routine `0x0030A5A0` gets pad 2's state (`0x006854D0`) instead of the AI's (`0x00154E00`). Not tried in a story fight yet.
+- **10 is a hit-effect test.** It adds a per-frame call to `0x001C8270`, an empty stub in the retail build, and at `0x0032258C` (inside the action script interpreter) picks one of 16 effects (`0x0031DE90` with ids 92, 70, ...) by `gp-22692` + 1. Nothing writes that byte, so it is always effect 1.
+- **8** enables a loop in `0x00316720` (called from `0x0030E208` and `0x003219E0`) over 64-byte records at `0x007231D0`. Turning it on by memory during a VS fight showed nothing visible.
+
+Earlier notes: 17 passes pad 2's state (`0x006854D0`) to the fighter input routine `0x0030A5A0` at `0x0030B068` (maybe driving a fighter from the second controller); 10 adds a call to `0x001C8270` before `0x002B2610` (`0x002C9820`) and gates a block at `0x0032258C`; 8, 16, 18 and 39 are each checked once (`0x0031676C`, `0x002E3E88`, `0x0019F37C`, `0x001BD34C`). These are good next targets: set switch n with a 32-bit write to `0x00599000 + 4n` and watch what changes.
 
 ## Options: DIFFICULTY and the other hidden items
 
@@ -133,9 +163,9 @@ Page 0 (OPTIONS):
 | MOVIE VIEWER | `0x509F10` | 1 (only once `0x0013D9E0(1)` is set, `0x002E9EB0`) | **0** |
 | DEFAULT SETTING, EXIT | `0x509F30`, `0x509F50` | 1 | 1 |
 
-Every item has +26 = 1, so **by the code DIFFICULTY should be in the title-screen OPTIONS**. That conflicts with MECHANICS.md ("hidden option") and with what was seen in-game, which may have been the pause menu. **Please check OPTIONS from the title screen.** If DIFFICULTY is there, it isn't cut, just missing from the pause menu. If it isn't, something else hides it and this needs another look.
+Every item has +26 = 1, so by the code DIFFICULTY is in the title-screen OPTIONS. **Seen in-game (2026-10-13): it is**, first in the list, and left/right changes it. So it isn't cut, only missing from the pause menu. The pause menu's OPTIONS opens a CONFIG. page with the +27 items (SUBTITLES, MAP, LIFE GAUGE, AUDIO CONFIG., CONTROL CONFIG., SCREEN ADJUST, BRIGHTNESS, DEFAULT SETTING, EXIT).
 
-**Restore (cheat):** `Cut content: DIFFICULTY in the pause menu options` sets DIFFICULTY's +27 to 1 (`patch=1,EE,20509DA8,extended,01010100`). The same works for the blood and bruising items (+27 at `0x509E2B`, `0x509E4B`, `0x509E6B`, `0x509E8B`). Setting difficulty directly: `patch=1,EE,0060C704,extended,000000XX` (1 EASY, 2 NORMAL, 3 HARD).
+**Restore (cheat), seen in-game:** `Cut content: DIFFICULTY in the pause menu options` sets DIFFICULTY's +27 to 1 (`patch=1,EE,20509DA8,extended,01010100`). The same works for the blood and bruising items (+27 at `0x509E2B`, `0x509E4B`, `0x509E6B`, `0x509E8B`). Setting difficulty directly: `patch=1,EE,0060C704,extended,000000XX` (1 EASY, 2 NORMAL, 3 HARD).
 
 Bytes +24 and +25 are never read by the option code.
 
@@ -147,7 +177,7 @@ All **confirmed** against the class table `0x0050D6A0`, the fighter records (`du
 
 Classes TESTER_M (type 40), TESTER_S (45) and TESTER_L (46) use style `0x09` with animation group 174 (STAGE.XAF pack 109, 83 animations, all shared with other groups). No fighter record uses them, and style 0x09 is the only one without a MOVE LIST entry (`0xFFFF` in `0x005CAB40`). Its command list (`0x005D10B0`, 67 commands, see `dumps/commands.txt`) is a developers' test kit: one or two moves from many styles, from a 90-damage jab up to two 1000-damage actions (760), grabs and rear grabs.
 
-**Restore (cheat):** `Aaron uses the cut TESTER moveset` (made with `python tools/bdkit.py swap-moveset ISO/SLUS_211.50 AARON TESTER_M`; both medium bodies). It writes Aaron's row like the other Aaron cheats, so only one at a time.
+**Restore (cheat), seen in-game:** `Aaron uses the cut TESTER moveset` (made with `python tools/bdkit.py swap-moveset ISO/SLUS_211.50 AARON TESTER_M`; both medium bodies). It writes Aaron's row like the other Aaron cheats, so only one at a time.
 
 ### Short generic styles 0x1C-0x23
 

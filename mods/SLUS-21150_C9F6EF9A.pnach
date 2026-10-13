@@ -51,12 +51,12 @@ patch=1,EE,203B75D0,extended,24020005
 
 [Cut content: developer debug mode (switch 5)]
 author=Claude for Daniel
-description=Turns on developer debug switch 5 in the unused switch table at 0x00599000. Expected (from the code): a fighter info overlay in fights (hold L2 and click L3 to page through it), hold R1 to move faster, and hold L1+R1+Square to skip a collision check. See docs/CUTCONTENT.md.
+description=Turns on developer debug switch 5 in the unused switch table at 0x00599000. In a fight or in free roam, hold L2 and press R2 to show or hide the developer fighter overlay, and hold L2 and click L3 to page through its 10 pages (action and motion IDs, HP, damage, injuries, attack/defence, states, loaded animations). Tested in PCSX2. The code also has a hold-R1 speed-up while walking, but R1 is grab, so it can't be used. See docs/CUTCONTENT.md.
 patch=1,EE,20599014,extended,00000001
 
 [Cut content: DIFFICULTY in the pause menu options]
 author=Claude for Daniel
-description=Marks the DIFFICULTY option (record 0x00509D90) as shown in the pause-menu options too (byte +27). By the code it is already shown in the title-screen OPTIONS. 1 = EASY, 2 = NORMAL, 3 = HARD.
+description=Adds the DIFFICULTY option (record 0x00509D90) to the pause menu's OPTIONS, CONFIG. page (byte +27). Without the cheat it is only in the title-screen OPTIONS. Tested in PCSX2. 1 = EASY, 2 = NORMAL, 3 = HARD.
 patch=1,EE,20509DA8,extended,01010100
 
 [Aaron uses the cut TESTER moveset (one Aaron cheat at a time)]

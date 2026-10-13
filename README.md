@@ -233,20 +233,20 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | Aaron uses Raven's moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12) |
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
 | Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: works in-game with name and model (tested by Daniel, 2026-10-12) |
-| Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. See docs/CUTCONTENT.md |
-| Cut content: all six languages in the debug LANGUAGE menu | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Needs the DEBUG title cheat |
-| Cut content: developer debug mode (switch 5) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested |
-| Cut content: DIFFICULTY in the pause menu options | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. By the code DIFFICULTY is already in the title-screen OPTIONS; please check |
-| Aaron uses the cut TESTER moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Aaron cheat: one at a time |
-| Cut content: boxers use the short boxer style 0x1C | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested |
+| Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): DEBUG menu, scene player and language select all work. See docs/CUTCONTENT.md, Test results |
+| Cut content: all six languages in the debug LANGUAGE menu | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): German gives German text and menu graphics. Needs the DEBUG title cheat; left/right picks, Cross confirms |
+| Cut content: developer debug mode (switch 5) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): the 10-page fighter overlay works (hold L2 + press R2 to show it, hold L2 + click L3 to page). The R1 speed-up can't be used because R1 is grab |
+| Cut content: DIFFICULTY in the pause menu options | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13). DIFFICULTY is already in the title-screen OPTIONS without any cheat; this adds it to the pause menu's CONFIG. page |
+| Aaron uses the cut TESTER moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): TESTER's action IDs confirmed with the debug overlay. In VS mode Aaron starts with a knife, which uses knife moves until it's gone. Aaron cheat: one at a time |
+| Cut content: boxers use the short boxer style 0x1C | `mods/SLUS-21150_C9F6EF9A.pnach` | Style 0x1C works (tested by Claude in PCSX2 on a stand-in fighter, 2026-10-13); not yet seen on street boxers in story mode |
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory).
 
 ## Open questions and next targets
 
-- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See docs/CODEMAP.md, "The command table". Frame data and which animation each action plays are still open.
+- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See docs/CODEMAP.md, "The command table". The style is read live from the class row, so changing it mid-fight changes the next move. Which animation each action plays is now readable in-game: with the switch 5 cheat, the overlay's TASK line is the action ID and MOT the motion ID. Frame data is still open.
 - **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See docs/CODEMAP.md.
-- **Cut content**: see docs/CUTCONTENT.md. Next: test the cheats, trace the other debug switches (8, 10, 16, 17, 18, 39), and find which GRAPH/SCRIPT/FSCENE entries are never loaded.
+- **Cut content**: see docs/CUTCONTENT.md. All six cheats are tested. Next: try switch 18 (debug head start, on a new game) and switch 17 (controller 2 drives enemies) in story mode, trace switches 16 and 39, see the short boxer style on real street boxers, and find which GRAPH/SCRIPT/FSCENE entries are never loaded.
 - **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See docs/MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
 - **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See docs/CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.

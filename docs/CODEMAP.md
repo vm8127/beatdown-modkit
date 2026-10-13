@@ -75,7 +75,7 @@ Where the multipliers come from, in `Fighter_Spawn` `0x00304B60`:
 - Enemies only: times `g_EnemyDamageByDifficulty[difficulty]` at `0x005D04F0` = `{1.0, 0.8, 1.0, 1.5}`.
 - HP = person `+0x54`, max HP = person `+0x4E` plus bonus `+0x382`, both capped at 9999. Tired meter max = 1.5 x max HP. The Pride Gauge (called guard here before; see MECHANICS.md) comes from person `+0x3A6` capped by the template's value (`Fighter_SetGuard` `0x2FB780`).
 
-A debug overlay, `Debug_FighterInfo` `0x00302260`, prints most of these (HP, DAMAGE, TIRED, REV, LENGTH, motion category such as "ATTACK DAMAGE"); it isn't reachable in normal play; developer debug switch 5 turns it on (see docs/CUTCONTENT.md).
+A debug overlay, `Debug_FighterInfo` `0x00302260`, prints most of these (HP, DAMAGE, TIRED, REV, LENGTH, motion category such as "ATTACK DAMAGE"); it isn't reachable in normal play; developer debug switch 5 enables it, then hold L2 and press R2 to show it and hold L2 and click L3 to page (seen in-game; 10 pages, listed in docs/CUTCONTENT.md). Its TASK line is the current action id (`+0x4346`) and MOT the motion id.
 
 ## The command table: input to move to damage
 
@@ -219,7 +219,7 @@ The game file is built by `SaveData_Pack` `0x0013A950` and read back by `SaveDat
 | `0x357E8` | 8 | `g_Party` |
 | `0x357F0` | 2052 | `g_Inventory` |
 | `0x35FF4` | 156 | `0x60BE50` |
-| `0x36090` | 256 | `0x60C990` |
+| `0x36090` | 256 | `0x60C990` (`g_StoryVars`, 128 script variables) |
 | `0x36190` | 1024 | `g_EventFlags` |
 | `0x36590` | 13 + 13 | `0x76F0F0`, `0x76F0E0` |
 | `0x365AC` | 1024 | `0x60B6E0` |

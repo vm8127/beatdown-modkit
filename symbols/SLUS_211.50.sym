@@ -22,7 +22,9 @@
 0013DF40 Criminal_AddCharisma
 0013DF60 Criminal_AddCashScore
 0013DFE0 Criminal_Recalc
+00172BD0 StoryVar_Add
 00176130 Fighter_FindNpcSlot
+0019F370 Debug_HeadStart
 001C5C00 MoveList_GetName
 001C5C30 MoveList_GetInput
 001C89A0 ScenePlayer_Main
@@ -152,6 +154,8 @@
 005FEA70 g_AttackLevelToRank
 005FEBD0 g_Party
 005FFDD8 g_PresetData
+005FFE30 g_DebugOverlayOn
+005FFE44 g_DebugOverlayPage
 0060A680 g_EventFlags
 0060B6E0 g_SaveBlock_365AC
 0060BAE0 g_SaveBlock_369AC
@@ -161,7 +165,7 @@
 0060C700 g_SystemData
 0060C704 g_Difficulty
 0060C710 g_Language
-0060C990 g_SaveBlock_36090
+0060C990 g_StoryVars
 0060CA90 g_SaveBlock_34EE0
 0060D16C g_Records
 0060D19C g_TotalMoneyEarned
