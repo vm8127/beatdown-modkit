@@ -1,6 +1,6 @@
 # Mod plan: negotiation menu on knockout
 
-Status: **test v1 built, untested** (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
+Status: **test v1 built and tested 2026-10-13; v2 (CANCEL = normal knockout) next** (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
 
 ## What the mod would do
 
@@ -74,10 +74,21 @@ What to check in PCSX2 (story mode, a 1-on-1 street fight with a Pride bar):
 4. Is there a way to back out of the menu (Triangle or X)? I didn't find a cancel in the code yet.
 5. A boss and a group fight: these should end as normal knockouts with no menu.
 
+## Test v1 results (PCSX2, 2026-10-13)
+
+Story mode, 1-on-1 street fight with Miles (Pride bar shown), from Daniel's save state. The knockout was forced by setting Miles to 1 HP and refilling Aaron's HP in memory.
+
+1. Knockout opens the NEGOTIATION menu: **yes**. Items are RECRUIT / ROB / INTERROGATE / BEATDOWN / CANCEL, with Miles lying KO'd.
+2. RECRUIT: normal recruit scene, then "Add Miles to the party / Keep on call"; Miles joined the party. ROB: "Hand over your money!", haul only $3 (maybe the empty-Pride branch, maybe Miles is poor). INTERROGATE: an info note (the wharf crane). These three end with the normal BATTLE RESULT screen (EXP 12).
+3. BEATDOWN: the finisher cutscene, then straight back to the street with Miles gone, no BATTLE RESULT; the star meter rose 21% to 79%. The fight did **not** resume with a 0-HP enemy, so that risk didn't happen.
+4. Backing out: **doesn't work**. CANCEL reopens the same menu with the cursor on RECRUIT; Triangle, Circle, Start and Select do nothing.
+5. Boss and group fights: not tested (no save state for one).
+
 ## What's left after the test
 
-- **Cancel = normal knockout.** If the menu has a cancel, send it to the kind 1 ending (step 1600). If it doesn't, decide with Daniel which button should do it.
-- **BEATDOWN** must keep its vanilla meaning. If resuming the fight with a 0-HP enemy misbehaves, give the enemy 1 HP back before the menu.
+- **Cancel = normal knockout.** The menu has a CANCEL item that currently loops back to the menu. In v2, CANCEL (only when the mod opened the menu) goes to the kind 1 ending (step 1600).
+- **BEATDOWN** already keeps its vanilla meaning (tested); no change needed.
+- Check why ROB paid only $3 (compare with a manual threaten on the same enemy).
 - Add a `bdkit.py` command if the hook needs parameters (it doesn't yet).
 
 ## Risks
