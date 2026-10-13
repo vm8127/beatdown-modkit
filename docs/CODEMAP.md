@@ -35,7 +35,7 @@ Other `codemap.py` commands: `commands` (a style's command table with damage), `
 
 | Range | What |
 |---|---|
-| `0x00100000-0x0016FFFF` | Sony libraries and libc (libpad, libmc, libcdvd, libmpeg, printf/scanf, memcpy `0x12BA38`, memset `0x12BBF0`) |
+| `0x00100000-0x0016FFFF` | Sony libraries and libc (libpad, libmc, libcdvd, libmpeg, printf/scanf, memcpy `0x12BA38`, memset `0x12BBF0`). Every function the SDK signatures identify is in `dumps/ps2_sdk_functions.tsv` |
 | `0x00170000-0x0040D880` | Game code. Rough neighbourhoods: people and money `0x138000-0x13E000`, Capcom memory card system `0x1D8000-0x1E2000`, XAF loading `0x29B000-0x29F000`, fighters, combat and AI `0x2A4000-0x325000`, ZenFS / ZenAudio (XPEC's file and sound layer) `0x34B000-0x34F000`, text `0x387000` |
 | `0x0040D880-0x005FE000` | Read-only data: tables listed in this file, strings |
 | `0x005FE000-0x00788180` | RAM globals (gp = `0x00604BF0`) |

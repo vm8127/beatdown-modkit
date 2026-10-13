@@ -1,5 +1,5 @@
 00100008 _start
-001107C8 printf
+001107C8 scePrintf
 0012BA38 memcpy
 0012BBF0 memset
 00138D20 Graph_FindName

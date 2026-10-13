@@ -59,6 +59,8 @@ All commands below are run from the top of the workspace.
 | `docs/MEMORY-MAP.md` | **Memory used by our cheats**: every address each cheat writes, the code caves (used and free), and which cheats can't be on together |
 | `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
 | `tools/ghidra/ExportDecompiled.py` | Ghidra script that writes the decompiled C of every function to `decomp/` (see "Ghidra") |
+| `tools/ghidra/ApplyPS2Signatures.py`, `ps2sigdb.py` | Name the Sony PS2 SDK library functions (sceCdRead, scePadRead, memcpy, sprintf...) by signature before the export (see "Ghidra") |
+| `dumps/ps2_sdk_functions.tsv` | The 707 Sony library functions the signatures find: address, name, library, size, strong or weak match (`ps2sigdb.py`) |
 | `ghidra/`, `decomp/` | Your local Ghidra project and its pseudocode export. Never committed: both are derived from the game's code. |
 | `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
 | `dumps/persons.txt` | All 602 person templates with level, HP, guard, attack rank and money (`codemap.py persons`) |
@@ -222,7 +224,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x00387980` | Look up a text string by ID |
 | `0x001C5C00` | Move name text for (style, move index), via the move list table |
 | `0x001C5C30` | Move input text for (style, move index), via the move list table |
-| `0x001107C8` | Debug print (probably printf) |
+| `0x001107C8` | `scePrintf`, Sony kernel debug print (libc `printf` is `0x0012CDF8`) |
 | `0x0013B490` | Fighter init `(slot, fighter_id, 0)`: reads the fighter table at `0x00413134`, copies the outfit preset |
 | `0x002A8720` | Outfit preset record `(preset, 1 = parts, 2 = params)` from CDATA.XAF entry 0 |
 | `0x0013CA80` | Fighter display name; hero presets (`0x18, 0x3F, 0x4E, 0x71, 0x73, 0x99-0x9D`) get the hero name |
@@ -250,10 +252,20 @@ Setup (Windows, done once; everything goes in `C:\Tools`):
 Import, name, analyze and export in one headless run, from this folder:
 
 ```
-C:\Tools\pyghidra-venv\Scripts\python C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py C:\Tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ExportDecompiled.py decomp
+C:\Tools\pyghidra-venv\Scripts\python C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py C:\Tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ApplyPS2Signatures.py -postScript ExportDecompiled.py decomp
 ```
 
-`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv`) names our known functions and tables before analysis, so the pseudocode uses those names. `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `C:\Tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
+`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv`) names our known functions and tables before analysis, so the pseudocode uses those names. `ApplyPS2Signatures.py` then names the Sony library functions (next section). `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `C:\Tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
+
+### Sony library signatures
+
+About 740 of the game's functions (`0x00100000-0x00133500`, plus the sound libraries near `0x348D88` and `0x3606B8`) are Sony's PS2 SDK 3.0 libraries, not game code. `ApplyPS2Signatures.py` finds them by signature and names them, so the pseudocode reads `sceCdRead`, `scePadRead`, `sceOpen`, `sceGsSyncV`, `memcpy`, `sprintf` instead of `FUN_0011xxxx`.
+- Signatures: the sce-symbol-scanner database (5,300 names from libkernl, libc, libgraph, libdma, libpad, libcdvd, libmc, libmpeg, libm, libgcc and more, built from PS2 games that shipped with debug symbols), as embedded in [PS2Recomp](https://github.com/ran-j/PS2Recomp) (GPL-3.0). The first run downloads it once (12 MB, [this file](https://raw.githubusercontent.com/ran-j/PS2Recomp/2c5fbb9389e11dd95693385969490c9e8e6f57b4/ps2xAnalyzer/include/ps2recomp/sce_symbol_database_data.h)) into `ghidra/sigdb/` and checks its SHA-256. With no internet on that PC, download that file by hand into `ghidra\sigdb\`.
+- How it matches: each library function's code is hashed with its relocated fields (call targets, addresses) masked out. A match with at least 256 fixed bits is "strong"; smaller ones ("weak") count only when unambiguous and from a library that also has strong matches. When several functions share the same code (`EnableIntc` and `DisableIntc`), what they call decides. Version tags in the ELF (`PsIIlibkernl3000`) say SDK 3.0, so 3.0 variants win ties.
+- What it changes: unnamed functions get the Sony name and the comment "PS2 SDK libpad (signature match)". Our own names from `symbols/symbols.tsv` always win. Library code that Ghidra had merged into its neighbour (about 70 functions) is split out into its own function. C library functions also get their prototypes from Ghidra's `generic_clib` archive.
+- Result: 707 functions named, listed in `dumps/ps2_sdk_functions.tsv`: libkernl 247 (threads, semaphores, SIF/RPC, file I/O `sceOpen`/`sceRead`/`sceLseek`, timers), libc 111, libmpeg 105, libm 40, 6 more that libc and libm share, libgcc 32, libpad 32, libcdvd 32, libmc 25, libdma 19, libgraph 18, libsein 16, libipu 7, libpkt 5, libspu2m 4, libsdr 4, gcc_wrapper 3, crt0 1. Another 37 places had several equally good candidates (`open`/`stat`/`unlink` are the same stub) and are left alone. Each Ghidra run writes what it applied, and those ambiguous places, to `ghidra/ps2_signatures.tsv`.
+- Without Ghidra: `python tools/ghidra/ps2sigdb.py ISO/SLUS_211.50 --known decomp/index.tsv --out dumps/ps2_sdk_functions.tsv` runs the same scan (`--ambiguous` lists the unresolved places).
+- `0x001107C8`, which we had called `printf`, is Sony's kernel debug print `scePrintf`; the C library's `printf` is `0x0012CDF8`.
 
 ## Mods so far
 
@@ -295,4 +307,4 @@ In the table above, "tested by Daniel" means played in his own game; "tested by 
 - **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See docs/CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.
 - **SCRIPT.XAF**: entries 0-999 are 964+ byte bytecode files and 1000+ are indexed event lists. The ELF has opcode names like `EXF_SET_SKILL`, `EXF_SET_MOTION` and `EXF_MOVE_STAGE` near `0x004101E8`.
-- **Ghidra**: set up on Daniel's PC (see "Ghidra" above). 6,855 of 6,856 functions are exported as pseudocode; rebuild it after adding many symbols so the new names show up.
+- **Ghidra**: set up on Daniel's PC (see "Ghidra" above). 6,855 of 6,856 functions are exported as pseudocode; rebuild it after adding many symbols so the new names show up. Sony library signatures added 2026-10-13 (`ApplyPS2Signatures.py`, 707 names); not run on Daniel's PC yet.

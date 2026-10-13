@@ -1,6 +1,6 @@
 # addr	kind	name	comment
 00100008	func	_start	ELF entry point
-001107c8	func	printf	debug print
+001107c8	func	scePrintf	Sony kernel debug print (also called kprintf; libc printf is 0x12CDF8)
 0012ba38	func	memcpy	(dst, src, size)
 0012bbf0	func	memset	(dst, byte, size)
 00138df0	func	Flags_SaveTo	copy 1024-byte event flag block to buffer

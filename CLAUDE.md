@@ -13,6 +13,7 @@ All tools read game files from `ISO/`, which holds the user's own disc unpacked 
 | `tools/bdkit.py` | Main CLI: ISO/XAF extraction, character and fighter tables, `swap-moveset`, `mix-moveset`, `swap-model`, `roster`, move lists, address conversion |
 | `tools/codemap.py` | Code map CLI: symbol exports, command tables with damage, hit records, person templates, motion scripts (`actions`), missing animations (`anim-check`), the addresses each cheat writes (`pnach-map`) |
 | `tools/ghidra/ExportDecompiled.py` | Ghidra script that exports the pseudocode to `decomp/` |
+| `tools/ghidra/ApplyPS2Signatures.py`, `ps2sigdb.py` | Name the Sony SDK library functions by signature before the export; `dumps/ps2_sdk_functions.tsv` lists them |
 | `docs/CODEMAP.md` | Where things are in the code (functions, tables, structs) |
 | `docs/MECHANICS.md` | What the stats and meters do, with formulas |
 | `docs/CUTCONTENT.md` | Cut content and unreachable code, with restore cheats |

@@ -3,7 +3,7 @@
 from ghidra.program.model.symbol import SourceType
 SYMS = [
     (0x00100008, 'func', '_start', 'ELF entry point'),
-    (0x001107C8, 'func', 'printf', 'debug print'),
+    (0x001107C8, 'func', 'scePrintf', 'Sony kernel debug print (also called kprintf; libc printf is 0x12CDF8)'),
     (0x0012BA38, 'func', 'memcpy', '(dst, src, size)'),
     (0x0012BBF0, 'func', 'memset', '(dst, byte, size)'),
     (0x00138D20, 'func', 'Graph_FindName', 'name -> GRAPH.XAF entry via g_GraphNames'),
