@@ -11,6 +11,10 @@ ISO/
 SLUS_211.50
 *.elf
 
+# Ghidra project and decompiled pseudocode: derived from the game's code
+/ghidra/
+/decomp/
+
 # Python
 __pycache__/
 *.pyc

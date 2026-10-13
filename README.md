@@ -56,6 +56,8 @@ All commands below are run from the top of the workspace.
 | `docs/ROSTER.md` | **Story roster**: recast the five story heroes (model, moves, HP bar name, starting stats) from one file, `mods/roster.json`, with `bdkit.py roster` |
 | `docs/PLAN-auto-negotiation.md` | **Mod plan (not built)**: open the negotiation menu (RECRUIT, ROB, INTERROGATE, BEATDOWN) automatically when you knock out an enemy you could negotiate with |
 | `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
+| `tools/ghidra/ExportDecompiled.py` | Ghidra script that writes the decompiled C of every function to `decomp/` (see "Ghidra") |
+| `ghidra/`, `decomp/` | Your local Ghidra project and its pseudocode export. Never committed: both are derived from the game's code. |
 | `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
 | `dumps/persons.txt` | All 602 person templates with level, HP, guard, attack rank and money (`codemap.py persons`) |
 | `dumps/characters.txt` | Every fighter: class row, address, body size, style, animation groups |
@@ -232,6 +234,24 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 - `SLUS_211.50` starts at ISO sector 1156876, so **ISO offset = 1156876 x 2048 + ELF offset**.
 - `python tools/bdkit.py addr 0x50D8B4` does both conversions.
 - PCSX2 pnach line for a 32-bit write: `patch=1,EE,2XXXXXXX,extended,VALUE`, where `XXXXXXX` is the address without its top digit. A `[Section name]` header makes it a cheat you can toggle under Game Properties, Cheats.
+
+## Ghidra (readable pseudocode)
+
+Ghidra turns the game's MIPS code into C-like pseudocode. It stays outside this folder; only the project (`ghidra/`) and the export (`decomp/`) live here, and git ignores both.
+
+Setup (Windows, done once; everything goes in `C:\Tools`):
+1. [Ghidra 12.1.4](https://github.com/NationalSecurityAgency/ghidra/releases) unzipped to `C:\Tools\ghidra_12.1.4_PUBLIC`.
+2. A JDK 21 ([Temurin](https://adoptium.net)) unzipped to `C:\Tools\jdk-21.0.12.1+1`, and `JAVA_HOME_OVERRIDE=C:\\Tools\\jdk-21.0.12.1+1` added to `support\launch.properties`. Ghidra 12 needs Java 21.
+3. Ghidra has no PS2 CPU built in, so add the [ghidra-emotionengine-reloaded](https://github.com/chaoticgd/ghidra-emotionengine-reloaded/releases) build for your exact Ghidra version: unzip it into `Ghidra\Extensions`. It adds the `r5900:LE:32:default` language (the MMI and VU0 instructions decode properly).
+4. PyGhidra, so Python scripts run: `py -3.13 -m venv C:\Tools\pyghidra-venv`, then `C:\Tools\pyghidra-venv\Scripts\python -m pip install --no-index -f C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\pypkg\dist pyghidra` (the wheels ship with Ghidra).
+
+Import, name, analyze and export in one headless run, from this folder:
+
+```
+C:\Tools\pyghidra-venv\Scripts\python C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py C:\Tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ExportDecompiled.py decomp
+```
+
+`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv`) names our known functions and tables before analysis, so the pseudocode uses those names. `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `C:\Tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
 
 ## Mods so far
 
