@@ -192,7 +192,7 @@ These are shown by the unused debug overlay `Debug_FighterInfo` `0x00302260`.
 
 ## Difficulty
 
-`0x0060C704`, 1 = EASY, 2 = NORMAL, 3 = HARD. It is a **hidden option**. The options menu items are 32-byte records; the DIFFICULTY record at `0x509D90` (label `0x5CF550`, text id `0x232D`) has default value 2 (byte `+20`), but bytes `+24` and `+27` are 0 where the visible SUBTITLES and MAP records (`0x509DB0`, `0x509DD0`) have 1. **Probably** one of those bytes shows the item; that would put DIFFICULTY back in the menu. Until then the game always plays on NORMAL, so the EASY and HARD values below are cut content. A pnach can also just set `0x0060C704`.
+`0x0060C704`, 1 = EASY, 2 = NORMAL, 3 = HARD. It is a **hidden option**. The options menu items are 32-byte records; the DIFFICULTY record at `0x509D90` (label `0x5CF550`, text id `0x232D`) has default value 2 (byte `+20`), but bytes `+24` and `+27` are 0 where the visible SUBTITLES and MAP records (`0x509DB0`, `0x509DD0`) have 1. Update (docs/CUTCONTENT.md): byte `+26` decides whether an item shows in the title-screen OPTIONS and `+27` in the pause-menu options (`Options_SetMode` `0x2E9590`). DIFFICULTY has `+26` = 1 and `+27` = 0, so by the code it should be in the title-screen OPTIONS and only missing from the pause menu; this still needs checking in-game. Until then the game always plays on NORMAL, so the EASY and HARD values below are cut content. A pnach can also just set `0x0060C704`.
 
 Everything indexed by it:
 

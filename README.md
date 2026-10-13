@@ -52,6 +52,7 @@ All commands below are run from the top of the workspace.
 | `docs/movesets.md` | **Moveset map**: every fighting style ID, who uses it, each fighter's body and move groups, which swaps work, and every style's move list with names and inputs |
 | `docs/CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
 | `docs/MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
+| `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
 | `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
 | `dumps/commands.txt` | Every style's command table: input, action ID, base damage and its address, move name (`codemap.py commands`) |
 | `dumps/persons.txt` | All 602 person templates with level, HP, guard, attack rank and money (`codemap.py persons`) |
@@ -231,6 +232,12 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | Aaron uses Raven's moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12) |
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
 | Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: works in-game with name and model (tested by Daniel, 2026-10-12) |
+| Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. See docs/CUTCONTENT.md |
+| Cut content: all six languages in the debug LANGUAGE menu | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Needs the DEBUG title cheat |
+| Cut content: developer debug mode (switch 5) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested |
+| Cut content: DIFFICULTY in the pause menu options | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. By the code DIFFICULTY is already in the title-screen OPTIONS; please check |
+| Aaron uses the cut TESTER moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Aaron cheat: one at a time |
+| Cut content: boxers use the short boxer style 0x1C | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested |
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory).
 
@@ -238,6 +245,7 @@ When adding a new mod, add a new `[section]` to that same pnach file, because PC
 
 - **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See docs/CODEMAP.md, "The command table". Frame data and which animation each action plays are still open.
 - **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See docs/CODEMAP.md.
+- **Cut content**: see docs/CUTCONTENT.md. Next: test the cheats, trace the other debug switches (8, 10, 16, 17, 18, 39), and find which GRAPH/SCRIPT/FSCENE entries are never loaded.
 - **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See docs/MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
 - **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See docs/CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.

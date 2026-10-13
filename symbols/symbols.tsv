@@ -113,7 +113,7 @@
 0076f100	data	g_EventList	SCRIPT.XAF event list buffer
 001db720	func	Save_BuildGameFile	calls SaveData_Pack before the memory card write
 001dd1f0	func	Load_ApplyGameFile	calls SaveData_Unpack after a memory card read
-00340c60	func	SaveLoadScreen	save/load screen state machine (also calls SaveData_Unpack)
+00340c60	func	VsMode_Main	VS MODE screen (title items VS MODE NORMAL/CUSTOM); calls VsMode_CharacterSelect/StageSelect and SaveData_Unpack. Was named SaveLoadScreen
 001d8ca0	func	MemCard_Step	memory card state machine, jump table 0x5CB2F0
 003340d0	func	Debug_ShopSelect	"[SELECT SHOP]" debug shop picker
 0060c704	data	g_Difficulty	byte in g_SystemData, indexes g_EnemyDamageByDifficulty
@@ -155,3 +155,26 @@
 0060d16c	data	g_Records	s32 counters shown on the RECORDS screen (1 on 1 wins, group wins, murders, fled...), see MECHANICS.md
 005d7d90	data	g_WeaponLossChance	two byte[4] tables {0,25,50,100}, {0,20,50,80} by weapon class (item +126)
 00509a20	data	g_MinHpByDifficulty	float[4] {0, 0.5, 0.2, 0.2}, fraction of max HP, probably what allies keep after a fight
+0033d7a0	func	Title_Main	title screen state machine (27 states, jump table 0x5D78B0)
+0033e980	func	Title_DrawMenu	draws the 5 title menu items
+00589680	data	g_TitleMenuItems	5 x {s16 element, s16 enabled, s16 action, s16 0}, then -1; action indexes g_TitleMenuJump
+00589710	data	g_TitleMenuDebugStrings	ASCII fallback labels (PRESS START BUTTON ... OPTIONS, DEBUG) used when a text id is 0
+00589740	data	g_TitleMenuTextIds	u16 text id per label index; index 7 (DEBUG) is 0
+00589760	data	g_TitleMenuElements	8 x 20 bytes {float x, float y, float scale, u16 label index, u16 0, u32 colour ptr}; element 7 = DEBUG at y 403
+005d7890	data	g_TitleMenuJump	6 handlers: NEW GAME, LOAD GAME, VS NORMAL, VS CUSTOM, OPTIONS (state 17), DEBUG (0x33DE38 -> DebugMenu_Main)
+00340220	func	DebugMenu_Main	cut DEBUG menu: SCENE PLAYER, LANGUAGE, EXIT (records 0x5899E0)
+00340020	func	DebugMenu_Draw	draws the DEBUG menu
+005899e0	data	g_DebugMenuItems	3 x 24 bytes {u32 scene func, float x, float y, float scale, u16 text id, u16 0, u32 colour ptr}
+001c89a0	func	ScenePlayer_Main	cutscene player (SELECT SCENE/PLAYER/LANGUAGE, PLAY, EXIT); reached from the DEBUG menu and from MOVIE VIEWER
+003b7400	func	DebugLanguage_Main	debug LANGUAGE screen: sets g_SystemData+0x10, cursor limited to 2 of 6 languages
+005ac3a0	data	g_LanguageNames	6 x {u16 text id 0x294D-0x2952, u16 0}: JAPANESE, ENGLISH, FRANCE, GERMANY, SPAIN, ITALY
+003404b0	func	VsMode_CharacterSelect	"CHARACTER SELECT"
+003409c0	func	VsMode_StageSelect	"STAGE SELECT"
+00589a40	data	g_VsRoster	84 fighter IDs ending -999 (heroes, bosses, enemies)
+00589a30	data	g_VsStages	7 stage ids ending -999
+00599000	data	g_DebugSwitches	48 x u32 compile-time switches, nothing writes them; 5 = developer debug mode
+0039ba00	func	Debug_GetSwitch	(n) -> g_DebugSwitches[n] != 0
+001d02b0	func	Pad_RemapButtons	raw pad bits -> game bits (Up 4, Down 8, Left 1, Right 2, Start 0x10, Select 0x20, Tri 0x40, X 0x80, Sq 0x100, O 0x200, L1 0x400, L2 0x800, R1 0x1000, R2 0x2000, L3 0x4000, R3 0x8000)
+00685450	data	g_Pad1	pad 1 state: +4 held, +8 newly pressed (game bits); pad 2 at 0x6854D0
+00509d90	data	g_OptionPages	option menu pages of 16 x 32-byte records, 0x200 apart; +20 default, +26 shown from the title screen, +27 shown from the pause menu
+002e9590	func	Options_SetMode	(0 = title screen, 1 = pause menu) -> gp-20216, picks byte +26 or +27 of each option record

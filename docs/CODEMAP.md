@@ -75,7 +75,7 @@ Where the multipliers come from, in `Fighter_Spawn` `0x00304B60`:
 - Enemies only: times `g_EnemyDamageByDifficulty[difficulty]` at `0x005D04F0` = `{1.0, 0.8, 1.0, 1.5}`.
 - HP = person `+0x54`, max HP = person `+0x4E` plus bonus `+0x382`, both capped at 9999. Tired meter max = 1.5 x max HP. The Pride Gauge (called guard here before; see MECHANICS.md) comes from person `+0x3A6` capped by the template's value (`Fighter_SetGuard` `0x2FB780`).
 
-A debug overlay, `Debug_FighterInfo` `0x00302260`, prints most of these (HP, DAMAGE, TIRED, REV, LENGTH, motion category such as "ATTACK DAMAGE"); it isn't reachable in normal play.
+A debug overlay, `Debug_FighterInfo` `0x00302260`, prints most of these (HP, DAMAGE, TIRED, REV, LENGTH, motion category such as "ATTACK DAMAGE"); it isn't reachable in normal play; developer debug switch 5 turns it on (see docs/CUTCONTENT.md).
 
 ## The command table: input to move to damage
 
@@ -231,10 +231,11 @@ The save is a plain copy of RAM, so a save editor only needs these offsets (whet
 
 Less mapped so far; pointers for the next pass:
 
-- **Save/load screens**: `SaveLoadScreen` `0x340C60`, memory card state machine `MemCard_Step` `0x1D8CA0` (jump table `0x5CB2F0`), `Save_BuildGameFile` `0x1DB720`, `Load_ApplyGameFile` `0x1DD1F0`.
+- **Save/load screens**: memory card state machine `MemCard_Step` `0x1D8CA0` (jump table `0x5CB2F0`), `Save_BuildGameFile` `0x1DB720`, `Load_ApplyGameFile` `0x1DD1F0`.
+- **Title, VS mode and debug menus**: `Title_Main` `0x33D7A0` (items `0x589680`, handlers `0x5D7890`), `VsMode_Main` `0x340C60` (earlier mislabeled SaveLoadScreen; calls `VsMode_CharacterSelect` `0x3404B0` and `VsMode_StageSelect` `0x3409C0`), the cut `DebugMenu_Main` `0x340220`, and the debug switch table `g_DebugSwitches` `0x599000`. See docs/CUTCONTENT.md.
 - **Shops**: the per-shop logic isn't found yet. Leads: the `SHOP_AD` entries near `0x423690`, a debug shop picker `Debug_ShopSelect` `0x3340D0` ("[SELECT SHOP]", "LEVEL : %d"), and a heap named "ShopGlobal" set up at `0x32FEE0`.
 - **Scripts**: `g_ScriptOpcodes` `0x00411ACC` names all 118 EXF script commands with argument counts (EXF_ADD_MONEY = 0x24, EXF_CHECK_MONEY = 0x2C, EXF_SET_SKILL = 0x39, EXF_ITEM_ADD = 0x17, EXF_ADD_DRESS = 0x62, ...). The interpreter that runs SCRIPT.XAF entries 0-999 isn't located yet; `Script_LoadEventList` `0x3A4F40` loads the event lists (entries 1000+).
-- **Text**: `Text_Get` `0x387980` (688 callers). CDATA.XAF entries 385-432 are 8 text banks x 6 languages: 385-390 UI and menus (ids `0x2328`-), 391-396 items, 397-402 move lists, 403-408 mission names, 409-414 partner lines, 415-420 (blank), 421-426 system messages (save prompts), 427-432 credits.
+- **Text**: `Text_Get` `0x387980` (688 callers). CDATA.XAF entries 385-432 are 8 text banks x 6 languages: 385-390 UI and menus (ids `0x2328`-), 391-396 items, 397-402 move lists, 403-408 mission names, 409-414 partner lines, 415-420 town rumours and hints ("There's a record store in town that doesn't sell records at all."), 421-426 system messages (save prompts), 427-432 credits.
 - **GRAPH.XAF names**: `g_GraphNames` `0x005AB0D0` gives a name to each of the 602 GRAPH.XAF entries (BA_PARTS01, ...), looked up by `Graph_FindName` `0x138D20`.
 
 ## Handy addresses for mods

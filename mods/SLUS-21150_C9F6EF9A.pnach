@@ -36,3 +36,38 @@ patch=1,EE,203E0160,extended,080AA1C8
 patch=1,EE,203E0164,extended,00000000
 patch=1,EE,2013B54C,extended,0C0F804C
 patch=1,EE,2013B55C,extended,0C0F804C
+
+[Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM)]
+author=Claude for Daniel
+description=Brings back the cut DEBUG item on the title menu. The third menu slot (VS MODE CUSTOM) gets action 5, which opens the developer menu at 0x00340220 (SCENE PLAYER, LANGUAGE, EXIT), and its label is switched to the leftover "DEBUG" string. VS MODE NORMAL still works. See docs/CUTCONTENT.md.
+patch=1,EE,2058969C,extended,00000005
+patch=1,EE,205897D0,extended,00000007
+
+[Cut content: all six languages in the debug LANGUAGE menu]
+author=Claude for Daniel
+description=The debug LANGUAGE screen (0x003B7400) only lets you pick JAPANESE or ENGLISH. This lets the cursor reach FRANCE, GERMANY, SPAIN and ITALY too; the disc has all six text banks. Use it together with the DEBUG title cheat.
+patch=1,EE,203B75F0,extended,28420006
+patch=1,EE,203B75D0,extended,24020005
+
+[Cut content: developer debug mode (switch 5)]
+author=Claude for Daniel
+description=Turns on developer debug switch 5 in the unused switch table at 0x00599000. Expected (from the code): a fighter info overlay in fights (hold L2 and click L3 to page through it), hold R1 to move faster, and hold L1+R1+Square to skip a collision check. See docs/CUTCONTENT.md.
+patch=1,EE,20599014,extended,00000001
+
+[Cut content: DIFFICULTY in the pause menu options]
+author=Claude for Daniel
+description=Marks the DIFFICULTY option (record 0x00509D90) as shown in the pause-menu options too (byte +27). By the code it is already shown in the title-screen OPTIONS. 1 = EASY, 2 = NORMAL, 3 = HARD.
+patch=1,EE,20509DA8,extended,01010100
+
+[Aaron uses the cut TESTER moveset (one Aaron cheat at a time)]
+author=Claude for Daniel
+description=Gives Aaron style 0x09, the developers' TESTER style: 67 commands mixing moves from many styles, with no MOVE LIST entry, and TESTER_M's animation groups (both medium bodies, so a plain swap). Turn on only one Aaron cheat at a time, and restart the game after switching.
+patch=1,EE,2050D8B4,extended,00000009
+patch=1,EE,2050D8BC,extended,0050D2E0
+
+[Cut content: boxers use the short boxer style 0x1C]
+author=Claude for Daniel
+description=Points BOXER_S, BOXER_M and BOXER_L at style 0x1C, one of eight short versions of the generic styles that no class row uses (Jab, Boxer Step, Punch Combo, Left Hook Combo, Uppercut Combo). They keep the boxer animation group 166, which has those moves.
+patch=1,EE,2050D6A4,extended,0000001C
+patch=1,EE,2050D6B4,extended,0000001C
+patch=1,EE,2050D6C4,extended,0000001C
