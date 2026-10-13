@@ -34,12 +34,10 @@ Max Pride is **not** the filter: 488 of the 602 person templates have 100 Pride 
 
 Defaults marked; each is a small switch in the patch.
 
-1. **Does Pride still matter?**
+1. **Does Pride still matter?** Settled: the default (Daniel, 2026-10-13).
    - **Default: a knockout counts as breaking Pride**, so the menu opens on every negotiable knockout. Simple and always works.
    - Strict: the menu opens only if Pride was already 0 when they went down; otherwise they just lose. Keeps the Pride mechanic, but the mod will trigger less often because Pride refills.
-2. **Group fights.**
-   - **Default: open on each negotiable knockout**, like threatening mid-fight does today. Needs a check in-game of what a success does to the enemies still standing.
-   - Last enemy only: the menu opens only when the final enemy drops.
+2. **Group fights.** Settled: Daniel says you can't threaten in group fights (up to 3 enemies). Because the mod reuses the game's own threaten check, group-fight knockouts stay normal knockouts. Confirm this when the check is traced.
 3. **Failed negotiation** ("TRY AGAIN?"). **Default: keep the vanilla retry**; answering NO (or cancelling) gives the normal knockout, same as CANCEL. Alternative: a fail goes straight to the normal knockout.
 
 ## How it would be built
@@ -74,5 +72,5 @@ Code areas to trace first:
 
 1. Trace the threaten button to the negotiation start and its availability check. Add names to `symbols/symbols.tsv` and CODEMAP.md.
 2. Trace where the knockout is decided.
-3. Build the hook as a test pnach section and try it in PCSX2: a street fight, a mission fight, a group fight, a boss.
+3. Build the hook as a test pnach section and try it in PCSX2: a street fight, a mission fight, a boss, and a group fight to confirm nothing happens there.
 4. Settle the three choices above, then add the section to `mods/` and the README mod list with test results.
