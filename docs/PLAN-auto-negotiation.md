@@ -84,6 +84,15 @@ Story mode, 1-on-1 street fight with Miles (Pride bar shown), from Daniel's save
 4. Backing out: **doesn't work**. CANCEL reopens the same menu with the cursor on RECRUIT; Triangle, Circle, Start and Select do nothing.
 5. Boss and group fights: not tested (no save state for one).
 
+## Probe for v2 (CANCEL), to run in PCSX2
+
+Statically the kind 0 choice dispatch (step 2, `0x002DEF2C`) is: choice 0 or 1 -> step 1000, 2 -> 1150, 3 -> 1200, 4 -> 1250, anything else -> 1000. The choice is the menu widget's result (`Talk_PollMenu` copies widget `+0xC` at `B+0xF8` to `B+0x94`; step 1 copies it to `B+0x58` and to the byte at `0x006004DC`). Where CANCEL loops back is not visible, so log it live. `B` = word at `0x005FFC6C`.
+
+1. With the menu open: 0x50 bytes at `0x005A90F0` (menu descriptor; `+0xC` is the Triangle/cancel item, `+8` the mode), words `B+0x28..B+0x44`, `B+0x6C` (talk kind).
+2. Widget at `B+0xEC`: halfwords `B+0xF4` (state), `B+0xF6` (cursor), `B+0xF8` (result), `B+0xFA` (item count). Note the cursor value for each visible label.
+3. Pick CANCEL and sample as often as possible for about 2 s: step `B+0x12` (halfword), `B+0x58`, `B+0x94`, byte `0x006004DC`, `B+0xF8`. Same for ROB (first few steps only).
+4. Does Triangle at the menu change any of these?
+
 ## What's left after the test
 
 - **Cancel = normal knockout.** The menu has a CANCEL item that currently loops back to the menu. In v2, CANCEL (only when the mod opened the menu) goes to the kind 1 ending (step 1600).
