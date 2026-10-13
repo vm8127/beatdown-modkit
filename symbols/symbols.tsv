@@ -19,7 +19,6 @@
 0013de00	func	Item_CodeToIndex	(item code, qty) used by Inventory_InitForHero; code = category*100 + n
 00176130	func	Fighter_FindNpcSlot	(personId) -> slot 2..12 or -1
 001c5c00	func	MoveList_GetName	(style, move index) -> text, via g_MoveListTable
-001c5c30	func	MoveList_GetInput	(style, move index) -> text, via g_MoveListTable
 001d1810	func	Boot_LoadModules	loads cdrom0:\MODULES\MODULE.BIN
 001da020	func	MemCard_SetupFiles	registers save dir BASLUS-21150XXX: system file 584 bytes, game file 0x36A74 bytes, icons
 001dd370	func	MemCard_PrintVersion	"CAPCOM RD3 Memory Card System Ver.1.11"
@@ -48,7 +47,6 @@
 002f8ba0	func	Fighter_GetHP
 002f8bb0	func	Fighter_GetMaxHP
 002f8bc0	func	Fighter_GetHPRatio
-002f8c00	func	Fighter_GetGuard	float at +0x4420; 0 means damage is ignored
 002f8c80	func	Fighter_GetPos	copies xyz at +0x2AC
 002f8dc0	func	Person_GetBody	body size from the class row
 002f8e00	func	Fighter_GetStyle	class row +4
@@ -59,7 +57,6 @@
 002f9be0	func	Fighter_IsPartyMember	true when the fighter's person is in g_Party
 002fb780	func	Fighter_SetGuard	(fighter, max, value)
 002fb880	func	Fighter_ApplyDamage	(fighter, dmg) HP -= dmg, floor 0; skipped while +0x471C bit 13 is set
-002fb8d0	func	Fighter_DamageReaction	uses per-style byte table 0x5D4250
 002fd300	func	Fighter_FindByPerson	(personId) -> fighter or 0, slots 0..12
 003020e0	func	Debug_PrintAt	debug text helper
 00302260	func	Debug_FighterInfo	debug overlay: HP, DAMAGE, TIRED, REV, LENGTH, motion category
@@ -92,7 +89,7 @@
 00515c10	data	g_StyleCommands	one pointer per style 0x01-0x24: list of {cond ptr, sequence ptr}, sequence ptr 0 ends
 00580a40	data	g_ActionHits	2004 pointers: per action, 16-byte hit records (+8 u16 base damage, +14 u16 flags)
 00582990	data	g_ActionEvents	2004 pointers: per action, 16-byte event records starting with a handler address
-005848e0	data	g_ActionScripts	2001 x {u32 header ptr, u32 bytecode ptr}, used by Fighter_SetAction
+005848e0	data	g_ActionScripts	2001 x {u32 motion script, u32 second stream}; Fighter_SetAction copies them to fighter +0x3FD4/+0x3FD8 (docs/ANIMATION.md)
 00589af0	data	g_CharTypeNames	52 string pointers (UNKNOWN, BOXER_S, ...)
 005ab0d0	data	g_GraphNames	602 x {u32 0, char* name}: names of GRAPH.XAF entries
 005cab40	data	g_MoveListTable	47 x {u16 first input text, u16 last, u16 first name text, u16 last}
@@ -191,9 +188,6 @@
 00216538	func	Unused_DmaGsUpload	library DMA/GS upload code nothing calls or points to; code cave for bdkit roster hooks
 0031b210	func	HpBar_Build	(side) builds one side's HP bar, one name line per team member; called from 0x3184D4; jal Fighter_DisplayName at 0x31B3E4 (hooked by bdkit roster)
 0013c5c0	func	Team_GetMember	(side, i) -> person id from the team lists 0x76EAC8 (side 0) / 0x76EAD0 (side 1), s16 ending -1
-002f8990	func	Fighter_IsAlive	HP > 0
-002f8c00	func	Fighter_GetGuard	float at +0x4420; 0 means damage is ignored
-002f8c00	func	Fighter_GetPride	(fighter) -> float fighter +0x4420
 002dd500	func	Battle_Update	battle state machine, state at g_Battle +0x10 (12 states, jump table 0x5CF240): 0 fight, 2 after a KO, 3-5 talk scene, 6 resume fight, 10 end
 002de540	func	Battle_RequestTalk	(fighter, kind) threaten button: allowed when the target is DOWN or GUARD, or during threaten grabs; sets g_Battle +0x144 bit 4, +0x60 = fighter, +0x5C = kind
 002de6e0	func	Battle_StartTalk	(kind) starts the talk scene: 0 = threaten (RECRUIT/ROB/INTERROGATE/BEATDOWN menu), 1 = after knocking out a non-boss, 3 = beg for your life
@@ -204,9 +198,25 @@
 002e37e0	func	Battle_IsStoryTalkBattle	story mode, not VS, g_Battle +0x144 bit 1; the empty-Pride x1.2 damage condition
 002e38d0	func	Battle_CanTalkAfterKO	(winner, loser) story battle, loser not a boss and not one of 8 ally person ids
 002e3a20	func	Battle_PrideHudShown	Pride bars shown: not VS, not flag 0x200, target's person +0x388 bit 31 clear, battle type (0x76EAA0) not 3
-002f8990	func	Fighter_IsAlive	HP > 0
-002f8c00	func	Fighter_GetPride	current Pride (float, fighter +0x4420)
 002f8c20	func	Fighter_GetPrideRatio	Pride / max Pride
 002fb120	func	Fighter_HasPride	1 when Pride is not 0
 00313f90	func	Fighter_PrideRegen	refills Pride from a timer after it hits 0
 005ffc6c	data	g_Battle	pointer to the battle context (gp-20356): +4/+8 the two sides' fighters, +0x10 state, +0x12 talk step, +0x60 winner/talker, +0x64 loser, +0x6C talk kind, +0x144 flags
+002dc1e0	func	Anim_ResetAll	frees every animation slot not marked resident, clears the group counts
+002dc280	func	Anim_SetSlot	(slot, data) stores a loaded animation; slot = anim id + 1
+002dc2e0	func	Anim_IsLoaded	(slot) -> g_AnimSlots[slot] != 0
+002dc300	func	Anim_GetSlot	(slot) -> animation data (+0xC float length)
+002dc790	func	Anim_UnloadGroup	(group) drops one reference, frees animations nobody else holds
+002dc880	func	Anim_UnloadGroupList	(9999-terminated group list)
+002dc990	func	Anim_UnloadClassGroups	(class row) unloads the row's group list
+002f0900	func	Fighter_PlayMotion	(fighter, anim id, start frame, end frame or -1, blend frames); motion id at +0x3FA4
+00301cd0	func	Action_LoadMtd	loads "%s/%04d.mtd" and registers it with Action_Register
+00301d80	func	Action_Register	fills g_ActionScripts/Hits/Events for one action from a loaded record (ref count 0x7228E0)
+00307e40	func	Fighter_StartAction	(fighter, action); negative ids go through the class row's remap table
+0031f650	func	Action_Next	(fighter, action) chain to the next action; -3 and other negatives are special cases
+0031fae0	func	Action_Step	runs the fighter's motion script (+0x3FD4) until it plays a motion or ends
+006c55f0	data	g_AnimSlots	u32[0x6D1]: loaded animation per slot (anim id + 1)
+006c7140	data	g_AnimSlotRefs	u8 per slot: how many loaded groups hold it
+006c7860	data	g_AnimGroupRefs	u8[317]: how many times each animation group is loaded
+006c79a0	data	g_AnimSlotResident	u8 per slot: loaded while the resident flag was on; Anim_ResetAll keeps it
+006c8080	data	g_ClassGroupBuf	copy of the group list Anim_LoadClassGroups is loading

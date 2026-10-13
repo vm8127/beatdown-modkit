@@ -1,6 +1,6 @@
 # Mod plan: negotiation menu on knockout
 
-Status: **v1 tested 2026-10-13; test v2 (CANCEL = normal knockout) built and tested the same day**. The pnach section is now `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). (pnach section `Negotiation menu on knockout (test v1)`). Plan first Written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
+Status: **done**. v1 and v2 were tested in PCSX2 on 2026-10-13, and Daniel tested v2 himself the same day: works as intended. The pnach section is `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). Not tried yet: a boss fight and a group fight (the code should leave both alone). Plan first written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
 
 ## What the mod would do
 

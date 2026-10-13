@@ -159,6 +159,13 @@ p = p + trunc(p x 0.2 x Technique level)                         player only
 
 A taunt (PROVOCATION) takes `Pride max x a factor` (`0x003114E0`; the factor comes from the taunt's data and wasn't traced).
 
+How negotiation runs in the code (traced and tested for the negotiation-on-knockout mod, docs/PLAN-auto-negotiation.md):
+
+- Pride bars, and so threatening, only exist when `Battle_PrideHudShown` `0x002E3A20` passes: not VS mode, game flag `0x0076EA90` bit 9 clear, the target's person `+0x388` bit 31 clear, and battle type `0x0076EAA0` not 3 (probably group fights; you can't threaten there).
+- The threaten button (`Battle_RequestTalk` `0x002DE540`) works when your target is down, guarding, or held in a threaten grab, and starts talk kind 0 (`Battle_StartTalk` `0x002DE6E0`). After a normal story knockout of a non-boss, the game plays talk kind 1 instead (`Battle_CanTalkAfterKO` `0x002E38D0`); kind 3 is "beg for your life".
+- The menu (descriptor `0x005990F0`) has RECRUIT 0, ROB 1, INTERROGATE 2, BEATDOWN 3, CANCEL 4. RECRUIT and ROB go to talk step 1000, INTERROGATE 1150, BEATDOWN 1200, CANCEL 1250 (resumes the fight). INTERROGATE and BEATDOWN check `Fighter_HasPride` `0x002FB120` on the target. BEATDOWN plays a finisher scene and skips BATTLE RESULT (seen in-game).
+- How much ROB pays isn't traced: Miles (Wharf street enemy) paid $3.
+
 What empty Pride does, from the game's text: when the gauge is 0 you can press the threaten button to NEGOTIATE; a successful negotiation wins the fight and can give money, info or a new ally (RECRUIT). If **you** lose with your Pride at 0, you get the "Beg for your life?" choice: you go back to the hospital or clinic but may get Trauma. **Probably**: the x1.2 damage on an empty-Pride defender in the damage formula is part of this.
 
 ## Other fight meters

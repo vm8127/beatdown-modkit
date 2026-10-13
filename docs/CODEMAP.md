@@ -2,7 +2,7 @@
 
 What the main program does and where, worked out by hand from the US release (no symbols in the ELF; compiler string: "MW MIPS C Compiler 2.4.1.01", i.e. Metrowerks CodeWarrior). All addresses are EE addresses as PCSX2 shows them. ELF offset = address - 0x100000 + 0x80.
 
-Status words used below: **confirmed** means the code was read and the data checked against something known (move names, hero stats, save file size). **Probably** means the name fits the code but wasn't proven. Nothing here has been tested in-game yet.
+Status words used below: **confirmed** means the code was read and the data checked against something known (move names, hero stats, save file size). **Probably** means the name fits the code but wasn't proven. Several of these were since confirmed in-game by the cheats built on them (class table, command lists, move list functions, fighter init, HP bar name, battle talk scenes; see README.md, "Mods so far"); the rest is from reading the code.
 
 ## Contents
 
@@ -29,7 +29,7 @@ Status words used below: **confirmed** means the code was read and the data chec
 | `ImportBeatdownSymbols.py` | Ghidra. Load `SLUS_211.50` at 0x00100000 (MIPS R5900, or the emotionengine-reloaded extension), then run it from the Script Manager. Creates functions, labels and plate comments. |
 | `beatdown_symbols.csv` | Anything else (spreadsheets, IDA, scripts). |
 
-Other `codemap.py` commands: `commands` (a style's command table with damage), `hits` (one action's hit records), `persons` (all 602 person templates). Their output for every style and person is in `dumps/commands.txt` and `dumps/persons.txt`.
+Other `codemap.py` commands: `commands` (a style's command table with damage), `hits` (one action's hit records), `persons` (all 602 person templates), `actions` (an action's motion script: which animations it plays), `anim-check` (animations a class's groups don't load), `pnach-map` (addresses each cheat writes, and overlaps). Their output for every style and person is in `dumps/commands.txt` and `dumps/persons.txt`.
 
 ## Memory map
 
@@ -52,6 +52,7 @@ Main RAM globals:
 | `0x005FEBD0` | g_Party | s16 person IDs of the party |
 | `0x005FFDD8` | g_PresetData | pointer to CDATA.XAF entry 0 once loaded |
 | `0x006CFB70` | g_Fighters | fighter structs, 0x4730 bytes each; slot 0 = player, NPCs use slots 2-12 |
+| `0x006C55F0` | g_AnimSlots | loaded animation per global animation id + 1 (ref counts at `0x006C7140`, group counts at `0x006C7860`); see docs/ANIMATION.md |
 
 ## Combat and damage
 
@@ -89,9 +90,11 @@ style ──> g_StyleCommands[style]          0x00515C10, one pointer per style 
 action ─> g_ActionHits[action]             0x00580A40, 2004 pointers: hit records (damage, see above)
        ─> g_ActionEvents[action]           0x00582990, 2004 pointers: 16-byte event records, each starting
                                            with a handler address (0x30BF10, 0x30BFA0, ...)
-       ─> g_ActionScripts[action]          0x005848E0, 2001 x { header ptr, bytecode ptr }
+       ─> g_ActionScripts[action]          0x005848E0, 2001 x { motion script ptr, second stream ptr }
                                            Fighter_SetAction 0x0031F120 loads these into the fighter
-                                           (+0x3FD4/+0x3FD8) and sets +0x4346 = action
+                                           (+0x3FD4/+0x3FD8) and sets +0x4346 = action; Action_Step
+                                           0x0031FAE0 runs the motion script (which animations play,
+                                           frame ranges): see docs/ANIMATION.md
 ```
 
 The matching is done by `Cmd_MatchSequence` `0x002A6720` (input history at `+0`, count at `+256`) and `Cmd_MatchSingle` `0x002A68B0`. A non-zero condition is a 16-byte record `{u16 move list index, then required stat levels}`; `Cmd_CheckCondition` `0x002A63A0` (fighter, condition) compares bytes `+2`.. with the fighter's stat levels from `0x002F8B40`, so these are the "learn at level" gates on hero moves (read from the code, not tested). They don't name a hero, so a command keeps working when copied into another style's list (`bdkit.py mix-moveset`). `Fighter_RemapAction` only touches negative action IDs, and command lists hold positive ones.
@@ -180,7 +183,8 @@ Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind 
 | `+0x004`, `+0x008` | person id |
 | `+0x018` | in use |
 | `+0x2AC` | position, float x3 |
-| `+0x3FD4`, `+0x3FD8` | current action header / bytecode |
+| `+0x3FA4` / `+0x3FA6` | current / previous animation (id + 1; the overlay's MOT) |
+| `+0x3FD4`, `+0x3FD8` | current action's motion script / second stream (docs/ANIMATION.md has the other motion fields) |
 | `+0x3FF8` | outfit slots (copy of the person's 792 bytes) |
 | `+0x432C` | held weapon item, -1 = none |
 | `+0x4346` | current action id |
@@ -258,7 +262,7 @@ Untested starting points. RAM values are rewritten by the game, so a pnach cheat
 
 ## Open leads
 
-- **Action event and script formats**: `g_ActionEvents` records start with a handler address (`0x30BF10` and `0x30BFA0` both call `Fighter_SetAction` on the fighter's `+0x4348`); `g_ActionScripts` bytecode is a stream of u16s that includes small numbers like `0x35` that look like animation slots. Decoding these gives frame data and which animation each action plays.
+- **Action event records and the second stream**: `g_ActionEvents` records start with a handler address (`0x30BF10` and `0x30BFA0` both call `Fighter_SetAction` on the fighter's `+0x4348`). The motion script is decoded (docs/ANIMATION.md, `codemap.py actions`); the second stream at `+0x3FD8` (starting `0x35, 1, ...`) and the event records probably hold the frame data.
 - **Hit record fields** other than damage (`+0` kind, `+4` maybe stun or knockback, `+10`, `+12`, `+14` flags).
 - **Script interpreter** for SCRIPT.XAF 0-999, so EXF commands can be traced to their handlers.
 - **Shops** (see above) and level-up / EXP code (strings "LEVEL: ", "EXP: " near `0x5B83F8`).

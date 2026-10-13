@@ -48,13 +48,15 @@ All commands below are run from the top of the workspace.
 | `CLAUDE.md` | How Claude works in this folder (rules, workflow) |
 | `ISO/` | Your unpacked disc. Never committed, never modified. |
 | `tools/bdkit.py` | Command-line tool (Python 3, no extra packages). Run `python tools/bdkit.py -h`. |
-| `tools/codemap.py` | Code map helpers: symbol exports, command tables with damage, person templates (`python tools/codemap.py -h`) |
+| `tools/codemap.py` | Code map helpers: symbol exports, command tables with damage, person templates, motion scripts (`actions`), missing-animation check (`anim-check`), which addresses each cheat writes (`pnach-map`). Run `python tools/codemap.py -h`. |
 | `docs/movesets.md` | **Moveset map**: every fighting style ID, who uses it, each fighter's body and move groups, which swaps work, and every style's move list with names and inputs |
 | `docs/CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
 | `docs/MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
 | `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
 | `docs/ROSTER.md` | **Story roster**: recast the five story heroes (model, moves, HP bar name, starting stats) from one file, `mods/roster.json`, with `bdkit.py roster` |
-| `docs/PLAN-auto-negotiation.md` | **Mod plan (not built)**: open the negotiation menu (RECRUIT, ROB, INTERROGATE, BEATDOWN) automatically when you knock out an enemy you could negotiate with |
+| `docs/PLAN-auto-negotiation.md` | **Negotiation on knockout** (built, tested): the plan, the battle and talk-scene code it hooks, and the test runs |
+| `docs/ANIMATION.md` | **Animation system**: animation groups and the global animation slots, action motion scripts (which animation each move plays, frame ranges), body remap tables, and what that means for moveset mods |
+| `docs/MEMORY-MAP.md` | **Memory used by our cheats**: every address each cheat writes, the code caves (used and free), and which cheats can't be on together |
 | `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
 | `tools/ghidra/ExportDecompiled.py` | Ghidra script that writes the decompiled C of every function to `decomp/` (see "Ghidra") |
 | `ghidra/`, `decomp/` | Your local Ghidra project and its pseudocode export. Never committed: both are derived from the game's code. |
@@ -196,11 +198,11 @@ For story heroes, prefer the **roster** (`docs/ROSTER.md`): `bdkit.py roster ISO
 
 ### Move lists (names and inputs)
 
-Table at `0x005CAB40`, 8 bytes per style, row = style - 1: `{u16 first input text, u16 last input text, u16 first name text, u16 last name text}` (`0xFFFF` = none; only style 0x09 TESTER). 47 rows cover styles `0x01`-`0x2F`: `0x1C`-`0x23` are short versions of the generic styles and `0x25`-`0x2F` are weapon lists, none of them used by a class row. The text lives in CDATA.XAF entries 397-402 (JP, EN, FR, DE, ES, IT), format `{u32 size, u16 count, u16 language, count x {u16 id, u16 len, u32 offset}}` then UTF-8 strings in full-width characters. Buttons in the inputs: 〆 punch, ◎ kick, ◇ guard, 4 action. `bdkit.py moves SLUS_211.50 CDATA.XAF 0x13` prints one style; `bdkit.py style-map SLUS_211.50 CDATA.XAF > movesets.md` regenerates the map. This is the in-game MOVE LIST screen; which animation each move plays is still unknown.
+Table at `0x005CAB40`, 8 bytes per style, row = style - 1: `{u16 first input text, u16 last input text, u16 first name text, u16 last name text}` (`0xFFFF` = none; only style 0x09 TESTER). 47 rows cover styles `0x01`-`0x2F`: `0x1C`-`0x23` are short versions of the generic styles and `0x25`-`0x2F` are weapon lists, none of them used by a class row. The text lives in CDATA.XAF entries 397-402 (JP, EN, FR, DE, ES, IT), format `{u32 size, u16 count, u16 language, count x {u16 id, u16 len, u32 offset}}` then UTF-8 strings in full-width characters. Buttons in the inputs: 〆 punch, ◎ kick, ◇ guard, 4 action. `bdkit.py moves SLUS_211.50 CDATA.XAF 0x13` prints one style; `bdkit.py style-map SLUS_211.50 CDATA.XAF > movesets.md` regenerates the map. This is the in-game MOVE LIST screen. Which animation each move plays is in its action's motion script: see docs/ANIMATION.md and `python tools/codemap.py actions ISO/SLUS_211.50 0x13`.
 
 ### Animation groups
 
-Table at `0x004FB4C0`, 8 bytes per group: `{s16 STAGE.XAF entry, s16 0, u32 pointer to s16 animation IDs ending in -1}`. Group N loads STAGE.XAF entry `stage_entry`, and the animations in that pack are numbered by the ID list in order. The loader is `0x002DC360`, and the per-fighter loop is `0x002DC550`. See `dumps/anim_groups.txt`.
+Table at `0x004FB4C0`, 8 bytes per group: `{s16 STAGE.XAF entry, s16 0, u32 pointer to s16 animation IDs ending in -1}`. Group N loads STAGE.XAF entry `stage_entry`, and the animations in that pack are numbered by the ID list in order. The loader is `0x002DC360`, and the per-fighter loop is `0x002DC550`. See `dumps/anim_groups.txt`. Animation IDs are global (one slot per ID at `0x006C55F0`, reference counted, so groups that share an ID load it once), and an action's motion script names the IDs it plays. Full description in docs/ANIMATION.md; `python tools/codemap.py anim-check ISO/SLUS_211.50 A 0xSTYLE` lists the animations a planned swap would be missing.
 
 ## Known code addresses
 
@@ -225,8 +227,8 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x002A8720` | Outfit preset record `(preset, 1 = parts, 2 = params)` from CDATA.XAF entry 0 |
 | `0x0013CA80` | Fighter display name; hero presets (`0x18, 0x3F, 0x4E, 0x71, 0x73, 0x99-0x9D`) get the hero name |
 | `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
-| `0x003E0130` | 20 unused zero words before the VU microcode. `swap-model` uses `0x003E0130`-`0x003E0164`; the negotiation-on-knockout mod uses `0x003E0168`-`0x003E017C` |
-| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to; code space for the roster hooks (from the start); the negotiation-on-knockout mod uses `0x00218F00`-`0x00218F40` at its end |
+| `0x003E0130` | 20 unused zero words before the VU microcode. `swap-model` uses `0x003E0130`-`0x003E0164`; the negotiation-on-knockout mod uses `0x003E0168`-`0x003E017C`. Full. |
+| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to: roster hooks `0x00216538`-`0x00216737`, mix-moveset `0x00217000`-`0x00218EFF`, negotiation-on-knockout `0x00218F00`-`0x00218F43`. Free: `0x00216738`-`0x00216FFF` and `0x00218F44`-`0x00218FEF`. See docs/MEMORY-MAP.md. |
 
 ## Addresses, offsets and patching
 
@@ -262,7 +264,7 @@ C:\Tools\pyghidra-venv\Scripts\python C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Featu
 | Aaron uses Jason G's moveset (keeps Aaron's medium body groups) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Daniel, 2026-10-12). Confirms `--keep-body` works for M-body heroes using L-body styles. |
 | Aaron uses Ignacy's moveset and Chester's model (all medium bodies; first model swap) | `mods/SLUS-21150_C9F6EF9A.pnach` | First version (Aaron's records set to Chester's preset) showed Chester but lost the HP bar name (Daniel, 2026-10-12). Replaced by the init hook, which keeps Aaron's preset number: works in-game with name and model (tested by Daniel, 2026-10-12) |
 | Story roster: Aaron is Chester with Ignacy's moves (built by `bdkit.py roster` from `mods/roster.json`; HP bar says Chester) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Replaces the older Aaron cheats: turn those off |
-| Negotiation menu on knockout (test v2) | `mods/SLUS-21150_C9F6EF9A.pnach` | v1 tested in PCSX2 2026-10-13 (Miles, 1-on-1 street fight): the menu opens on knockout and RECRUIT, ROB, INTERROGATE and BEATDOWN all work with no freezes. v2 tested 2026-10-13: CANCEL and Triangle after a knockout give the normal after-KO talk and BATTLE RESULT; ROB and BEATDOWN still work; a manual threaten's CANCEL still resumes the fight (Triangle now does that too).amp; Daniel tested it 2026-10-13: works as intended. See docs/PLAN-auto-negotiation.md |
+| Negotiation menu on knockout (test v2) | `mods/SLUS-21150_C9F6EF9A.pnach` | v1 tested in PCSX2 2026-10-13 (Miles, 1-on-1 street fight): the menu opens on knockout and RECRUIT, ROB, INTERROGATE and BEATDOWN all work with no freezes. v2 tested 2026-10-13: CANCEL and Triangle after a knockout give the normal after-KO talk and BATTLE RESULT; ROB and BEATDOWN still work; a manual threaten's CANCEL still resumes the fight (Triangle now does that too). Daniel tested v2 2026-10-13: works as intended. Group fights and bosses not tried yet (the code should leave them alone). See docs/PLAN-auto-negotiation.md |
 | Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): DEBUG menu, scene player and language select all work. See docs/CUTCONTENT.md, Test results |
 | Cut content: all six languages in the debug LANGUAGE menu | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): German gives German text and menu graphics. Needs the DEBUG title cheat; left/right picks, Cross confirms |
 | Cut content: developer debug mode (switch 5) | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): the 10-page fighter overlay works (hold L2 + press R2 to show it, hold L2 + click L3 to page). The R1 speed-up can't be used because R1 is grab |
@@ -270,17 +272,27 @@ C:\Tools\pyghidra-venv\Scripts\python C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Featu
 | Aaron uses the cut TESTER moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): TESTER's action IDs confirmed with the debug overlay. In VS mode Aaron starts with a knife, which uses knife moves until it's gone. Aaron cheat: one at a time |
 | Cut content: boxers use the short boxer style 0x1C | `mods/SLUS-21150_C9F6EF9A.pnach` | Style 0x1C works (tested by Claude in PCSX2 on a stand-in fighter, 2026-10-13); not yet seen on street boxers in story mode |
 
-When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory).
+When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory). Only one mixed-moveset cheat can be on at a time, because `mix-moveset` always uses the same code space. Everything else can be combined; `python tools/codemap.py pnach-map mods/SLUS-21150_C9F6EF9A.pnach` prints every cheat's addresses and any overlaps, and docs/MEMORY-MAP.md has the full table.
 
-**Widescreen patch:** PCSX2's bundled "Widescreen 16:9" patch (ElHecht, pnach NTSC-U by Arapapa; Game Properties, Patches) is safe to use with every cheat here. It writes only three words, `0x375388`, `0x375394` and `0x37539C` (horizontal FOV code placed in unused zero words), plus `gsaspectratio=16:9`. None of our cheats write anywhere near those (our nearest writes are `0x31B3E4` and `0x3B75D0`; the code caves are at `0x3E0130`-`0x3E017C`). Checked 2026-10-13 against PCSX2/pcsx2_patches `SLUS-21150_C9F6EF9A.pnach`; not yet tested together in-game.
+### Testing a cheat in PCSX2
+
+1. Copy `mods/SLUS-21150_C9F6EF9A.pnach` to `C:\Games\Emu\PCSX2\cheats` (after a `git pull` in this folder).
+2. In PCSX2, right-click the game, Properties, Cheats, and tick the section. A renamed section (say "test v1" to "test v2") has to be ticked again.
+3. Restart the game. Turn off the other cheats that write the same addresses.
+4. For moveset work, the developer overlay (cheat "Cut content: developer debug mode (switch 5)": hold L2 + press R2, hold L2 + click L3 to page) shows the current action (`TASK`) and animation (`MOT`).
+5. A save state next to the thing you're testing saves a lot of walking: street enemies with a Pride bar for the negotiation mod, a VS fight for movesets.
+
+In the table above, "tested by Daniel" means played in his own game; "tested by Claude" means checked in a separate copy of PCSX2 on his PC.
+
+**Widescreen patch:** PCSX2's bundled "Widescreen 16:9" patch (ElHecht, pnach NTSC-U by Arapapa; Game Properties, Patches) is safe to use with every cheat here. It writes only three words, `0x375388`, `0x375394` and `0x37539C` (horizontal FOV code placed in unused zero words), plus `gsaspectratio=16:9`. None of our cheats write anywhere near those (our nearest writes are `0x31B3E4` and `0x3B75D0`; the code caves are at `0x3E0130`-`0x3E017F` and `0x216538`-`0x218FEF`; full list in docs/MEMORY-MAP.md). Checked 2026-10-13 against PCSX2/pcsx2_patches `SLUS-21150_C9F6EF9A.pnach`; not yet tested together in-game.
 
 ## Open questions and next targets
 
-- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See docs/CODEMAP.md, "The command table". The style is read live from the class row, so changing it mid-fight changes the next move. Which animation each action plays is now readable in-game: with the switch 5 cheat, the overlay's TASK line is the action ID and MOT the motion ID. Frame data is still open.
+- **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, each action has hit records with its base damage, and a motion script that names the animations it plays and their frame ranges. See docs/CODEMAP.md, "The command table", and docs/ANIMATION.md. The style is read live from the class row, so changing it mid-fight changes the next move. Frame data (when a hit is active) is still open: probably the action's second stream or event records.
 - **Fighter stats**: found (HP, level, attack rank, money in the person templates at `0x00413130` and person records at `0x0060D360`). See docs/CODEMAP.md.
 - **Cut content**: see docs/CUTCONTENT.md. All six cheats are tested. Next: try switch 18 (debug head start, on a new game) and switch 17 (controller 2 drives enemies) in story mode, trace switches 16 and 39, see the short boxer style on real street boxers, and find which GRAPH/SCRIPT/FSCENE entries are never loaded.
 - **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See docs/MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
 - **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See docs/CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.
 - **SCRIPT.XAF**: entries 0-999 are 964+ byte bytecode files and 1000+ are indexed event lists. The ELF has opcode names like `EXF_SET_SKILL`, `EXF_SET_MOTION` and `EXF_MOVE_STAGE` near `0x004101E8`.
-- **Ghidra**: couldn't be downloaded in Claude's environment. If you install it locally with the `ghidra-emotionengine-reloaded` extension, load `ISO/SLUS_211.50` at `0x00100000` and import the addresses above as labels.
+- **Ghidra**: set up on Daniel's PC (see "Ghidra" above). 6,855 of 6,856 functions are exported as pseudocode; rebuild it after adding many symbols so the new names show up.
