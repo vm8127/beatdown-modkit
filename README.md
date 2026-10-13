@@ -249,6 +249,8 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory).
 
+**Widescreen patch:** PCSX2's bundled "Widescreen 16:9" patch (ElHecht, pnach NTSC-U by Arapapa; Game Properties, Patches) is safe to use with every cheat here. It writes only three words, `0x375388`, `0x375394` and `0x37539C` (horizontal FOV code placed in unused zero words), plus `gsaspectratio=16:9`. None of our cheats write anywhere near those (our nearest writes are `0x31B3E4` and `0x3B75D0`; the code caves are at `0x3E0130`-`0x3E017C`). Checked 2026-10-13 against PCSX2/pcsx2_patches `SLUS-21150_C9F6EF9A.pnach`; not yet tested together in-game.
+
 ## Open questions and next targets
 
 - **What a style ID controls.** Found: the style picks a command list (`0x00515C10`) that turns inputs into action IDs, and each action has hit records with its base damage. See docs/CODEMAP.md, "The command table". The style is read live from the class row, so changing it mid-fight changes the next move. Which animation each action plays is now readable in-game: with the switch 5 cheat, the overlay's TASK line is the action ID and MOT the motion ID. Frame data is still open.
