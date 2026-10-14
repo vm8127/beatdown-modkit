@@ -39,12 +39,14 @@ void *Preset_Get(int preset, int part);  /* 0x002a8720 */
 void Fighter_AssignPerson(int slot, int person_id);  /* 0x002a89d0 */
 void Person_RecalcMaxHP(int person_id);  /* 0x002afd60 */
 void Battle_AddBonusExp(int n);  /* 0x002b2660 */
+void Jobs_ResetAll(void);  /* 0x002c8f40 */
 int Anim_IsLoaded(int slot);  /* 0x002dc2e0 */
 void *Anim_GetSlot(int slot);  /* 0x002dc300 */
 int Anim_UnloadGroup(int group);  /* 0x002dc790 */
 void Anim_UnloadGroupList(int *groups);  /* 0x002dc880 */
 void Battle_StartTalk(int kind);  /* 0x002de6e0 */
 void Battle_OnFighterDown(Fighter *fighter, int flag);  /* 0x002e2f60 */
+int Location_Current(void);  /* 0x002e7a50 */
 void Fighter_PlayMotion(Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames);  /* 0x002f0900 */
 s16 Fighter_RemapAction(Fighter *fighter, int action);  /* 0x002f8a30 */
 s16 Fighter_RemapActionNeg(Fighter *fighter, int action);  /* 0x002f8a60 */
@@ -58,6 +60,7 @@ void Fighter_GetPos(Fighter *fighter, f32 *xyz);  /* 0x002f8c80 */
 int Fighter_GetStyle(Fighter *fighter);  /* 0x002f8e00 */
 Person *Fighter_GetPerson(Fighter *fighter);  /* 0x002f9250 */
 PersonDef *Fighter_GetPersonDef(Fighter *fighter);  /* 0x002f9260 */
+int Fighter_HeroId(Fighter *fighter);  /* 0x002f9a80 */
 int Person_IsBoss(Fighter *fighter);  /* 0x002f9f30 */
 int Fighter_IsAttacking(Fighter *fighter);  /* 0x002fa150 */
 int Fighter_IsReeling(Fighter *fighter);  /* 0x002fa170 */
@@ -67,6 +70,7 @@ void Fighter_SetGuard(Fighter *fighter, int max, f32 value);  /* 0x002fb780 */
 void Fighter_ApplyDamage(Fighter *fighter, int damage);  /* 0x002fb880 */
 void Fighter_SubPride(Fighter *fighter, int amount);  /* 0x002fbae0 */
 Fighter *Fighter_FindByPerson(int person_id);  /* 0x002fd300 */
+int Area_Current(void);  /* 0x002fd630 */
 void Fighter_Spawn(int slot, int target, int team);  /* 0x00304b60 */
 void Fighter_StartAction(Fighter *fighter, int action);  /* 0x00307e40 */
 void Combat_TakeHit(Fighter *fighter);  /* 0x0030dfd0 */
@@ -78,6 +82,9 @@ void Fighter_SetAction(Fighter *fighter, int action);  /* 0x0031f120 */
 int Action_Next(Fighter *fighter, int action);  /* 0x0031f650 */
 void Action_Step(Fighter *fighter);  /* 0x0031fae0 */
 const char *Text_Get(int text_id, int zero);  /* 0x00387980 */
+int Criminal_Rank(int which);  /* 0x003937c0 */
+int Hero_StartEncounter(int hero);  /* 0x003964f0 */
+int Hero_CanMeet(int hero);  /* 0x00398ba0 */
 int Debug_GetSwitch(int n);  /* 0x0039ba00 */
 Fighter *Script_FighterByPerson(int person_id);  /* 0x0039bca0 */
 int ScriptVM_Init(ScriptVM *vm, void *script, void *regs);  /* 0x0039bd20 */
@@ -292,6 +299,7 @@ int Mission_RaiseEvent(u32 bits, int on);  /* 0x003a3b30 */
 void MissionMgr_SetFlags(u32 bits, int on);  /* 0x003a3be0 */
 void Mission_ResetState(int mission);  /* 0x003a4020 */
 int Mission_Current(void);  /* 0x003a4400 */
+void Jobs_ResetRun(void);  /* 0x003a4450 */
 void Mission_SetResult(int mission, int result);  /* 0x003a47d0 */
 int Job_GetResult(int job);  /* 0x003a4890 */
 int Job_IndexOf(int mission);  /* 0x003a4970 */
@@ -299,7 +307,8 @@ int Mission_IsJob(int mission);  /* 0x003a4a30 */
 int Jobs_PercentCleared(void);  /* 0x003a4a70 */
 int Battle_ScriptResult(void);  /* 0x003a5350 */
 int Mission_Unavailable(int mission, int chapter, int percent);  /* 0x003b02c0 */
-int MissionRank_Get(void);  /* 0x003df540 */
+void ClearCount_Inc(void);  /* 0x003df520 */
+int ClearCount_Get(void);  /* 0x003df540 */
 extern ScriptOpInfo g_ScriptOpcodes[204];  /* 0x00411ac0 */
 extern PersonDef g_PersonDefs[602];  /* 0x00413130 */
 extern ItemDef g_ItemTable[488];  /* 0x004f2400 */
@@ -316,6 +325,7 @@ extern void *g_AutoMissionChecks[26];  /* 0x0059a9a0 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
 extern ScriptOpHandler g_ScriptOpHandlers[204];  /* 0x005dacf0 */
+extern u8 g_PhoneOrderAllies[16];  /* 0x005db360 */
 extern Job g_Jobs[50];  /* 0x005db470 */
 extern u32 g_JobListA[34];  /* 0x005db6d0 */
 extern u32 g_JobListB[16];  /* 0x005db760 */
@@ -325,6 +335,7 @@ extern s16 g_Party[4];  /* 0x005febd0 */
 extern Battle *g_Battle;  /* 0x005ffc6c */
 extern Preset *g_PresetData;  /* 0x005ffdd8 */
 extern u8 g_EventFlags[1024];  /* 0x0060a680 */
+extern s32 g_ClearCount;  /* 0x0060badc */
 extern s32 g_StoryChapter;  /* 0x0060be10 */
 extern Inventory g_Inventory;  /* 0x0060bef0 */
 extern SystemData g_SystemData;  /* 0x0060c700 */

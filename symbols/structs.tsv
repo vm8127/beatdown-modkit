@@ -214,7 +214,7 @@ Job	0x8	u32	description	text id
 
 MissionReq	size	0x4		g_MissionReq entry, per mission id
 MissionReq	0x0	u16	chapters	bit n = allowed in story chapter n (g_StoryChapter)
-MissionReq	0x2	u8	min_rank	minimum MissionRank_Get (0x0060BADC)
+MissionReq	0x2	u8	min_clears	minimum times the game was finished (g_ClearCount)
 MissionReq	0x3	u8	min_percent	minimum % of jobs cleared (Jobs_PercentCleared)
 
 Mission	size	0x110		one g_MissionMgr slot: a running mission or event script

@@ -289,7 +289,9 @@ Found in the UI text (CDATA.XAF entry 386) but not traced in code yet:
 
 - **Status effects**: BAD TRIP (from drinking or cheap or experimental medicine; wears off with time or movement) and TRAUMA (from begging for your life; wears off with time or activity, or at once by beating the person who caused it). People refuse to deal with you while Traumatized. HEAL STATUS at a hospital or clinic cures both, and "dizzy".
 - **Being spotted**: a percentage chance of being recognised that disguises (clothes, haircuts, plastic surgery) lower; over 100% you are spotted for sure. Hats aren't included in the shown number. Police recognise wanted criminals.
-- **Ally skills**: PICKPOCKET, LOCKPICK, sells dope, MARTIAL ARTIST, CAR THIEF (shown in the ally list; set by script command EXF_SET_SKILL): bits of person `+0x388` (`EXF_SET_SKILL person, bit, on`); `EXF_CHECK_ABILITY` tests bits 0, 1, 2, 7, 4, 5 and 31 across the party (docs/SCRIPTS.md). Which bit is which skill isn't matched yet.
+- **Ally skills**: PICKPOCKET, LOCKPICK, sells dope, MARTIAL ARTIST, CAR THIEF (shown in the ally list; set by script command EXF_SET_SKILL): bits of person `+0x388` (`EXF_SET_SKILL person, bit, on`); `EXF_CHECK_ABILITY` tests bits 0, 1, 2, 7, 4, 5 and 31 across the party (docs/SCRIPTS.md). Which bit is which skill isn't matched yet; the skill names are text 14532-14535 (PICKPOCKET, MARTIAL ARTIST, Specialty:, CAR THIEF).
+- **Criminal Level ranks**: `Criminal_Rank` `0x003937C0` (1 Leadership, 2 Cash Flow, 3 Charisma) turns a 0-255 score into a rank: 0-20 = 0, 21-60 = 1, 61-100 = 2, 101-140 = 3, 141-190 = 4, 191-240 = 5, 241-255 = 6. Meeting the other heroes needs rank 2 (docs/UNLOCKS.md).
+- **Game clears**: `g_ClearCount` `0x0060BADC` counts finished playthroughs (the ending adds 1); job 45 and events 0x5B, 0x5C need 1, 2 and 3. The playthrough after the ending keeps your money and the jobs-ever-cleared bits.
 - **Items** (CDATA.XAF entry 392): CHICKEN restores all Pride and 1000 health, TURKEY restores all Pride and health, a PRIDE +16 item, an "increase attack power by 16" item, HEATDOWN, and fake cash that raises negotiation skill.
 
 ## Mod cheat sheet

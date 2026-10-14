@@ -526,11 +526,11 @@ _Static_assert(sizeof(Job) == 0xc, "sizeof Job");
 /* g_MissionReq entry, per mission id */
 struct MissionReq {
     u16 chapters;  /* +0x0 bit n = allowed in story chapter n (g_StoryChapter) */
-    u8 min_rank;  /* +0x2 minimum MissionRank_Get (0x0060BADC) */
+    u8 min_clears;  /* +0x2 minimum times the game was finished (g_ClearCount) */
     u8 min_percent;  /* +0x3 minimum % of jobs cleared (Jobs_PercentCleared) */
 };
 _Static_assert(__builtin_offsetof(MissionReq, chapters) == 0x0, "MissionReq.chapters");
-_Static_assert(__builtin_offsetof(MissionReq, min_rank) == 0x2, "MissionReq.min_rank");
+_Static_assert(__builtin_offsetof(MissionReq, min_clears) == 0x2, "MissionReq.min_clears");
 _Static_assert(__builtin_offsetof(MissionReq, min_percent) == 0x3, "MissionReq.min_percent");
 _Static_assert(sizeof(MissionReq) == 0x4, "sizeof MissionReq");
 

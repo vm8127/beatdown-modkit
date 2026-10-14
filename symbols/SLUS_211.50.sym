@@ -30,10 +30,13 @@
 0013DF40 Criminal_AddCharisma
 0013DF60 Criminal_AddCashScore
 0013DFE0 Criminal_Recalc
+0013EB30 Hero_ScaleToPlayer
+0013FC50 JobMenu_Open
 00172BD0 StoryVar_Add
 00172E10 StoryVar_Sub
 00176130 Fighter_FindNpcSlot
 0019F370 Debug_HeadStart
+001BAC80 Appearance_UpdateFlags
 001C5BA0 MoveList_Count
 001C5BF0 MoveList_NameText
 001C5C00 MoveList_GetName
@@ -59,12 +62,14 @@
 002A85B0 Person_CheckOutfit
 002A8720 Preset_Get
 002A89D0 Fighter_AssignPerson
+002AE7A0 Ending_Task
 002AF450 Criminal_GetTitle
 002AF640 Criminal_GetTitleCategory
 002AFD60 Person_RecalcMaxHP
 002AFEE0 Battle_CalcExp
 002B00F0 Battle_GiveExp
 002B2660 Battle_AddBonusExp
+002C8F40 Jobs_ResetAll
 002DC1E0 Anim_ResetAll
 002DC280 Anim_SetSlot
 002DC2E0 Anim_IsLoaded
@@ -85,6 +90,7 @@
 002E37E0 Battle_IsStoryTalkBattle
 002E38D0 Battle_CanTalkAfterKO
 002E3A20 Battle_PrideHudShown
+002E7A50 Location_Current
 002E9590 Options_SetMode
 002F0900 Fighter_PlayMotion
 002F8990 Fighter_IsAlive
@@ -103,6 +109,7 @@
 002F9250 Fighter_GetPerson
 002F9260 Fighter_GetPersonDef
 002F9930 Person_GetHeroDefId
+002F9A80 Fighter_HeroId
 002F9BE0 Fighter_IsPartyMember
 002F9F30 Person_IsBoss
 002FA150 Fighter_IsAttacking
@@ -114,6 +121,7 @@
 002FB8D0 Fighter_PrideDamage
 002FBAE0 Fighter_SubPride
 002FD300 Fighter_FindByPerson
+002FD630 Area_Current
 00301CD0 Action_LoadMtd
 00301D80 Action_Register
 003020E0 Debug_PrintAt
@@ -133,6 +141,7 @@
 0031FAE0 Action_Step
 003255D0 Dialogue_RunEntry
 003340D0 Debug_ShopSelect
+0033ACC0 Talk_CurrentPerson
 0033AD00 Message_Start
 0033B3C0 Message_Task
 0033BA70 Message_Step
@@ -156,6 +165,12 @@
 0034EA50 zenGetIOPReply
 00387760 Text_LoadLanguage
 00387980 Text_Get
+0038B4A0 Story_AreaEvents2
+0038CE00 Story_AreaEvents
+003937C0 Criminal_Rank
+003964F0 Hero_StartEncounter
+00398A60 Hero_HintState
+00398BA0 Hero_CanMeet
 0039A3E0 Script_MessageBusy
 0039BA00 Debug_GetSwitch
 0039BAA0 Script_UsesRegArgs
@@ -256,6 +271,7 @@
 003A05E0 ScrOp_EXF_CHECK_ARREST
 003A0820 ScrOp_EXF_REMOVE
 003A08A0 ScrOp_EXF_EVSTAGE
+003A08D0 Job_PhoneOrdersCaller
 003A0A80 ScrOp_EXF_KILL_CHR
 003A0B50 ScrOp_EXF_GET_PARTY_ID
 003A0C30 ScrOp_EXF_BAININ
@@ -376,6 +392,7 @@
 003A3C40 Mission_FreeSlot
 003A4020 Mission_ResetState
 003A4400 Mission_Current
+003A4450 Jobs_ResetRun
 003A45B0 JobList_Build
 003A47D0 Mission_SetResult
 003A4890 Job_GetResult
@@ -395,7 +412,9 @@
 003B08A0 Mission_FlagTrigger
 003B7400 DebugLanguage_Main
 003C0D50 Ability_ApplyAttack
-003DF540 MissionRank_Get
+003D5860 Ending_NewGame
+003DF520 ClearCount_Inc
+003DF540 ClearCount_Get
 003E0130 CodeCave_SwapModel
 00411AC0 g_ScriptOpcodes
 00413130 g_PersonDefs
@@ -435,6 +454,7 @@
 005D7890 g_TitleMenuJump
 005D7D90 g_WeaponLossChance
 005DACF0 g_ScriptOpHandlers
+005DB360 g_PhoneOrderAllies
 005DB470 g_Jobs
 005DB6D0 g_JobListA
 005DB760 g_JobListB
@@ -450,9 +470,10 @@
 005FFE44 g_DebugOverlayPage
 0060A680 g_EventFlags
 0060B6E0 g_SaveBlock_365AC
+0060BADC g_ClearCount
 0060BAE0 g_SaveBlock_369AC
 0060BE10 g_StoryChapter
-0060BE50 g_SaveBlock_35FF4
+0060BE50 g_Appearance
 0060BEF0 g_Inventory
 0060C700 g_SystemData
 0060C704 g_Difficulty

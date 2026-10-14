@@ -79,10 +79,10 @@ Life of a mission:
 | **A story flag gets set** | `Mission_FlagTrigger` `0x003B08A0` watches trigger records `{state ptr, s16 flag, u8 mission, u8 step}`; when the flag is set it starts the mission (and clears it again afterwards) | several story and timed missions |
 | **Story code** | direct `Mission_Start` calls: 0x90 (`0x0038B4A0`, also from save loading), 7 (`0x0038CE00`), 0x57 and 0x75 (the field loop `0x002C97F0`) | story chapters |
 
-**Requirements.** `Mission_Unavailable(id, chapter, percent)` `0x003B02C0` returns 0 when `g_MissionReq[id]` `0x0059A750` (`MissionReq`, 4 bytes per id) allows it:
+**Requirements.** `Mission_Unavailable(id, chapter, percent)` `0x003B02C0` returns 0 (docs/UNLOCKS.md lists every job's conditions) when `g_MissionReq[id]` `0x0059A750` (`MissionReq`, 4 bytes per id) allows it:
 
 - `chapters`: bit n set = allowed while `g_StoryChapter` `0x0060BE10` is n. That word is compared with 1, 5 and 11 by story code and the masks use bits 1-10, so it is very probably the story chapter; the side jobs open in chapters 6-10.
-- `min_rank`: at least this value of `MissionRank_Get` (the u32 at `0x0060BADC`, meaning unknown; only mission 0x5B, 0x5C and 0x84 use it).
+- `min_clears`: the game must have been finished at least this many times (`g_ClearCount` `0x0060BADC`, incremented by the ending, `ClearCount_Get`): job 0x54 needs 1, events 0x5B and 0x5C need 2 and 3.
 - `min_percent`: at least this % of the 50 jobs ever cleared (`Jobs_PercentCleared` `0x003A4A70`): 0, 20, 40 or 60.
 
 plus special cases in the same function (0x4E, 0x4F, 0x50, 0x54, 0x75 check the party or the player's sex; a list of missions is blocked while `0x006004B8` counts down after another one).
@@ -365,7 +365,9 @@ Bernard is person 200; his flags are 0x800-0x809 (mission 1's range).
 
 ## Open questions
 
-- What `MissionRank_Get` (`0x0060BADC`) counts.
+See also docs/UNLOCKS.md for the job and hero conditions.
+
+
 - Event codes 2, 3, 5 and 8 in detail; where `Mission_FlagTrigger` records come from.
 - Which NPC or menu offers job list A or B (`0x00141E30` is the menu that calls `Mission_Start`).
 - `g_StoryVars`: the `EXF_ITEM_*` and `EXF_BAININ` commands use it as item stock (letters as indexes, capped at 99, a total budget of 200), so it may hold dealer and key-item counts rather than plot variables.

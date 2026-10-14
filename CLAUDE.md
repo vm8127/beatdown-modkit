@@ -19,6 +19,7 @@ All tools read game files from `ISO/`, which holds the user's own disc unpacked 
 | `docs/CUTCONTENT.md` | Cut content and unreachable code, with restore cheats |
 | `docs/ANIMATION.md` | Animation groups and slots, action motion scripts, body remap tables |
 | `docs/SCRIPTS.md` | Missions, side jobs, events, dialogue: the mission manager, the script format, the event VM and every command |
+| `docs/UNLOCKS.md` | What unlocks each side job and each hero recruit in story mode; location ids, appearance categories, chapter objectives |
 | `tools/scriptkit.py` | Script disassembler (`dis`), mission table (`missions`), command use counts (`stats`) |
 | `docs/MEMORY-MAP.md` | Every address our cheats write, the code caves (used and free), which cheats conflict |
 | `docs/ROSTER.md` | Story roster system (`bdkit.py roster`, `mods/roster.json`) |
@@ -58,6 +59,7 @@ Common recipes:
 - Before a moveset swap or mix, check the animations with `python tools/codemap.py anim-check ISO/SLUS_211.50 A 0xSTYLE` (docs/ANIMATION.md).
 
 ## Working rules
+- **Document everything you learn, not only what the task asked for.** Anything that could help the next mod or the next session goes into the docs in the same commit: new addresses and names (symbols.tsv, with types), struct fields (structs.tsv), mechanics and formulas (MECHANICS.md), unlock conditions (UNLOCKS.md), script facts (SCRIPTS.md), text banks and id tables you come across, corrections to older docs, dead ends worth not repeating, and every open question in the doc's "Open questions". Say how sure each fact is (read from code, tested by whom). If a tool would make the next lookup faster, add it (`scriptkit.py`, `codemap.py`, `pcsx2.py`) and document it.
 - The ELF has no symbols. When you identify a function, table or struct, add it to `symbols/symbols.tsv` (with its C type in the fifth column when you know it) or `symbols/structs.tsv`, and to `docs/CODEMAP.md` (and to bdkit.py constants if a command uses it), then rerun `python tools/codemap.py symbols ISO/SLUS_211.50 symbols`. After many additions, rebuild `decomp/` (README.md, "Ghidra": about 5 minutes), run `codemap.py infer-types`, and rebuild once more.
 - Read a function's pseudocode in `decomp/` first when it exists (cloud threads: `/mnt/project-files/all.c`, `index.tsv` and `beatdown-decomp.zip` with one file per function); its names come from `symbols/symbols.tsv`, so rebuild it after adding many symbols. Confirm exact instructions in the disassembly before writing a patch.
 - Disassemble with `mips-linux-gnu-objdump -D -b binary -m mips:5900 -EL --adjust-vma=0xFFF80 ISO/SLUS_211.50`. EE address = ELF offset + 0xFFF80 (load address 0x00100000 at file offset 0x80).

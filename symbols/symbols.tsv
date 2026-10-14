@@ -102,7 +102,7 @@
 0060b6e0	data	g_SaveBlock_365AC	1024 bytes (saved)
 0060bae0	data	g_SaveBlock_369AC	200 bytes (saved)
 0060be10	data	g_StoryChapter	u32 story chapter (1-11): first word of save block 0x357B0 (56 bytes); g_MissionReq masks test it	s32
-0060be50	data	g_SaveBlock_35FF4	156 bytes (saved)
+0060be50	data	g_Appearance	u32 count, u32 parts[38]: what the player wears and looks like, code = category * 100 + n (bits 0-11), variant (bits 12-15); category names are text 14500 + category (saved block 0x35FF4)
 0060bef0	data	g_Inventory	2052 bytes: u32 count, u32 items[512] (bits 0-11 item, 12-15 qty) (saved)	Inventory
 0060c700	data	g_SystemData	584 bytes: the system save file (options, unlocks); +4 difficulty, +0x10 language	SystemData
 0060c990	data	g_StoryVars	128 x s16 script variables, 0-99, saved (save block 0x36090); read by the script VM at 0x39D2B0	s16[128]
@@ -465,7 +465,7 @@
 003b08a0	func	Mission_FlagTrigger	({state ptr, s16 flag, u8 mission, u8 step}) starts a mission when its story flag gets set
 003b02c0	func	Mission_Unavailable	(mission, chapter, % jobs cleared) 0 if g_MissionReq allows the mission now (plus per-mission special cases)	int (int mission, int chapter, int percent)
 003b0270	func	Mission_SlotBusy	(mission) 1 if that mission's slot (0, or 1 for 100/101) is running something
-003df540	func	MissionRank_Get	-> u32 at 0x0060BADC, the second g_MissionReq threshold (meaning not known)	int (void)
+003df540	func	ClearCount_Get	-> g_ClearCount, times the game was finished; g_MissionReq min_clears	int (void)
 0039a3e0	func	Script_MessageBusy	nonzero while a message or menu is up; blocking commands wait for it
 0039bbc0	func	Script_PlayerBusy	nonzero while the player can't be interrupted; blocking commands wait for it
 00172e10	func	StoryVar_Sub	(index) g_StoryVars[index] -= 1 if above 0 (EXF_ITEM_DEL)	int (int index)
@@ -483,3 +483,24 @@
 0076f0f0	data	g_JobResults	13 bytes, 2 bits per job: 0 never, 2 done, 3 failed (saved)	u8[13]
 0076f0e0	data	g_JobCleared	13 bytes, 2 bits per job: 2 = ever cleared (saved); Jobs_PercentCleared	u8[13]
 00776100	data	g_BgMissionScript	script buffer of missions 100 and 101 (slot 1)
+003df520	func	ClearCount_Inc	g_ClearCount += 1; called once by the ending (0x002AE7A0)	void (void)
+0060badc	data	g_ClearCount	s32 times the game was finished (saved, last word of save block 0x365AC); unlocks missions 0x54, 0x5B, 0x5C	s32
+002ae7a0	func	Ending_Task	ending sequence: credits, ClearCount_Inc, Criminal ending
+003937c0	func	Criminal_Rank	(1 Leadership, 2 Cash Flow, 3 Charisma) -> rank 0-6 from the score: 0-20, 21-60, 61-100, 101-140, 141-190, 191-240, 241-255	int (int which)
+002f9a80	func	Fighter_HeroId	(fighter) -> the hero template the fighter is (68 Aaron, 107 Raven, 108 Gina, 53 Jason G, 22 Lola, ...) from its person's preset	int (Fighter *fighter)
+002e7a50	func	Location_Current	-> the current location id (text 18000 + id: 4 GAS STATION, 7 HARBOR GATE, 17 PLATFORM, 31 HOTEL LOBBY, ...)	int (void)
+002fd630	func	Area_Current	-> the current area id (same numbering as Location_Current)	int (void)
+00398ba0	func	Hero_CanMeet	(hero 22/53/68/107/108) 1 if that hero can be met here and now; docs/UNLOCKS.md	int (int hero)
+003964f0	func	Hero_StartEncounter	(hero) if Hero_CanMeet and not met yet, sets up the hero encounter at their location; docs/UNLOCKS.md	int (int hero)
+00398a60	func	Hero_HintState	(?, hero) 0-3: whether / how rumours point to a hero (Hero_CanMeet plus Jason G and Aaron specials)
+0013eb30	func	Hero_ScaleToPlayer	(hero) sets the hero person's level to the player's +-2 (minimum 1) and recalculates HP
+0038ce00	func	Story_AreaEvents	story events on entering an area, by g_StoryChapter stage; starts hero encounters (stage 7 Jason G; 8 Gina, Raven, Jason G; 9 Raven, Jason G; 10 Aaron, Raven, Jason G)
+0038b4a0	func	Story_AreaEvents2	more story events by stage: Lola's encounter at stages 5-9, Aaron's flag 0x5F2 at stage 10, mission 0x90 at stage 11
+001bac80	func	Appearance_UpdateFlags	from g_Appearance: flag 0x3FF = brows other than your hero's own, 0x3FD = a category 10 item worn, 0x3FE = category 11, 0x4CE = item 2553, plus 0x514-0x525 for other items
+003a08d0	func	Job_PhoneOrdersCaller	-> a random healthy ally from g_PhoneOrderAllies who isn't in the party, or 0 (needs 3 healthy allies); mission 0x4E needs it
+005db360	data	g_PhoneOrderAllies	16 u8 person ids job 0x4E (Phone Orders) can use	u8[16]
+0033acc0	func	Talk_CurrentPerson	-> the person id the player is talking to
+0013fc50	func	JobMenu_Open	job menu: JobList_Build(list B when talking to Melvin, person 106, else list A)
+002c8f40	func	Jobs_ResetAll	clears g_JobResults and g_JobCleared; NEW GAME on the title screen	void (void)
+003a4450	func	Jobs_ResetRun	clears g_JobResults (not g_JobCleared) and flags 0x7EF-0x7F3; the new game after the ending (0x003D5860)	void (void)
+003d5860	func	Ending_NewGame	after the ending: starts the next playthrough, keeping money and g_JobCleared (Jobs_ResetRun)

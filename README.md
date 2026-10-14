@@ -56,7 +56,8 @@ All commands below are run from the top of the workspace.
 | `docs/ROSTER.md` | **Story roster**: recast the five story heroes (model, moves, HP bar name, starting stats) from one file, `mods/roster.json`, with `bdkit.py roster` |
 | `docs/PLAN-auto-negotiation.md` | **Negotiation on knockout** (built, tested): the plan, the battle and talk-scene code it hooks, and the test runs |
 | `docs/SCRIPTS.md` | **Scripts, missions, side jobs, events and dialogue**: how missions start (job menu, area load, talking, story flags), their requirements and results, the 50 side jobs, the script file format, the event VM and all 204 commands, with a worked example and modding notes |
-| `tools/scriptkit.py` | Disassembles SCRIPT.XAF (mission and dialogue scripts) and lists every mission (`dumps/missions.txt`, `dumps/scripts/`, `dumps/script_ops.txt`) |
+| `docs/UNLOCKS.md` | **Unlocks**: the prerequisites of all 50 side jobs (story stage, % of jobs cleared, game clears, special conditions) and of meeting and recruiting each hero in story mode (story stage, Criminal Level, location, disguise, flags), plus location ids, appearance categories and chapter objectives |
+| `tools/scriptkit.py` | Disassembles SCRIPT.XAF (mission and dialogue scripts), lists every mission (`dumps/missions.txt`, `dumps/scripts/`, `dumps/script_ops.txt`) and the job prerequisites (`jobs`) |
 | `docs/ANIMATION.md` | **Animation system**: animation groups and the global animation slots, action motion scripts (which animation each move plays, frame ranges), body remap tables, and what that means for moveset mods |
 | `docs/MEMORY-MAP.md` | **Memory used by our cheats**: every address each cheat writes, the code caves (used and free), and which cheats can't be on together |
 | `symbols/symbols.tsv` | Every name we've given an address, with its C type when known (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
