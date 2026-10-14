@@ -23,3 +23,6 @@ __pycache__/
 /__external_tools/
 # The user's disc image
 /disc/
+
+# Backups written by tools/cmod.py install
+*.bak

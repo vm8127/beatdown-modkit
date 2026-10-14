@@ -457,3 +457,23 @@ patch=1,EE,2050D140,extended,000000D2
 patch=1,EE,2050D144,extended,000000B7
 patch=1,EE,2050D148,extended,000000D1
 patch=1,EE,2050D14C,extended,0000270F
+
+[Aaron uses Ignacy's moveset and Chester's model (C version, one Aaron cheat at a time)]
+author=Claude for Daniel
+description=The C rewrite of "Aaron uses Ignacy's moveset and Chester's model", built by tools/cmod.py. Aaron fights with Ignacy's style 0x0C and animation groups; fighter init loads Chester's outfit preset 23 whenever it builds Aaron (presets 78, 79, 153). Turn on only one Aaron cheat at a time, and restart the game after switching.
+patch=1,EE,20216738,extended,2482FFB2
+patch=1,EE,2021673C,extended,2C420002
+patch=1,EE,20216740,extended,14400007
+patch=1,EE,20216744,extended,00000000
+patch=1,EE,20216748,extended,24020099
+patch=1,EE,2021674C,extended,10820004
+patch=1,EE,20216750,extended,00000000
+patch=1,EE,20216754,extended,080AA1C8
+patch=1,EE,20216758,extended,00000000
+patch=1,EE,2021675C,extended,00000000
+patch=1,EE,20216760,extended,080AA1C8
+patch=1,EE,20216764,extended,24040017
+patch=1,EE,2050D8B4,extended,0000000C
+patch=1,EE,2050D8BC,extended,0050D290
+patch=1,EE,2013B54C,extended,0C0859CE
+patch=1,EE,2013B55C,extended,0C0859CE

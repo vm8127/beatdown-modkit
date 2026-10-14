@@ -72,6 +72,9 @@ All commands below are run from the top of the workspace.
 | `dumps/xaf_ARCHIVE.txt` | Outfit and body part names (HAI_ hair, EYE_, MOU_ mouth, WEA_ weapons...) |
 | `mods/SLUS-21150_C9F6EF9A.pnach` | Finished patches (PCSX2 cheats), one `[section]` per mod |
 | `mods/roster.json` | The story roster `bdkit.py roster` builds its cheat section from (see docs/ROSTER.md) |
+| `tools/cmod.py`, `tools/cmod/game.h` | Builds mods written in C into cheat sections (see "Mods in C") |
+| `mods/c/` | Mods written in C, one file each |
+| `__external_tools/`, `disc/` | Ghidra, JDK, PyGhidra and the PS2 compiler; your disc image. Never committed (see "External tools") |
 
 ## Quick facts
 
@@ -230,7 +233,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x0013CA80` | Fighter display name; hero presets (`0x18, 0x3F, 0x4E, 0x71, 0x73, 0x99-0x9D`) get the hero name |
 | `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
 | `0x003E0130` | 20 unused zero words before the VU microcode. `swap-model` uses `0x003E0130`-`0x003E0164`; the negotiation-on-knockout mod uses `0x003E0168`-`0x003E017C`. Full. |
-| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to: roster hooks `0x00216538`-`0x00216737`, mix-moveset `0x00217000`-`0x00218EFF`, negotiation-on-knockout `0x00218F00`-`0x00218F43`. Free: `0x00216738`-`0x00216FFF` and `0x00218F44`-`0x00218FEF`. See docs/MEMORY-MAP.md. |
+| `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to: roster hooks `0x00216538`-`0x00216737`, mix-moveset `0x00217000`-`0x00218EFF`, negotiation-on-knockout `0x00218F00`-`0x00218F43`. C mods (`tools/cmod.py`) `0x00216738`-`0x00216FFF`. Free: `0x00218F44`-`0x00218FEF`. See docs/MEMORY-MAP.md. |
 
 ## Addresses, offsets and patching
 
@@ -294,8 +297,22 @@ About 740 of the game's functions (`0x00100000-0x00133500`, plus the sound libra
 | Cut content: DIFFICULTY in the pause menu options | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13). DIFFICULTY is already in the title-screen OPTIONS without any cheat; this adds it to the pause menu's CONFIG. page |
 | Aaron uses the cut TESTER moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): TESTER's action IDs confirmed with the debug overlay. In VS mode Aaron starts with a knife, which uses knife moves until it's gone. Aaron cheat: one at a time |
 | Cut content: boxers use the short boxer style 0x1C | `mods/SLUS-21150_C9F6EF9A.pnach` | Style 0x1C works (tested by Claude in PCSX2 on a stand-in fighter, 2026-10-13); not yet seen on street boxers in story mode |
+| Aaron uses Ignacy's moveset and Chester's model (C version): the first mod written in C (`mods/c/aaron_chester_model.c`, built by `tools/cmod.py`); same effect as the hand-written cheat above | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Aaron cheat: one at a time. If it behaves exactly like the hand-written version, C mods work |
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory). Only one mixed-moveset cheat can be on at a time, because `mix-moveset` always uses the same code space. Everything else can be combined; `python tools/codemap.py pnach-map mods/SLUS-21150_C9F6EF9A.pnach` prints every cheat's addresses and any overlaps, and docs/MEMORY-MAP.md has the full table.
+
+### Mods in C
+
+Mods can be written in C instead of hand-assembled MIPS. `tools/cmod.py` compiles a C file with the PS2 compiler (`__external_tools/ps2dev`, see "External tools"), places it at a fixed address in a free code cave, links it against every name in `symbols/symbols.tsv`, and prints a pnach section with the code and the hooks:
+
+```
+python tools/cmod.py build ISO/SLUS_211.50 mods/c/aaron_chester_model.c --asm
+python tools/cmod.py install ISO/SLUS_211.50 mods/c/aaron_chester_model.c
+```
+
+`install` adds or replaces the section in `mods/` and in the PCSX2 cheats folder (both get a `.bak`). The C file says where it goes and what it hooks in `// @` comment lines; `mods/c/aaron_chester_model.c` is the example and the top of `tools/cmod.py` lists them all (`@section`, `@description`, `@org`, `@max`, `@jal SITE FUNC`, `@jump SITE FUNC`, `@ptr SITE FUNC`, `@word SITE VALUE`). `tools/cmod/game.h` declares the game functions with known prototypes; add to it as functions get understood.
+
+Limits: no writable globals (cheats rewrite the code every frame, so a variable would reset; keep state in game memory), and mods don't use registers s0-s7 (the game saves them as 128-bit values, this compiler as 64-bit). Pass only int and pointer arguments to game functions. Every C mod gets its own `@org` range inside the C mod area `0x00216738`-`0x00216FFF` (docs/MEMORY-MAP.md).
 
 ### Testing a cheat in PCSX2
 

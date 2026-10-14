@@ -26,6 +26,8 @@ All tools read game files from `ISO/`, which holds the user's own disc unpacked 
 | `dumps/` | Generated listings. Regenerate them with the tools, never edit by hand. |
 | `mods/SLUS-21150_C9F6EF9A.pnach` | Every finished mod, one `[section]` each |
 | `mods/roster.json` | Input for `bdkit.py roster` |
+| `mods/c/*.c` | Mods written in C; `tools/cmod.py install ISO/SLUS_211.50 mods/c/X.c` builds one into both pnach files |
+| `tools/cmod.py`, `tools/cmod/game.h` | C mod builder (ps2dev compiler, links against `symbols/symbols.tsv`) and the game prototypes header |
 | `decomp/` | Ghidra pseudocode of every function (`all.c`, `funcs/`, `index.tsv`); local only, never committed. README.md, "Ghidra", rebuilds it. |
 | `__external_tools/` | Ghidra, JDK, PyGhidra venv, ps2dev compiler; local only, never committed (README.md, "External tools") |
 | `disc/` | The user's original disc image; local only, never committed |
@@ -47,6 +49,7 @@ Common recipes:
 - Model: `python tools/bdkit.py swap-model ISO/SLUS_211.50 A B`. See README.md, "Fighter records: the model switch".
 - Several mods write the same row (all the Aaron cheats do), so only one of those may be on at a time; say so in the section name. Only one `mix-moveset` cheat can be on at a time (fixed code space).
 - Any change to a fighting style must also make the in-game MOVE LIST show the right moves (the user's rule). Whole-style swaps get that for free; `mix-moveset` hooks the MOVE LIST; anything new must do the same.
+- New code: prefer C (`mods/c/`, `tools/cmod.py`; README.md, "Mods in C") over hand-assembled MIPS. Give it an `@org` range in the C mod area (docs/MEMORY-MAP.md), add prototypes you need to `tools/cmod/game.h`, and check the output with `--asm`.
 - Before a moveset swap or mix, check the animations with `python tools/codemap.py anim-check ISO/SLUS_211.50 A 0xSTYLE` (docs/ANIMATION.md).
 
 ## Working rules
