@@ -13,8 +13,15 @@ The C file is compiled with the ps2dev PS2 compiler for a fixed address in a fre
 Directives, in `// @name args` comment lines anywhere in the C file:
   @section NAME          pnach section name (required)
   @description TEXT      pnach description line
-  @org ADDR              where the code goes (required; a free range from docs/MEMORY-MAP.md)
+  @org ADDR              where the code goes (required; a free range from docs/MEMORY-MAP.md: small mods in
+                         the C mod cave 0x00216738-0x00216FFF, big ones in the mod area 0x000A0000-0x000DFFFF)
   @max SIZE              fail if code + constants grow past SIZE bytes (default 0x100)
+  @bss ADDR SIZE         where the mod's writable globals go (mod data area 0x000E0000-0x000EFFFF). They
+                         start at zero when the game boots, are never written by the cheat, and are saved
+                         in save states. Without @bss the mod may not have writable globals.
+  @hook FUNC MYFUNC      make every call to game function FUNC (a name from symbols.tsv or an address) run
+                         MYFUNC instead; MYFUNC can call the original as orig_FUNC (orig_0013B490 for an
+                         address), which runs FUNC's first two instructions and continues at FUNC+8
   @jal SITE FUNC         SITE holds a `jal`; make it `jal FUNC` instead (FUNC gets the same arguments)
   @jump SITE FUNC        overwrite the instruction at SITE with `j FUNC` and the next one with `nop`
                          (replaces a whole game function when SITE is its first instruction)
@@ -22,10 +29,12 @@ Directives, in `// @name args` comment lines anywhere in the C file:
   @word SITE VALUE       write a 32-bit VALUE at SITE (table entries)
 
 Rules the build enforces:
-  - No writable globals (.data/.bss): cheats are rewritten every frame, so they would reset.
-    Keep state in game memory. Constants (.rodata, strings) are fine.
+  - No initialized writable globals (.data): the cheat rewrites the code every frame, so it can't own
+    data that changes. Use const tables, or zero-initialized globals with @bss.
   - The game's code saves s0-s7 as 128-bit values, this compiler only 64 bits, so mods never use
-    s0-s7 or fp (-ffixed-...). Leaf code and calls work normally.
+    s0-s7 or fp (-ffixed-...). Leaf code, calls and hooks work normally.
+  - Calls use the game's convention (EABI with 32-bit long and pointers): int and pointer arguments in
+    a0-a7, float arguments in f12-f19, counted separately, so floats can be passed and returned.
 
 The toolchain is __external_tools/ps2dev (README.md, "External tools"); set CMOD_TOOLCHAIN to the
 folder holding mips64r5900el-ps2-elf-gcc to use another one.
@@ -52,7 +61,7 @@ PNACH = os.path.join(ROOT, "mods", "SLUS-21150_C9F6EF9A.pnach")
 PCSX2_PNACH = r"C:\Games\Emu\PCSX2\cheats\SLUS-21150_C9F6EF9A.pnach"
 AUTHOR = "Claude for Daniel"
 
-CFLAGS = ["-O2", "-G0", "-mno-abicalls", "-fno-pic", "-mno-gpopt", "-ffreestanding", "-fno-builtin",
+CFLAGS = ["-O2", "-G0", "-mabi=eabi", "-mlong32", "-mno-abicalls", "-fno-pic", "-mno-gpopt", "-ffreestanding", "-fno-builtin",
           "-fno-common", "-fno-toplevel-reorder", "-fno-asynchronous-unwind-tables", "-fno-unwind-tables",
           "-Wall", "-Werror=implicit-function-declaration"] + \
          [f"-ffixed-s{i}" for i in range(8)] + ["-ffixed-fp"]
@@ -78,7 +87,7 @@ def num(s):
 
 
 def parse_directives(src):
-    d = dict(section=None, description="", org=None, max=0x100, patches=[])
+    d = dict(section=None, description="", org=None, max=0x100, bss=None, patches=[], hooks=[])
     for ln, line in enumerate(src.splitlines(), 1):
         m = re.match(r"\s*//\s*@(\w+)\s*(.*?)\s*$", line)
         if not m:
@@ -90,6 +99,10 @@ def parse_directives(src):
                 d[key] = rest
             elif key in ("org", "max"):
                 d[key] = num(args[0])
+            elif key == "bss":
+                d["bss"] = (num(args[0]), num(args[1]))
+            elif key == "hook":
+                d["hooks"].append((args[0], args[1]))
             elif key in ("jal", "jump", "ptr"):
                 d["patches"].append((key, num(args[0]), args[1]))
             elif key == "word":
@@ -103,35 +116,83 @@ def parse_directives(src):
     return d
 
 
-def symbol_lines():
-    """Linker script lines defining every symbols.tsv name at its game address."""
-    seen = set()
-    out = []
+def game_symbols():
+    """{name: address} of every symbols.tsv name (the first one wins)."""
+    out = {}
     with open(SYMBOLS, encoding="utf-8") as f:
         for line in f:
             if line.startswith("#") or not line.strip():
                 continue
             cols = line.rstrip("\n").split("\t")
-            if len(cols) < 3 or not NAME_RE.match(cols[2]) or cols[2] in seen:
-                continue
-            seen.add(cols[2])
-            out.append(f"{cols[2]} = 0x{int(cols[0], 16):08X};")
-    return "\n".join(out)
+            if len(cols) >= 3 and NAME_RE.match(cols[2]) and cols[2] not in out:
+                out[cols[2]] = int(cols[0], 16)
+    return out
 
 
-def link_script(path, org):
+def link_script(path, org, bss):
+    syms = "\n".join(f"{n} = 0x{a:08X};" for n, a in game_symbols().items())
+    bss_at = f"0x{bss[0]:08X} (NOLOAD)" if bss else ""
     with open(path, "w") as f:
-        f.write(symbol_lines() + f"""
+        f.write(syms + f"""
 SECTIONS
 {{
   . = 0x{org:08X};
   .text : {{ *(.text .text.*) }}
   .rodata : {{ *(.rodata .rodata.* .rodata1) }}
   .data : {{ *(.data .data.* .sdata .sdata.*) }}
-  .bss : {{ *(.bss .bss.* .sbss .sbss.* COMMON) }}
+  .bss {bss_at} : {{ *(.bss .bss.* .sbss .sbss.* COMMON) }}
   /DISCARD/ : {{ *(.MIPS.abiflags .MIPS.options .reginfo .comment .pdr .gnu.attributes .mdebug.* .note.*) }}
 }}
 """)
+
+
+BRANCH_OPS = (0x01, 0x04, 0x05, 0x06, 0x07, 0x14, 0x15, 0x16, 0x17)
+
+
+def is_cop_branch(w):
+    return w >> 26 in (0x10, 0x11, 0x12) and (w >> 21) & 0x1F == 0x08
+
+
+def is_control_transfer(w):
+    """True for jumps, branches and anything else that can't run at another address."""
+    op = w >> 26
+    if op == 0:
+        return (w & 0x3F) in (0x08, 0x09, 0x0C, 0x0D)  # jr, jalr, syscall, break
+    return op in (0x02, 0x03) + BRANCH_OPS or is_cop_branch(w) or (op == 0x10 and (w & 0x3F) == 0x18)  # eret
+
+
+def branch_target(pc, w):
+    op = w >> 26
+    if op in (0x02, 0x03):
+        return (pc + 4) & 0xF0000000 | (w & 0x03FFFFFF) << 2
+    if op in BRANCH_OPS or is_cop_branch(w):
+        off = w & 0xFFFF
+        return pc + 4 + ((off - 0x10000 if off & 0x8000 else off) << 2)
+    return None
+
+
+def hook_trampolines(game, hooks, syms):
+    """Assembly for the orig_FUNC trampolines, and the entry patches, for every @hook."""
+    asm = [".set noreorder", ".section .text.zhooks,\"ax\""]
+    patches = []
+    lo, hi = bdkit.Elf.o2v(bdkit.ELF_LOAD_OFFSET), bdkit.Elf.o2v(len(game.d))
+    for func, mine in hooks:
+        site = syms[func] if func in syms else num(func)
+        name = "orig_" + (func if func in syms else f"{site:08X}")
+        w0, w1 = game.u32(site), game.u32(site + 4)
+        if any(is_control_transfer(w) for w in (w0, w1)):
+            sys.exit(f"@hook {func}: the first two instructions ({w0:08X} {w1:08X}) include a jump or "
+                     "branch, so they can't be moved; hook a call site with @jal instead")
+        for pc in range(max(lo, site - 0x20000), min(hi, site + 0x20000), 4):
+            if branch_target(pc, game.u32(pc)) == site + 4:
+                sys.exit(f"@hook {func}: {pc:#010x} branches to {site + 4:#010x}, the second instruction, "
+                         "which the hook overwrites; hook a call site with @jal instead")
+        back = 0x08000000 | ((site + 8) >> 2) & 0x03FFFFFF
+        asm += [f".globl {name}", f".type {name},@function", f"{name}:",
+                f".word 0x{w0:08X}", f".word 0x{w1:08X}", f".word 0x{back:08X}", "nop",
+                f".size {name}, .-{name}"]
+        patches.append((site, mine, name, w0, w1))
+    return "\n".join(asm) + "\n", patches
 
 
 def elf_sections(path):
@@ -152,17 +213,26 @@ def build(elf_path, c_path, asm=False):
     src = open(c_path, encoding="utf-8").read()
     d = parse_directives(src)
     game = bdkit.Elf(elf_path)
+    hook_asm, hook_patches = hook_trampolines(game, d["hooks"], game_symbols())
     with tempfile.TemporaryDirectory() as tmp:
-        obj, out, binf = (os.path.join(tmp, n) for n in ("mod.o", "mod.elf", "mod.bin"))
-        lds = os.path.join(tmp, "mod.ld")
-        link_script(lds, d["org"])
+        obj, hobj, out, binf = (os.path.join(tmp, n) for n in ("mod.o", "hooks.o", "mod.elf", "mod.bin"))
+        lds, hsrc = os.path.join(tmp, "mod.ld"), os.path.join(tmp, "hooks.s")
+        link_script(lds, d["org"], d["bss"])
+        with open(hsrc, "w") as f:
+            f.write(hook_asm)
         run([tool("gcc")] + CFLAGS + ["-I", INCLUDE, "-c", c_path, "-o", obj])
-        run([tool("ld"), "-e", "0", "-T", lds, "-o", out, obj])
+        run([tool("gcc")] + CFLAGS + ["-c", hsrc, "-o", hobj])
+        run([tool("ld"), "-m", "elf32lr5900", "-e", "0", "-T", lds, "-o", out, obj, hobj])
         secs = elf_sections(out)
-        for s in (".data", ".bss"):
-            if secs.get(s, (0, 0))[1]:
-                sys.exit(f"the mod has writable globals ({s}, {secs[s][1]} bytes); cheats are rewritten every "
-                         "frame, so keep state in game memory or make tables const")
+        if secs.get(".data", (0, 0))[1]:
+            sys.exit(f"the mod has initialized writable globals (.data, {secs['.data'][1]} bytes); make them "
+                     "const, or zero-initialized with @bss")
+        bss_size = secs.get(".bss", (0, 0))[1]
+        if bss_size and not d["bss"]:
+            sys.exit(f"the mod has writable globals ({bss_size} bytes of .bss) but no @bss line saying where "
+                     "they go (docs/MEMORY-MAP.md, mod data area)")
+        if d["bss"] and bss_size > d["bss"][1]:
+            sys.exit(f"writable globals are {bss_size} bytes, over the @bss size {d['bss'][1]:#x}")
         run([tool("objcopy"), "-O", "binary", "-j", ".text", "-j", ".rodata", out, binf])
         code = open(binf, "rb").read()
         code += b"\0" * (-len(code) % 4)
@@ -184,6 +254,8 @@ def build(elf_path, c_path, asm=False):
     for k, site, _ in d["patches"]:
         if d["org"] <= site < end:
             sys.exit(f"@{k} {site:#010x} is inside the mod's own code")
+    if d["bss"] and d["bss"][0] < end and d["org"] < d["bss"][0] + d["bss"][1]:
+        sys.exit("@bss overlaps the mod's code")
     writes = [(d["org"] + i, struct.unpack_from("<I", code, i)[0]) for i in range(0, len(code), 4)]
     notes = []
     for kind, site, arg in d["patches"]:
@@ -203,11 +275,20 @@ def build(elf_path, c_path, asm=False):
         elif kind == "ptr":
             writes.append((site, target))
             notes.append(f"{site:#010x} {old:08X} -> {arg} {target:#010x}")
+    for site, mine, orig, w0, w1 in hook_patches:
+        target = addr_of(mine)
+        writes += [(site, 0x08000000 | (target >> 2) & 0x03FFFFFF), (site + 4, 0)]
+        notes.append(f"{site:#010x} hooked: j {mine} {target:#010x}; {orig} {addr_of(orig):#010x} runs "
+                     f"{w0:08X} {w1:08X}, then back to {site + 8:#010x}")
     lines = [f"[{d['section']}]", f"author={AUTHOR}"]
     if d["description"]:
         lines.append(f"description={d['description']}")
     lines += [f"patch=1,EE,{0x20000000 | (a & 0x0FFFFFFF):08X},extended,{v:08X}" for a, v in writes]
-    info = [f"code {d['org']:#010x}-{end - 1:#010x} ({len(code)} bytes, @max {d['max']:#x})"] + notes
+    info = [f"code {d['org']:#010x}-{end - 1:#010x} ({len(code)} bytes, @max {d['max']:#x})"]
+    if d["bss"]:
+        info.append(f"globals at {d['bss'][0]:#010x}: {bss_size} bytes of @bss size {d['bss'][1]:#x} "
+                    "(not written by the cheat)")
+    info += notes
     funcs = sorted((a, n) for n, a in addrs.items() if d["org"] <= a < end)
     info += [f"  {a:#010x} {n}" for a, n in funcs]
     return d["section"], "\n".join(lines) + "\n", info, listing

@@ -10,9 +10,27 @@ python tools/codemap.py pnach-map mods/SLUS-21150_C9F6EF9A.pnach
 
 It prints every section's address ranges and every pair of sections that write the same bytes.
 
+## Free RAM: the mod areas
+
+The game never uses EE RAM below its own program (it loads at `0x00100000`) above `0x00096000`, and its heap (which starts at `0x00788180`, is grown to about `0x01EF7000` once at boot by `Boot_LoadModules` and then trimmed) stays under `0x01E00000`. `python tools/pcsx2.py freeram` checks this in save states: in all four of Daniel's (2023-01 to 2026-10, title screen to street fights) both areas below are zero, the heap top (`sbrk` break at `0x0040C274`) was between `0x01BB2000` and `0x01D78000`, and no instruction in the ELF builds an address in `0x000A0000`-`0x000FFFFF`.
+
+| Area | Size | Use |
+|---|---|---|
+| `0x000A0000`-`0x000DFFFF` | 256 KB | **Mod area**: code of C mods too big for the cave below (`tools/cmod.py`, `@org`). Each mod claims a range in the table below |
+| `0x000E0000`-`0x000EFFFF` | 64 KB | **Mod data area**: C mods' writable globals (`@bss`). Never written by a cheat, so it keeps its values; zero at boot; saved in save states |
+| `0x000F0000`-`0x000FFFFF` | 64 KB | Debug scratch for live testing over PINE (logging caves). Never used by a cheat |
+| `0x01F00000`-`0x01FBFFFF` | 768 KB | Debug only: `tools/pcsx2.py trace` stubs and table. Above the heap's highest point seen, but the heap could in principle grow into it, so no shipped mod uses it |
+
+Claimed ranges in the mod areas:
+
+| Range | Used by |
+|---|---|
+| `0x000A0000`-`0x000A00FF` | "C mod test: the player takes half damage" (`mods/c/test_half_damage.c`, 104 bytes used of 0x100) |
+| `0x000E0000`-`0x000E000F` | its globals (8 bytes used of 0x10) |
+
 ## Code caves
 
-The game has no free memory set aside, so new code goes in places nothing runs or reads.
+The game has no free memory set aside inside its own image, so small hooks go in places nothing runs or reads. Bigger code goes in the mod area above.
 
 | Cave | Size | Why it's free | Used by | Free |
 |---|---|---|---|---|
@@ -45,6 +63,7 @@ Because mix-moveset always writes the same addresses and its move list table has
 | Aaron uses the cut TESTER moveset | `0x0050D8B4`, `0x0050D8BC` | class row |
 | Aaron keeps his moves but grapples like Jason G | `0x0050D8B4`, `0x0050D8BC`; `0x0050D100`-`0x0050D14F`; `0x00515C5C`; `0x001C5BA0`, `0x001C5BF0`, `0x001C5C30`, `0x001C5C70` (8 bytes each); `0x00217000`-`0x00218EFF` (parts) | class row; Aaron's whole group list; `g_StyleCommands[0x13]`; the four MOVE LIST functions' first two instructions; mix area |
 | Aaron uses Ignacy's moveset and Chester's model (C version) | `0x0050D8B4`, `0x0050D8BC`; `0x0013B54C`, `0x0013B55C`; `0x00216738`-`0x00216767` | class row; both `jal Preset_Get` in fighter init, now `jal Mod_PresetGet`; the C code |
+| C mod test: the player takes half damage (hook, mod area, globals) | `0x000A0000`-`0x000A0067`; `0x002FB880`-`0x002FB887` | the C code; `Fighter_ApplyDamage`'s first two instructions (`@hook`). Its globals at `0x000E0000` are not written by the cheat |
 | Negotiation menu on knockout (test v2) | `0x002DE478`-`0x002DE48B`; `0x002DEF70`-`0x002DEF77`; `0x003E0168`-`0x003E017F`; `0x00218F00`-`0x00218F43`; `0x005990FC` | after-KO talk hook; CANCEL hook; two caves; negotiation menu descriptor (Triangle → CANCEL) |
 | Cut content: DEBUG on the title screen | `0x0058969C`, `0x005897D0` | title menu item action and label |
 | Cut content: all six languages in the debug LANGUAGE menu | `0x003B75D0`, `0x003B75F0` | two clamp instructions |
@@ -71,5 +90,5 @@ PCSX2's bundled **Widescreen 16:9** patch (Game Properties, Patches) writes `0x0
 1. Prefer changing data (a table entry) over code. The data tables we change are listed above; `docs/CODEMAP.md` lists the rest.
 2. For new code, use the free ranges above, then record the new range in both tables here and in the README's "Known code addresses".
 3. A hook replaces a `jal` (or the first instructions of a function) with a jump into the cave. Put the original instruction back in the cave code, and check with `codemap.py pnach-map` that no other cheat writes the same words.
-4. A C mod (`tools/cmod.py`) picks its `@org` range from the C mod area and is recorded in the cave table above.
+4. A C mod (`tools/cmod.py`) picks its `@org` range from the C mod cave (small mods) or the mod area `0x000A0000`-`0x000DFFFF` (anything bigger), its `@bss` range from the mod data area, and records both in the tables above. A `@hook` writes the hooked function's first two instructions; `pnach-map` shows it like any other write.
 5. If a new tool command writes fixed addresses (like `mix-moveset`), name the constants in `tools/bdkit.py` and say here that only one cheat made by it can be on.

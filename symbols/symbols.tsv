@@ -1,72 +1,72 @@
-# addr	kind	name	comment
+# addr	kind	name	comment	type
 00100008	func	_start	ELF entry point
-001107c8	func	scePrintf	Sony kernel debug print (also called kprintf; libc printf is 0x12CDF8)
-0012ba38	func	memcpy	(dst, src, size)
-0012bbf0	func	memset	(dst, byte, size)
+001107c8	func	scePrintf	Sony kernel debug print (also called kprintf; libc printf is 0x12CDF8)	int (const char *fmt, ...)
+0012ba38	func	memcpy	(dst, src, size)	void *(void *dst, const void *src, u32 size)
+0012bbf0	func	memset	(dst, byte, size)	void *(void *dst, int byte, u32 size)
 00138df0	func	Flags_SaveTo	copy 1024-byte event flag block to buffer
 00138e00	func	Flags_LoadFrom	copy buffer to event flag block
-00138e20	func	Flag_Get	(n) bit n of g_EventFlags
-00138e70	func	Flag_Set	(n)
-00138ec0	func	Flag_Clear	(n)
-00138d20	func	Graph_FindName	name -> GRAPH.XAF entry via g_GraphNames
-0013a950	func	SaveData_Pack	(buf) copy game state into the 0x36A74-byte save image
-0013aab0	func	SaveData_Unpack	(buf) copy a save image back into game state
-0013b490	func	Person_Init	(slot, personDefId, temp) build a person record from g_PersonDefs
-0013c960	func	Person_Get	(personId) -> person record; ids 0-199 direct, 200-209 looked up by +62
-0013cc70	func	Person_SetMoney	(personId, value) clamps 0..99,999,999; player also updates g_TotalMoneyEarned
-0013cdc0	func	Person_AddMoney	(personId, delta) clamps 0..99,999,999
-0013d000	func	Inventory_InitForHero	clears g_Inventory and fills it from the hero's start list
+00138e20	func	Flag_Get	(n) bit n of g_EventFlags	int (int n)
+00138e70	func	Flag_Set	(n)	void (int n)
+00138ec0	func	Flag_Clear	(n)	void (int n)
+00138d20	func	Graph_FindName	name -> GRAPH.XAF entry via g_GraphNames	int (const char *name)
+0013a950	func	SaveData_Pack	(buf) copy game state into the 0x36A74-byte save image	void (void *buf)
+0013aab0	func	SaveData_Unpack	(buf) copy a save image back into game state	void (void *buf)
+0013b490	func	Person_Init	(slot, personDefId, temp) build a person record from g_PersonDefs	void (int slot, int person_def, int temp)
+0013c960	func	Person_Get	(personId) -> person record; ids 0-199 direct, 200-209 looked up by +62	Person *(int person_id)
+0013cc70	func	Person_SetMoney	(personId, value) clamps 0..99,999,999; player also updates g_TotalMoneyEarned	void (int person_id, int value)
+0013cdc0	func	Person_AddMoney	(personId, delta) clamps 0..99,999,999	void (int person_id, int delta)
+0013d000	func	Inventory_InitForHero	clears g_Inventory and fills it from the hero's start list	void (void)
 0013de00	func	Item_CodeToIndex	(item code, qty) used by Inventory_InitForHero; code = category*100 + n
-00176130	func	Fighter_FindNpcSlot	(personId) -> slot 2..12 or -1
+00176130	func	Fighter_FindNpcSlot	(personId) -> slot 2..12 or -1	int (int person_id)
 001c5c00	func	MoveList_GetName	(style, move index) -> text, via g_MoveListTable
 001d1810	func	Boot_LoadModules	loads cdrom0:\MODULES\MODULE.BIN
 001da020	func	MemCard_SetupFiles	registers save dir BASLUS-21150XXX: system file 584 bytes, game file 0x36A74 bytes, icons
 001dd370	func	MemCard_PrintVersion	"CAPCOM RD3 Memory Card System Ver.1.11"
 0029ba10	func	Xaf_OpenAll	opens all ten XAF archives
-0029bc40	func	Xaf_QueueLoad	(archive, entry, mode)
+0029bc40	func	Xaf_QueueLoad	(archive, entry, mode)	int (int archive, int entry, int mode)
 0029cd10	func	Xaf_LoadAnimation	chunk type 0x1B
 0029ed70	func	Xaf_LoadAnimPack	STAGE.XAF pack plus ID list
 002a5b80	func	Fighter_PickWeaponMove	uses the style and held weapon
-002a6720	func	Cmd_MatchSequence	(fighter, input history, style cmd list) -> action ID or 0
-001c5ba0	func	MoveList_Count	(?, style) -> number of MOVE LIST lines (move list table 0x5CAB40)
-001c5bf0	func	MoveList_NameText	(?, style, line) -> move name text
-001c5c30	func	MoveList_InputText	(?, style, line) -> move input text
-001c5c70	func	MoveList_Color	(style, line) -> 1 for the second text colour
-002a63a0	func	Cmd_CheckCondition	(fighter, command condition) -> 1 if the fighter's stat levels meet it
-002a68b0	func	Cmd_MatchSingle	(fighter, input code, style cmd list, out) -> action ID or 0
+002a6720	func	Cmd_MatchSequence	(fighter, input history, style cmd list) -> action ID or 0	s16 (Fighter *fighter, int *history, Command *list)
+001c5ba0	func	MoveList_Count	(?, style) -> number of MOVE LIST lines (move list table 0x5CAB40)	s16 (int unused, int style)
+001c5bf0	func	MoveList_NameText	(?, style, line) -> move name text	const char *(int unused, int style, int line)
+001c5c30	func	MoveList_InputText	(?, style, line) -> move input text	const char *(int unused, int style, int line)
+001c5c70	func	MoveList_Color	(style, line) -> 1 for the second text colour	int (int style, int line)
+002a63a0	func	Cmd_CheckCondition	(fighter, command condition) -> 1 if the fighter's stat levels meet it	int (Fighter *fighter, u8 *condition)
+002a68b0	func	Cmd_MatchSingle	(fighter, input code, style cmd list, out) -> action ID or 0	s16 (Fighter *fighter, int code, Command *list, int *out)
 002a85b0	func	Person_CheckOutfit	checks outfit slots against tables 0x5016D0/0x501860
-002a8720	func	Preset_Get	(preset, part) part 1 = outfit slots (+0), 2 = body params (+792); CDATA.XAF entry 0
-002a89d0	func	Fighter_AssignPerson	(slot, personId) sets class row, copies the 22 outfit slots, picks body
-002afd60	func	Person_RecalcMaxHP	(personId) max HP from base HP, level and bonuses, capped at 9999
+002a8720	func	Preset_Get	(preset, part) part 1 = outfit slots (+0), 2 = body params (+792); CDATA.XAF entry 0	void *(int preset, int part)
+002a89d0	func	Fighter_AssignPerson	(slot, personId) sets class row, copies the 22 outfit slots, picks body	void (int slot, int person_id)
+002afd60	func	Person_RecalcMaxHP	(personId) max HP from base HP, level and bonuses, capped at 9999	void (int person_id)
 002dc360	func	Anim_LoadGroup	one animation group
 002dc550	func	Anim_LoadGroupList	9999-terminated list
 002dc680	func	Anim_LoadClassGroups	uses the class table group list
 002f8990	func	Fighter_IsAlive	HP > 0
-002f8a30	func	Fighter_RemapAction	(fighter, action) via class row +8 per-body remap table
-002f8a60	func	Fighter_RemapActionNeg	negative IDs go through the remap table
-002f8ba0	func	Fighter_GetHP
-002f8bb0	func	Fighter_GetMaxHP
-002f8bc0	func	Fighter_GetHPRatio
-002f8c80	func	Fighter_GetPos	copies xyz at +0x2AC
+002f8a30	func	Fighter_RemapAction	(fighter, action) via class row +8 per-body remap table	s16 (Fighter *fighter, int action)
+002f8a60	func	Fighter_RemapActionNeg	negative IDs go through the remap table	s16 (Fighter *fighter, int action)
+002f8ba0	func	Fighter_GetHP		s16 (Fighter *fighter)
+002f8bb0	func	Fighter_GetMaxHP		s16 (Fighter *fighter)
+002f8bc0	func	Fighter_GetHPRatio		f32 (Fighter *fighter)
+002f8c80	func	Fighter_GetPos	copies xyz at +0x2AC	void (Fighter *fighter, f32 *xyz)
 002f8dc0	func	Person_GetBody	body size from the class row
-002f8e00	func	Fighter_GetStyle	class row +4
+002f8e00	func	Fighter_GetStyle	class row +4	int (Fighter *fighter)
 002f8e20	func	Fighter_GetWeaponMoveList	weapon type x style -> weapon move list
-002f9250	func	Fighter_GetPerson	Person_Get(fighter+8)
-002f9260	func	Fighter_GetPersonDef	-> g_PersonDefs entry
+002f9250	func	Fighter_GetPerson	Person_Get(fighter+8)	Person *(Fighter *fighter)
+002f9260	func	Fighter_GetPersonDef	-> g_PersonDefs entry	PersonDef *(Fighter *fighter)
 002f9930	func	Person_GetHeroDefId	maps a hero preset to the hero's PersonDef (68 Aaron, 107 Raven, 108 Gina, 53 Jason G, 22 Lola)
 002f9be0	func	Fighter_IsPartyMember	true when the fighter's person is in g_Party
-002fb780	func	Fighter_SetGuard	(fighter, max, value)
-002fb880	func	Fighter_ApplyDamage	(fighter, dmg) HP -= dmg, floor 0; skipped while +0x471C bit 13 is set
-002fd300	func	Fighter_FindByPerson	(personId) -> fighter or 0, slots 0..12
+002fb780	func	Fighter_SetGuard	(fighter, max, value)	void (Fighter *fighter, int max, f32 value)
+002fb880	func	Fighter_ApplyDamage	(fighter, dmg) HP -= dmg, floor 0; skipped while +0x471C bit 13 is set	void (Fighter *fighter, int damage)
+002fd300	func	Fighter_FindByPerson	(personId) -> fighter or 0, slots 0..12	Fighter *(int person_id)
 003020e0	func	Debug_PrintAt	debug text helper
 00302260	func	Debug_FighterInfo	debug overlay: HP, DAMAGE, TIRED, REV, LENGTH, motion category
-00304b60	func	Fighter_Spawn	(slot, target, team) HP from person, attack multiplier, difficulty scaling
+00304b60	func	Fighter_Spawn	(slot, target, team) HP from person, attack multiplier, difficulty scaling	void (int slot, int target, int team)
 00305cc0	func	Combat_ResolveHit	(attacker, defender, ...) computes damage into defender +0x44B0
-0030dfd0	func	Combat_TakeHit	applies pending damage, knockdown meter, calls Fighter_ApplyDamage
-00317bc0	func	Style_GetCommandList	(style) -> g_StyleCommands[style]
-00317be0	func	Style_GetWeaponCommandList	(weapon kind 0..27) -> command list
-00317e50	func	MoveList_IsLearned	(fighter, style, line) -> 0 if a command gated on this line isn't learned yet
-0031f120	func	Fighter_SetAction	(fighter, action, ?) starts an action from g_ActionScripts
+0030dfd0	func	Combat_TakeHit	applies pending damage, knockdown meter, calls Fighter_ApplyDamage	void (Fighter *fighter)
+00317bc0	func	Style_GetCommandList	(style) -> g_StyleCommands[style]	Command *(int style)
+00317be0	func	Style_GetWeaponCommandList	(weapon kind 0..27) -> command list	Command *(int weapon_kind)
+00317e50	func	MoveList_IsLearned	(fighter, style, line) -> 0 if a command gated on this line isn't learned yet	int (Fighter *fighter, int style, int line)
+0031f120	func	Fighter_SetAction	(fighter, action, ?) starts an action from g_ActionScripts	void (Fighter *fighter, int action)
 0034be50	func	ZenFS_OpenXafIndex
 0034c0a0	func	ZenFS_OpenArchive
 0034c330	func	ZenFS_Open
@@ -78,41 +78,41 @@
 0034d2d0	func	ZenAudio_GetSoundStatus
 0034ea50	func	zenGetIOPReply
 00387760	func	Text_LoadLanguage	localized text from CDATA entries 385-432
-00387980	func	Text_Get	(text id) -> string
+00387980	func	Text_Get	(text id) -> string	const char *(int text_id, int zero)
 003a4f40	func	Script_LoadEventList	loads SCRIPT.XAF entry 1000+n into 0x76F100
-004f2400	data	g_ItemTable	488 x 52 bytes: {u32 category, u32 ?, u32 flags, u32 use handler, u16 icon?, s16 parts[...] -1}
-004fb4c0	data	g_AnimGroups	317 x 8 bytes: {s16 STAGE.XAF entry, s16 0, s16* anim IDs}
+004f2400	data	g_ItemTable	488 x 52 bytes: {u32 category, u32 ?, u32 flags, u32 use handler, u16 icon?, s16 parts[...] -1}	ItemDef[488]
+004fb4c0	data	g_AnimGroups	317 x 8 bytes: {s16 STAGE.XAF entry, s16 0, s16* anim IDs}	AnimGroup[317]
 0050b990	data	g_ActionRemap_M	s16 per action ID, medium body (class row +8)
 0050bde0	data	g_ActionRemap_L	s16 per action ID, large body
 0050c230	data	g_ActionRemap_S	s16 per action ID, small body
-0050d6a0	data	g_ClassTable	51 x 16 bytes: {body, style, action remap ptr, group list ptr}, row = type - 1
-00515c10	data	g_StyleCommands	one pointer per style 0x01-0x24: list of {cond ptr, sequence ptr}, sequence ptr 0 ends
-00580a40	data	g_ActionHits	2004 pointers: per action, 16-byte hit records (+8 u16 base damage, +14 u16 flags)
+0050d6a0	data	g_ClassTable	51 x 16 bytes: {body, style, action remap ptr, group list ptr}, row = type - 1	ClassRow[51]
+00515c10	data	g_StyleCommands	one pointer per style 0x01-0x24: list of {cond ptr, sequence ptr}, sequence ptr 0 ends	Command *[37]
+00580a40	data	g_ActionHits	2004 pointers: per action, 16-byte hit records (+8 u16 base damage, +14 u16 flags)	HitRecord *[2004]
 00582990	data	g_ActionEvents	2004 pointers: per action, 16-byte event records starting with a handler address
-005848e0	data	g_ActionScripts	2001 x {u32 motion script, u32 second stream}; Fighter_SetAction copies them to fighter +0x3FD4/+0x3FD8 (docs/ANIMATION.md)
+005848e0	data	g_ActionScripts	2001 x {u32 motion script, u32 second stream}; Fighter_SetAction copies them to fighter +0x3FD4/+0x3FD8 (docs/ANIMATION.md)	ActionScript[2001]
 00589af0	data	g_CharTypeNames	52 string pointers (UNKNOWN, BOXER_S, ...)
 005ab0d0	data	g_GraphNames	602 x {u32 0, char* name}: names of GRAPH.XAF entries
 005cab40	data	g_MoveListTable	47 x {u16 first input text, u16 last, u16 first name text, u16 last}
-005d04d0	data	g_AttackRankMul	float[7] {0.5, 1.0, 1.3, 1.6, 1.8, 1.9, 2.0}, indexed by person +81
-005d04f0	data	g_EnemyDamageByDifficulty	float[4] {1.0, 0.8, 1.0, 1.5}, indexed by g_SystemData +4
+005d04d0	data	g_AttackRankMul	float[7] {0.5, 1.0, 1.3, 1.6, 1.8, 1.9, 2.0}, indexed by person +81	f32[7]
+005d04f0	data	g_EnemyDamageByDifficulty	float[4] {1.0, 0.8, 1.0, 1.5}, indexed by g_SystemData +4	f32[4]
 005d4250	data	g_StylePrideMul	byte per style: Pride damage percent (Boxer 120, Negotiator 150, Carlo 200...), see MECHANICS.md
-005febd0	data	g_Party	s16 person IDs of the party (saved, 8 bytes)
-005ffdd8	data	g_PresetData	pointer to CDATA.XAF entry 0 in RAM: 189 presets x 1176 bytes
-0060a680	data	g_EventFlags	1024 bytes = 8192 story/event flags (saved)
+005febd0	data	g_Party	s16 person IDs of the party (saved, 8 bytes)	s16[4]
+005ffdd8	data	g_PresetData	pointer to CDATA.XAF entry 0 in RAM: 189 presets x 1176 bytes	Preset *
+0060a680	data	g_EventFlags	1024 bytes = 8192 story/event flags (saved)	u8[1024]
 0060b6e0	data	g_SaveBlock_365AC	1024 bytes (saved)
 0060bae0	data	g_SaveBlock_369AC	200 bytes (saved)
 0060be10	data	g_SaveBlock_357B0	56 bytes (saved)
 0060be50	data	g_SaveBlock_35FF4	156 bytes (saved)
-0060bef0	data	g_Inventory	2052 bytes: u32 count, u32 items[512] (bits 0-11 item, 12-15 qty) (saved)
-0060c700	data	g_SystemData	584 bytes: the system save file (options, unlocks); +4 difficulty, +0x10 language
-0060c990	data	g_StoryVars	128 x s16 script variables, 0-99, saved (save block 0x36090); read by the script VM at 0x39D2B0
+0060bef0	data	g_Inventory	2052 bytes: u32 count, u32 items[512] (bits 0-11 item, 12-15 qty) (saved)	Inventory
+0060c700	data	g_SystemData	584 bytes: the system save file (options, unlocks); +4 difficulty, +0x10 language	SystemData
+0060c990	data	g_StoryVars	128 x s16 script variables, 0-99, saved (save block 0x36090); read by the script VM at 0x39D2B0	s16[128]
 0060ca90	data	g_SaveBlock_34EE0	2256 bytes (saved)
-0060d19c	data	g_TotalMoneyEarned	s32, grows when the player gains money
-0060d360	data	g_Persons	210 x 1084-byte person records; 0 = the player; 0-199 are saved
-0060d3a0	data	g_PlayerMoney	s32 = g_Persons[0] +0x40
-00413130	data	g_PersonDefs	602 x 72-byte person templates (heroes, enemies, NPCs)
-00411acc	data	g_ScriptOpcodes	118 x 20 bytes {char* name, id, argc, ?, char* argtypes}: EXF_* script commands
-006cfb70	data	g_Fighters	fighters, 0x4730 bytes each; 0 = player, 2..12 = NPC slots
+0060d19c	data	g_TotalMoneyEarned	s32, grows when the player gains money	s32
+0060d360	data	g_Persons	210 x 1084-byte person records; 0 = the player; 0-199 are saved	Person[210]
+0060d3a0	data	g_PlayerMoney	s32 = g_Persons[0] +0x40	s32
+00413130	data	g_PersonDefs	602 x 72-byte person templates (heroes, enemies, NPCs)	PersonDef[602]
+00411acc	data	g_ScriptOpcodes	118 x 20 bytes {char* name, id, argc, ?, char* argtypes}: EXF_* script commands	ScriptOpcode[118]
+006cfb70	data	g_Fighters	fighters, 0x4730 bytes each; 0 = player, 2..12 = NPC slots	Fighter[13]
 0076f100	data	g_EventList	SCRIPT.XAF event list buffer
 001db720	func	Save_BuildGameFile	calls SaveData_Pack before the memory card write
 001dd1f0	func	Load_ApplyGameFile	calls SaveData_Unpack after a memory card read
@@ -121,27 +121,27 @@
 003340d0	func	Debug_ShopSelect	"[SELECT SHOP]" debug shop picker
 0060c704	data	g_Difficulty	byte in g_SystemData, indexes g_EnemyDamageByDifficulty
 0060c710	data	g_Language	byte in g_SystemData, passed to the move list text lookups
-006d3f8c	data	g_Player_HP	s16 = g_Fighters[0] +0x441C
-006d3f8e	data	g_Player_MaxHP	s16 = g_Fighters[0] +0x441E
-0013ca80	func	Fighter_DisplayName	hero presets get the hero name (found by the model-swap work)
+006d3f8c	data	g_Player_HP	s16 = g_Fighters[0] +0x441C	s16
+006d3f8e	data	g_Player_MaxHP	s16 = g_Fighters[0] +0x441E	s16
+0013ca80	func	Fighter_DisplayName	hero presets get the hero name (found by the model-swap work)	const char *(int person_id)
 003e0130	data	CodeCave_SwapModel	20 unused zero words before the VU microcode; used by bdkit swap-model
 002fb8d0	func	Fighter_PrideDamage	(defender, base, attacker) Pride loss per hit: base + 30..39, x style %, + 10 - 20 x HP%, x (1 + 0.2 Technique)
-002fbae0	func	Fighter_SubPride	(fighter, amount) fighter +0x4420 -= amount, floor 0
-002f8c00	func	Fighter_GetPride	(fighter) -> float fighter +0x4420
+002fbae0	func	Fighter_SubPride	(fighter, amount) fighter +0x4420 -= amount, floor 0	void (Fighter *fighter, int amount)
+002f8c00	func	Fighter_GetPride	(fighter) -> float fighter +0x4420	f32 (Fighter *fighter)
 00314d30	func	Combat_SituationFactor	(defender, attacker, &factor, &flag) low HP x0.8/x0.5, counter x1.5, combo scaling, hold x1.5
-002f9f30	func	Person_IsBoss	(fighter) template +0x0D == 5; bosses take weapon power / 3
-002fa150	func	Fighter_IsAttacking	(fighter) state +0x4378 == 2 (ATTACK)
-002fa170	func	Fighter_IsReeling	(fighter) state +0x4378 & 0x1E0 (damage states)
-002fa180	func	Fighter_IsHolding	(fighter) state +0x4378 == 4 (HOLD)
-002f8ab0	func	Player_GetAbilityLevel	(fighter, 0..2) Stamina/Attack/Technique level for the player, 0 for others
+002f9f30	func	Person_IsBoss	(fighter) template +0x0D == 5; bosses take weapon power / 3	int (Fighter *fighter)
+002fa150	func	Fighter_IsAttacking	(fighter) state +0x4378 == 2 (ATTACK)	int (Fighter *fighter)
+002fa170	func	Fighter_IsReeling	(fighter) state +0x4378 & 0x1E0 (damage states)	int (Fighter *fighter)
+002fa180	func	Fighter_IsHolding	(fighter) state +0x4378 == 4 (HOLD)	int (Fighter *fighter)
+002f8ab0	func	Player_GetAbilityLevel	(fighter, 0..2) Stamina/Attack/Technique level for the player, 0 for others	int (Fighter *fighter, int ability)
 002afee0	func	Battle_CalcExp	EXP for a fight: per enemy (lvl diff + 1)^2 + 30 (10 if weaker), plus bonus, cap 100
 002b00f0	func	Battle_GiveExp	adds the fight's EXP to the player and party; 100 EXP = 1 level, cap 50
-002b2660	func	Battle_AddBonusExp	(n) adds to the EXP bonus pool at gp-21468, cap 100
+002b2660	func	Battle_AddBonusExp	(n) adds to the EXP bonus pool at gp-21468, cap 100	void (int n)
 0013dfe0	func	Criminal_Recalc	rebuilds Leadership, Cash Flow and Charisma (0-255) from counters and difficulty weights
-0013df00	func	Criminal_AddLeadership	(n) adds to the Leadership bonus 0x60D34C
-0013df20	func	Criminal_AddCash	(n) adds to the Cash Flow bonus 0x60D34E
-0013df40	func	Criminal_AddCharisma	(n) adds to the Charisma bonus 0x60D350
-0013df60	func	Criminal_AddCashScore	(amount) 0x60D1A8 += amount / 1000 x {0,1,2,3}[difficulty]
+0013df00	func	Criminal_AddLeadership	(n) adds to the Leadership bonus 0x60D34C	void (int n)
+0013df20	func	Criminal_AddCash	(n) adds to the Cash Flow bonus 0x60D34E	void (int n)
+0013df40	func	Criminal_AddCharisma	(n) adds to the Charisma bonus 0x60D350	void (int n)
+0013df60	func	Criminal_AddCashScore	(amount) 0x60D1A8 += amount / 1000 x {0,1,2,3}[difficulty]	void (int amount)
 002af450	func	Criminal_GetTitle	-> title 0..27: 7 x (dominant score, 3 = balanced) + tier (thresholds 21/61/101/141/191/241)
 002af640	func	Criminal_GetTitleCategory	title -> 0..4 at gp-21540, probably the ending
 00348020	func	Weapon_RollLoss	chance % = 0x5D7D90[class] + template +0x28 - 10 x Technique; probably weapon break
@@ -163,7 +163,7 @@
 00589680	data	g_TitleMenuItems	5 x {s16 element, s16 enabled, s16 action, s16 0}, then -1; action indexes g_TitleMenuJump
 00589710	data	g_TitleMenuDebugStrings	ASCII fallback labels (PRESS START BUTTON ... OPTIONS, DEBUG) used when a text id is 0
 00589740	data	g_TitleMenuTextIds	u16 text id per label index; index 7 (DEBUG) is 0
-00589760	data	g_TitleMenuElements	8 x 20 bytes {float x, float y, float scale, u16 label index, u16 0, u32 colour ptr}; element 7 = DEBUG at y 403
+00589760	data	g_TitleMenuElements	8 x 20 bytes {float x, float y, float scale, u16 label index, u16 0, u32 colour ptr}; element 7 = DEBUG at y 403	TitleMenuElement[8]
 005d7890	data	g_TitleMenuJump	6 handlers: NEW GAME, LOAD GAME, VS NORMAL, VS CUSTOM, OPTIONS (state 17), DEBUG (0x33DE38 -> DebugMenu_Main)
 00340220	func	DebugMenu_Main	cut DEBUG menu: SCENE PLAYER, LANGUAGE, EXIT (records 0x5899E0)
 00340020	func	DebugMenu_Draw	draws the DEBUG menu
@@ -176,45 +176,45 @@
 00589a40	data	g_VsRoster	84 fighter IDs ending -999 (heroes, bosses, enemies)
 00589a30	data	g_VsStages	7 stage ids ending -999
 00599000	data	g_DebugSwitches	48 x u32 compile-time switches, nothing writes them; 5 = developer debug mode
-0039ba00	func	Debug_GetSwitch	(n) -> g_DebugSwitches[n] != 0
+0039ba00	func	Debug_GetSwitch	(n) -> g_DebugSwitches[n] != 0	int (int n)
 001d02b0	func	Pad_RemapButtons	raw pad bits -> game bits (Up 4, Down 8, Left 1, Right 2, Start 0x10, Select 0x20, Tri 0x40, X 0x80, Sq 0x100, O 0x200, L1 0x400, L2 0x800, R1 0x1000, R2 0x2000, L3 0x4000, R3 0x8000)
 00685450	data	g_Pad1	pad 1 state: +4 held, +8 newly pressed (game bits); pad 2 at 0x6854D0
 00509d90	data	g_OptionPages	option menu pages of 16 x 32-byte records, 0x200 apart; +20 default, +26 shown from the title screen, +27 shown from the pause menu
 002e9590	func	Options_SetMode	(0 = title screen, 1 = pause menu) -> gp-20216, picks byte +26 or +27 of each option record
-00172bd0	func	StoryVar_Add	(index, delta) adds to g_StoryVars[index], refusing to pass 99 or a total budget of 200
+00172bd0	func	StoryVar_Add	(index, delta) adds to g_StoryVars[index], refusing to pass 99 or a total budget of 200	int (int index, int delta)
 0019f370	func	Debug_HeadStart	story setup: only with debug switch 18, adds to about 70 g_StoryVars
 005ffe30	data	g_DebugOverlayOn	u8, switch 5 fighter overlay shown (toggled by L2+R2)
 005ffe44	data	g_DebugOverlayPage	u8, switch 5 overlay page 0-9 (L2+L3)
 00216538	func	Unused_DmaGsUpload	library DMA/GS upload code nothing calls or points to; code cave for bdkit roster hooks
-0031b210	func	HpBar_Build	(side) builds one side's HP bar, one name line per team member; called from 0x3184D4; jal Fighter_DisplayName at 0x31B3E4 (hooked by bdkit roster)
-0013c5c0	func	Team_GetMember	(side, i) -> person id from the team lists 0x76EAC8 (side 0) / 0x76EAD0 (side 1), s16 ending -1
+0031b210	func	HpBar_Build	(side) builds one side's HP bar, one name line per team member; called from 0x3184D4; jal Fighter_DisplayName at 0x31B3E4 (hooked by bdkit roster)	void (int side)
+0013c5c0	func	Team_GetMember	(side, i) -> person id from the team lists 0x76EAC8 (side 0) / 0x76EAD0 (side 1), s16 ending -1	int (int side, int i)
 002dd500	func	Battle_Update	battle state machine, state at g_Battle +0x10 (12 states, jump table 0x5CF240): 0 fight, 2 after a KO, 3-5 talk scene, 6 resume fight, 10 end
 002de540	func	Battle_RequestTalk	(fighter, kind) threaten button: allowed when the target is DOWN or GUARD, or during threaten grabs; sets g_Battle +0x144 bit 4, +0x60 = fighter, +0x5C = kind
-002de6e0	func	Battle_StartTalk	(kind) starts the talk scene: 0 = threaten (RECRUIT/ROB/INTERROGATE/BEATDOWN menu), 1 = after knocking out a non-boss, 3 = beg for your life
+002de6e0	func	Battle_StartTalk	(kind) starts the talk scene: 0 = threaten (RECRUIT/ROB/INTERROGATE/BEATDOWN menu), 1 = after knocking out a non-boss, 3 = beg for your life	void (int kind)
 002de850	func	Talk_Update	talk scene steps at g_Battle +0x12; returns an outcome code that Battle_Update turns into a result (table 0x5CF210)
 002e0150	func	Talk_OpenMenu	builds the negotiation menu from 0x5A90F0 (kind 3 uses 0x5A9160)
 002e0310	func	Talk_PollMenu	waits for a menu choice; the choice goes to g_Battle +0x94
-002e2f60	func	Battle_OnFighterDown	(fighter, flag) records the downed fighter at g_Battle +0xB8 and sets +0x144 bit 8
+002e2f60	func	Battle_OnFighterDown	(fighter, flag) records the downed fighter at g_Battle +0xB8 and sets +0x144 bit 8	void (Fighter *fighter, int flag)
 002e37e0	func	Battle_IsStoryTalkBattle	story mode, not VS, g_Battle +0x144 bit 1; the empty-Pride x1.2 damage condition
 002e38d0	func	Battle_CanTalkAfterKO	(winner, loser) story battle, loser not a boss and not one of 8 ally person ids
 002e3a20	func	Battle_PrideHudShown	Pride bars shown: not VS, not flag 0x200, target's person +0x388 bit 31 clear, battle type (0x76EAA0) not 3
-002f8c20	func	Fighter_GetPrideRatio	Pride / max Pride
-002fb120	func	Fighter_HasPride	1 when Pride is not 0
+002f8c20	func	Fighter_GetPrideRatio	Pride / max Pride	f32 (Fighter *fighter)
+002fb120	func	Fighter_HasPride	1 when Pride is not 0	int (Fighter *fighter)
 00313f90	func	Fighter_PrideRegen	refills Pride from a timer after it hits 0
-005ffc6c	data	g_Battle	pointer to the battle context (gp-20356): +4/+8 the two sides' fighters, +0x10 state, +0x12 talk step, +0x60 winner/talker, +0x64 loser, +0x6C talk kind, +0x144 flags
+005ffc6c	data	g_Battle	pointer to the battle context (gp-20356): +4/+8 the two sides' fighters, +0x10 state, +0x12 talk step, +0x60 winner/talker, +0x64 loser, +0x6C talk kind, +0x144 flags	Battle *
 002dc1e0	func	Anim_ResetAll	frees every animation slot not marked resident, clears the group counts
 002dc280	func	Anim_SetSlot	(slot, data) stores a loaded animation; slot = anim id + 1
-002dc2e0	func	Anim_IsLoaded	(slot) -> g_AnimSlots[slot] != 0
-002dc300	func	Anim_GetSlot	(slot) -> animation data (+0xC float length)
-002dc790	func	Anim_UnloadGroup	(group) drops one reference, frees animations nobody else holds
-002dc880	func	Anim_UnloadGroupList	(9999-terminated group list)
+002dc2e0	func	Anim_IsLoaded	(slot) -> g_AnimSlots[slot] != 0	int (int slot)
+002dc300	func	Anim_GetSlot	(slot) -> animation data (+0xC float length)	void *(int slot)
+002dc790	func	Anim_UnloadGroup	(group) drops one reference, frees animations nobody else holds	int (int group)
+002dc880	func	Anim_UnloadGroupList	(9999-terminated group list)	void (int *groups)
 002dc990	func	Anim_UnloadClassGroups	(class row) unloads the row's group list
-002f0900	func	Fighter_PlayMotion	(fighter, anim id, start frame, end frame or -1, blend frames); motion id at +0x3FA4
+002f0900	func	Fighter_PlayMotion	(fighter, anim id, start frame, end frame or -1, blend frames); motion id at +0x3FA4	void (Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames)
 00301cd0	func	Action_LoadMtd	loads "%s/%04d.mtd" and registers it with Action_Register
 00301d80	func	Action_Register	fills g_ActionScripts/Hits/Events for one action from a loaded record (ref count 0x7228E0)
-00307e40	func	Fighter_StartAction	(fighter, action); negative ids go through the class row's remap table
-0031f650	func	Action_Next	(fighter, action) chain to the next action; -3 and other negatives are special cases
-0031fae0	func	Action_Step	runs the fighter's motion script (+0x3FD4) until it plays a motion or ends
+00307e40	func	Fighter_StartAction	(fighter, action); negative ids go through the class row's remap table	void (Fighter *fighter, int action)
+0031f650	func	Action_Next	(fighter, action) chain to the next action; -3 and other negatives are special cases	int (Fighter *fighter, int action)
+0031fae0	func	Action_Step	runs the fighter's motion script (+0x3FD4) until it plays a motion or ends	void (Fighter *fighter)
 006c55f0	data	g_AnimSlots	u32[0x6D1]: loaded animation per slot (anim id + 1)
 006c7140	data	g_AnimSlotRefs	u8 per slot: how many loaded groups hold it
 006c7860	data	g_AnimGroupRefs	u8[317]: how many times each animation group is loaded

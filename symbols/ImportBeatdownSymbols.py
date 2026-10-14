@@ -224,6 +224,126 @@ SYMS = [
     (0x006D3F8E, 'data', 'g_Player_MaxHP', 's16 = g_Fighters[0] +0x441E'),
     (0x0076F100, 'data', 'g_EventList', 'SCRIPT.XAF event list buffer'),
 ]
+STRUCTS = [
+    ('OutfitSlot', 36, 'one outfit slot: an item and the model parts it adds', [(0, 'u32', 'item', 'index into g_ItemTable'), (4, 's16[16]', 'parts', 'ARCHIVE.XAF part ids, ending -1')]),
+    ('PresetParams', 384, "body parameters after a preset's 22 outfit slots", [(0, 's32', 'p0', 'copied to person +5'), (4, 's32', 'p1', 'copied to person +6'), (8, 's32', 'p2', 'copied to person +4'), (12, 's32', 'number', "the preset's own number"), (24, 's32', 'boss', '1 for boss presets; sets fighter flag 8')]),
+    ('Preset', 1176, 'outfit preset (CDATA.XAF entry 0, 189 records), read through Preset_Get', [(0, 'OutfitSlot[22]', 'slots', 'copied to person +0x68 and fighter +0x3FF8'), (792, 'PresetParams', 'params', '')]),
+    ('PersonDef', 72, 'person template, g_PersonDefs (602 records); Person_Init copies it into a person', [(4, 's16', 'preset', 'outfit preset: the model'), (6, 'u16', 'class_row', 'row in g_ClassTable: body, style, animation groups'), (8, 'u8', 'unk08', 'copied to the person record'), (13, 'u8', 'kind', '5 = story boss (Person_IsBoss); 2 is also tested'), (14, 's16', 'level', ''), (16, 's16', 'max_hp', ''), (18, 's16', 'pride', 'Pride Gauge max ("guard" in dumps/persons.txt)'), (21, 's8', 'attack_rank', 'index into g_AttackRankMul'), (24, 's32', 'money', ''), (40, 's32', 'weapon_break_mod', 'added to the weapon loss chance (heroes -20 to 0)'), (52, 'u8[16]', 'start_entries', 'two entries applied at spawn, probably weapons (copied to person +0x390)')]),
+    ('Person', 1084, 'person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get', [(0, 'u32', 'flags', ''), (58, 'u8', 'status', 'bit 1 = in hospital; 1 = probably in jail'), (62, 's16', 'id', 'person id (ids 200-209 are looked up by this)'), (64, 's32', 'money', '0-99,999,999'), (68, 's16', 'preset', 'outfit preset: the model'), (72, 's32', 'exp', '0-99; 100 = next level'), (76, 's16', 'level', '1-50'), (78, 's16', 'max_hp', 'cap 9999'), (81, 's8', 'attack_rank', 'index into g_AttackRankMul'), (82, 'u16', 'class_row', 'row in g_ClassTable (moveset)'), (84, 's16', 'hp', 'cap 9999'), (104, 'OutfitSlot[22]', 'outfit', 'copied from the preset'), (896, 's16', 'attack_percent', 'normally 100'), (898, 's16', 'bonus_max_hp', ''), (904, 'u32', 'flags388', 'bit 31 hides the Pride bar'), (912, 'u8[16]', 'start_entries', 'two entries applied at spawn (0x2FBC50), probably weapons'), (934, 's16', 'pride_max', 'Pride Gauge max'), (936, 'u8', 'ally_flags', 'bit 0 = ally (party or recruited)'), (948, 's16', 'bonus_max_hp2', 'added by Person_RecalcMaxHP')]),
+    ('Fighter', 18224, 'fighter in a fight, g_Fighters (0 = player, 2-12 = NPC slots)', [(0, 'u32', 'flags', 'bit 0 active; bit 1 motion playing, bit 2 action running, bit 3 ready for the next motion'), (24, 'void*', 'unk18', 'CODEMAP said "in use"; holds a heap pointer (0x01694A20) in a fight'), (684, 'f32[3]', 'pos', 'position x, y, z'), (16292, 's16', 'motion', "current animation slot (anim id + 1; the overlay's MOT + 1)"), (16294, 's16', 'prev_motion', ''), (16296, 'f32', 'blend', 'blend time (seconds)'), (16340, 'u8*', 'motion_script', "current action's motion script (docs/ANIMATION.md)"), (16344, 'u8*', 'second_stream', "current action's second stream"), (16348, 'u8*', 'loop_start', 'motion script loop start'), (16352, 'f32', 'motion_start', 'motion start time (seconds)'), (16356, 'f32', 'motion_end', 'motion end time (seconds)'), (16360, 'f32', 'speed', 'playback speed (1.0)'), (16364, 's32', 'loop_count', 'motion script loop counter'), (16376, 'OutfitSlot[22]', 'outfit', "copy of the person's outfit"), (17196, 's16', 'weapon', 'held weapon item, -1 = none'), (17222, 's16', 'action', "current action id (the overlay's TASK)"), (17224, 's16', 'hit_action', 'attack action used for the hit lookup'), (17272, 'u32', 'state', '2 = ATTACK, 4 = HOLD, 0x1E0 = damage states'), (17288, 'u32', 'flags4388', '0x4000 = holding a weapon'), (17296, 'u8', 'flags4390', 'bit 2: armour or special state (no counter/combo scaling)'), (17428, 'f32', 'attack_mul', 'attack multiplier'), (17432, 'f32', 'defense_mul', 'defense multiplier, normally 1.0'), (17436, 's16', 'hp', ''), (17438, 's16', 'max_hp', ''), (17440, 'f32', 'pride', 'Pride Gauge'), (17444, 's16', 'pride_max', ''), (17446, 's16', 'stagger', 'damage/stagger meter, capped at max HP'), (17448, 's16', 'stagger_max', '500'), (17450, 's16', 'tired', 'tired meter'), (17452, 's16', 'tired_max', '1.5 x max HP'), (17460, 's16[6]', 'limb_pool', 'per-limb attack pool'), (17472, 's16[6]', 'limb_pool_max', ''), (17584, 's16', 'pending_damage', ''), (17592, 'f32', 'limb_fatigue', 'per-limb float lowered by 0.1 every 30 points used (array; length not known)'), (17646, 's16', 'hit_count', ''), (17678, 's16', 'combo_hits', 'combo count used for damage scaling'), (17692, 's16', 'rev', 'REV meter'), (17694, 's16', 'rev_max', ''), (17776, 'u8', 'hit_index', 'current hit within the action'), (18051, 'u8', 'target', 'target fighter slot'), (18112, 's32', 'class_row', 'class row (type id - 1); picks the remap table'), (18120, 's32', 'body', 'body size 0 S, 1 M, 2 L'), (18204, 'u32', 'flags471C', 'bit 13 = takes no damage')]),
+    ('ClassRow', 16, 'g_ClassTable row (row = type id - 1): what a fighter class fights with', [(0, 'u32', 'body', '0 small, 1 medium, 2 large'), (4, 'u32', 'style', 'fighting style: picks g_StyleCommands[style]'), (8, 's16*', 'action_remap', 'g_ActionRemap_S/M/L'), (12, 's16*', 'groups', 'animation group ids ending 9999')]),
+    ('CmdInput', 8, 'one input of a command sequence', [(0, 'u32', 'code', 'input code (0xFFFFFFFF ends the sequence)'), (4, 's16', 'action', 'action id; set on the last input only')]),
+    ('Command', 8, "one command of a style's command list", [(0, 'u8*', 'condition', '16-byte unlock condition {u16 move list line, stat levels...}, 0 = always'), (4, 'CmdInput*', 'sequence', '0 ends the list')]),
+    ('HitRecord', 16, 'one hit of an action (g_ActionHits)', [(0, 'u32', 'kind', ''), (4, 'u32', 'unk4', ''), (8, 'u16', 'damage', 'base damage'), (10, 'u16', 'unkA', ''), (12, 'u16', 'unkC', ''), (14, 'u16', 'flags', '')]),
+    ('ActionScript', 8, 'g_ActionScripts entry; Fighter_SetAction copies it to fighter +0x3FD4', [(0, 'u8*', 'motion_script', ''), (4, 'u8*', 'second_stream', '')]),
+    ('AnimGroup', 8, 'g_AnimGroups entry', [(0, 's16', 'stage_entry', 'STAGE.XAF entry'), (4, 's16*', 'anims', 'animation ids')]),
+    ('ItemDef', 52, 'g_ItemTable entry (more fields further on: weapon class at +126 and +145 belong to another record)', [(0, 'u32', 'category', ''), (8, 'u32', 'flags', ''), (12, 'void*', 'use_handler', ''), (18, 's16[17]', 'parts', 'ARCHIVE.XAF part ids ending -1')]),
+    ('Inventory', 2052, 'g_Inventory (saved)', [(0, 'u32', 'count', ''), (4, 'u32[512]', 'items', 'bits 0-11 item, 12-15 quantity')]),
+    ('SystemData', 584, 'g_SystemData, the system save file (options, unlocks)', [(4, 'u8', 'difficulty', 'indexes g_EnemyDamageByDifficulty'), (16, 'u8', 'language', '0 JP, 1 EN, 2 FR, 3 DE, 4 ES, 5 IT')]),
+    ('ScriptOpcode', 20, 'g_ScriptOpcodes entry: an EXF_* script command', [(0, 'char*', 'name', ''), (16, 'char*', 'arg_types', '')]),
+    ('TitleMenuElement', 20, 'g_TitleMenuElements entry', [(0, 'f32', 'x', ''), (4, 'f32', 'y', ''), (8, 'f32', 'scale', ''), (12, 'u16', 'label', 'label index'), (16, 'u32*', 'colour', '')]),
+    ('Battle', None, 'battle context, *g_Battle (docs/PLAN-auto-negotiation.md)', [(16, 's32', 'state', '0 = fighting, 2 = a side went down'), (88, 's32', 'unk58', 'cleared when the after-KO talk starts'), (96, 's32', 'winner', ''), (100, 's32', 'loser', ''), (108, 's32', 'talk_kind', '0 threaten menu, 1 after a knockout, 3 beg for your life'), (156, 'u32', 'flags9C', 'bit 0 = resume the fight'), (184, 's32', 'down', 'records a knockout (Battle_OnFighterDown)')]),
+]
+TYPES = [
+    (0x001107C8, 'func', 'scePrintf', 'int (const char *fmt, ...)'),
+    (0x0012BA38, 'func', 'memcpy', 'void *(void *dst, const void *src, u32 size)'),
+    (0x0012BBF0, 'func', 'memset', 'void *(void *dst, int byte, u32 size)'),
+    (0x00138D20, 'func', 'Graph_FindName', 'int (const char *name)'),
+    (0x00138E20, 'func', 'Flag_Get', 'int (int n)'),
+    (0x00138E70, 'func', 'Flag_Set', 'void (int n)'),
+    (0x00138EC0, 'func', 'Flag_Clear', 'void (int n)'),
+    (0x0013A950, 'func', 'SaveData_Pack', 'void (void *buf)'),
+    (0x0013AAB0, 'func', 'SaveData_Unpack', 'void (void *buf)'),
+    (0x0013B490, 'func', 'Person_Init', 'void (int slot, int person_def, int temp)'),
+    (0x0013C5C0, 'func', 'Team_GetMember', 'int (int side, int i)'),
+    (0x0013C960, 'func', 'Person_Get', 'Person *(int person_id)'),
+    (0x0013CA80, 'func', 'Fighter_DisplayName', 'const char *(int person_id)'),
+    (0x0013CC70, 'func', 'Person_SetMoney', 'void (int person_id, int value)'),
+    (0x0013CDC0, 'func', 'Person_AddMoney', 'void (int person_id, int delta)'),
+    (0x0013D000, 'func', 'Inventory_InitForHero', 'void (void)'),
+    (0x0013DF00, 'func', 'Criminal_AddLeadership', 'void (int n)'),
+    (0x0013DF20, 'func', 'Criminal_AddCash', 'void (int n)'),
+    (0x0013DF40, 'func', 'Criminal_AddCharisma', 'void (int n)'),
+    (0x0013DF60, 'func', 'Criminal_AddCashScore', 'void (int amount)'),
+    (0x00172BD0, 'func', 'StoryVar_Add', 'int (int index, int delta)'),
+    (0x00176130, 'func', 'Fighter_FindNpcSlot', 'int (int person_id)'),
+    (0x001C5BA0, 'func', 'MoveList_Count', 's16 (int unused, int style)'),
+    (0x001C5BF0, 'func', 'MoveList_NameText', 'const char *(int unused, int style, int line)'),
+    (0x001C5C30, 'func', 'MoveList_InputText', 'const char *(int unused, int style, int line)'),
+    (0x001C5C70, 'func', 'MoveList_Color', 'int (int style, int line)'),
+    (0x0029BC40, 'func', 'Xaf_QueueLoad', 'int (int archive, int entry, int mode)'),
+    (0x002A63A0, 'func', 'Cmd_CheckCondition', 'int (Fighter *fighter, u8 *condition)'),
+    (0x002A6720, 'func', 'Cmd_MatchSequence', 's16 (Fighter *fighter, int *history, Command *list)'),
+    (0x002A68B0, 'func', 'Cmd_MatchSingle', 's16 (Fighter *fighter, int code, Command *list, int *out)'),
+    (0x002A8720, 'func', 'Preset_Get', 'void *(int preset, int part)'),
+    (0x002A89D0, 'func', 'Fighter_AssignPerson', 'void (int slot, int person_id)'),
+    (0x002AFD60, 'func', 'Person_RecalcMaxHP', 'void (int person_id)'),
+    (0x002B2660, 'func', 'Battle_AddBonusExp', 'void (int n)'),
+    (0x002DC2E0, 'func', 'Anim_IsLoaded', 'int (int slot)'),
+    (0x002DC300, 'func', 'Anim_GetSlot', 'void *(int slot)'),
+    (0x002DC790, 'func', 'Anim_UnloadGroup', 'int (int group)'),
+    (0x002DC880, 'func', 'Anim_UnloadGroupList', 'void (int *groups)'),
+    (0x002DE6E0, 'func', 'Battle_StartTalk', 'void (int kind)'),
+    (0x002E2F60, 'func', 'Battle_OnFighterDown', 'void (Fighter *fighter, int flag)'),
+    (0x002F0900, 'func', 'Fighter_PlayMotion', 'void (Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames)'),
+    (0x002F8A30, 'func', 'Fighter_RemapAction', 's16 (Fighter *fighter, int action)'),
+    (0x002F8A60, 'func', 'Fighter_RemapActionNeg', 's16 (Fighter *fighter, int action)'),
+    (0x002F8AB0, 'func', 'Player_GetAbilityLevel', 'int (Fighter *fighter, int ability)'),
+    (0x002F8BA0, 'func', 'Fighter_GetHP', 's16 (Fighter *fighter)'),
+    (0x002F8BB0, 'func', 'Fighter_GetMaxHP', 's16 (Fighter *fighter)'),
+    (0x002F8BC0, 'func', 'Fighter_GetHPRatio', 'f32 (Fighter *fighter)'),
+    (0x002F8C00, 'func', 'Fighter_GetPride', 'f32 (Fighter *fighter)'),
+    (0x002F8C20, 'func', 'Fighter_GetPrideRatio', 'f32 (Fighter *fighter)'),
+    (0x002F8C80, 'func', 'Fighter_GetPos', 'void (Fighter *fighter, f32 *xyz)'),
+    (0x002F8E00, 'func', 'Fighter_GetStyle', 'int (Fighter *fighter)'),
+    (0x002F9250, 'func', 'Fighter_GetPerson', 'Person *(Fighter *fighter)'),
+    (0x002F9260, 'func', 'Fighter_GetPersonDef', 'PersonDef *(Fighter *fighter)'),
+    (0x002F9F30, 'func', 'Person_IsBoss', 'int (Fighter *fighter)'),
+    (0x002FA150, 'func', 'Fighter_IsAttacking', 'int (Fighter *fighter)'),
+    (0x002FA170, 'func', 'Fighter_IsReeling', 'int (Fighter *fighter)'),
+    (0x002FA180, 'func', 'Fighter_IsHolding', 'int (Fighter *fighter)'),
+    (0x002FB120, 'func', 'Fighter_HasPride', 'int (Fighter *fighter)'),
+    (0x002FB780, 'func', 'Fighter_SetGuard', 'void (Fighter *fighter, int max, f32 value)'),
+    (0x002FB880, 'func', 'Fighter_ApplyDamage', 'void (Fighter *fighter, int damage)'),
+    (0x002FBAE0, 'func', 'Fighter_SubPride', 'void (Fighter *fighter, int amount)'),
+    (0x002FD300, 'func', 'Fighter_FindByPerson', 'Fighter *(int person_id)'),
+    (0x00304B60, 'func', 'Fighter_Spawn', 'void (int slot, int target, int team)'),
+    (0x00307E40, 'func', 'Fighter_StartAction', 'void (Fighter *fighter, int action)'),
+    (0x0030DFD0, 'func', 'Combat_TakeHit', 'void (Fighter *fighter)'),
+    (0x00317BC0, 'func', 'Style_GetCommandList', 'Command *(int style)'),
+    (0x00317BE0, 'func', 'Style_GetWeaponCommandList', 'Command *(int weapon_kind)'),
+    (0x00317E50, 'func', 'MoveList_IsLearned', 'int (Fighter *fighter, int style, int line)'),
+    (0x0031B210, 'func', 'HpBar_Build', 'void (int side)'),
+    (0x0031F120, 'func', 'Fighter_SetAction', 'void (Fighter *fighter, int action)'),
+    (0x0031F650, 'func', 'Action_Next', 'int (Fighter *fighter, int action)'),
+    (0x0031FAE0, 'func', 'Action_Step', 'void (Fighter *fighter)'),
+    (0x00387980, 'func', 'Text_Get', 'const char *(int text_id, int zero)'),
+    (0x0039BA00, 'func', 'Debug_GetSwitch', 'int (int n)'),
+    (0x00411ACC, 'data', 'g_ScriptOpcodes', 'ScriptOpcode[118]'),
+    (0x00413130, 'data', 'g_PersonDefs', 'PersonDef[602]'),
+    (0x004F2400, 'data', 'g_ItemTable', 'ItemDef[488]'),
+    (0x004FB4C0, 'data', 'g_AnimGroups', 'AnimGroup[317]'),
+    (0x0050D6A0, 'data', 'g_ClassTable', 'ClassRow[51]'),
+    (0x00515C10, 'data', 'g_StyleCommands', 'Command *[37]'),
+    (0x00580A40, 'data', 'g_ActionHits', 'HitRecord *[2004]'),
+    (0x005848E0, 'data', 'g_ActionScripts', 'ActionScript[2001]'),
+    (0x00589760, 'data', 'g_TitleMenuElements', 'TitleMenuElement[8]'),
+    (0x005D04D0, 'data', 'g_AttackRankMul', 'f32[7]'),
+    (0x005D04F0, 'data', 'g_EnemyDamageByDifficulty', 'f32[4]'),
+    (0x005FEBD0, 'data', 'g_Party', 's16[4]'),
+    (0x005FFC6C, 'data', 'g_Battle', 'Battle *'),
+    (0x005FFDD8, 'data', 'g_PresetData', 'Preset *'),
+    (0x0060A680, 'data', 'g_EventFlags', 'u8[1024]'),
+    (0x0060BEF0, 'data', 'g_Inventory', 'Inventory'),
+    (0x0060C700, 'data', 'g_SystemData', 'SystemData'),
+    (0x0060C990, 'data', 'g_StoryVars', 's16[128]'),
+    (0x0060D19C, 'data', 'g_TotalMoneyEarned', 's32'),
+    (0x0060D360, 'data', 'g_Persons', 'Person[210]'),
+    (0x0060D3A0, 'data', 'g_PlayerMoney', 's32'),
+    (0x006CFB70, 'data', 'g_Fighters', 'Fighter[13]'),
+    (0x006D3F8C, 'data', 'g_Player_HP', 's16'),
+    (0x006D3F8E, 'data', 'g_Player_MaxHP', 's16'),
+]
 for addr, kind, name, com in SYMS:
     a = toAddr(addr)
     if kind == 'func' and getFunctionAt(a) is None:
@@ -233,3 +353,92 @@ for addr, kind, name, com in SYMS:
     if com:
         setPlateComment(a, com)
 print('Imported %d Beat Down symbols' % len(SYMS))
+
+from ghidra.program.model.data import (ArrayDataType, ByteDataType, CategoryPath, CharDataType,
+    DataTypeConflictHandler, FloatDataType, FunctionDefinitionDataType, IntegerDataType, LongLongDataType,
+    ParameterDefinitionImpl, PointerDataType, ShortDataType, SignedByteDataType, StructureDataType,
+    UnsignedIntegerDataType, UnsignedLongLongDataType, UnsignedShortDataType, VoidDataType)
+from ghidra.app.cmd.function import ApplyFunctionSignatureCmd
+import re
+
+dtm = currentProgram.getDataTypeManager()
+CAT = CategoryPath("/BeatDown")
+
+# The ELF's zero-initialized globals (0x005FEB00-0x00788180) get no memory block from the loader, so
+# Ghidra can't type or follow them; map them as an uninitialized read/write block.
+mem = currentProgram.getMemory()
+pos, gaps = 0x005FEB00, []
+for blk in sorted(mem.getBlocks(), key=lambda b: b.getStart().getOffset()):
+    lo, hi = blk.getStart().getOffset(), blk.getEnd().getOffset() + 1
+    if hi <= pos or lo >= 0x00788180:
+        continue
+    if lo > pos:
+        gaps.append((pos, lo))
+    pos = max(pos, hi)
+if pos < 0x00788180:
+    gaps.append((pos, 0x00788180))
+for i, (lo, hi) in enumerate(gaps):
+    b = mem.createUninitializedBlock(".bss%s" % (i or ""), toAddr(lo), hi - lo, False)
+    b.setRead(True)
+    b.setWrite(True)
+    print("mapped .bss %08X-%08X" % (lo, hi - 1))
+PRIM = {"s8": SignedByteDataType.dataType, "u8": ByteDataType.dataType, "char": CharDataType.dataType,
+        "s16": ShortDataType.dataType, "u16": UnsignedShortDataType.dataType, "s32": IntegerDataType.dataType,
+        "u32": UnsignedIntegerDataType.dataType, "f32": FloatDataType.dataType, "s64": LongLongDataType.dataType,
+        "u64": UnsignedLongLongDataType.dataType, "void": VoidDataType.dataType, "int": IntegerDataType.dataType}
+
+def resolve(t):
+    t = t.replace("const ", "").strip()
+    m = re.match(r"^(\w+)\s*(\**)\s*(?:\[(\w+)\])?$", t)
+    base, ptr, count = m.group(1), len(m.group(2)), m.group(3)
+    dt = PRIM.get(base) or dtm.getDataType(CAT, base)
+    for _ in range(ptr):
+        dt = PointerDataType(dt, 4, dtm)
+    if count:
+        dt = ArrayDataType(dt, int(count, 0), dt.getLength())
+    return dt
+
+for name, size, com, fields in STRUCTS:
+    end = size or max(o + 1 for o, _, _, _ in fields)
+    s = StructureDataType(CAT, name, end, dtm)
+    s.setDescription(com)
+    dtm.addDataType(s, DataTypeConflictHandler.REPLACE_HANDLER)
+for name, size, com, fields in STRUCTS:
+    s = dtm.getDataType(CAT, name)
+    for off, t, field, fcom in fields:
+        dt = resolve(t)
+        if size is None and off + dt.getLength() > s.getLength():
+            s.growStructure(off + dt.getLength() - s.getLength())
+        s.replaceAtOffset(off, dt, dt.getLength(), field, fcom or None)
+
+def apply_func(addr, name, proto):
+    i = proto.index("(")
+    fd = FunctionDefinitionDataType(name)
+    fd.setReturnType(resolve(proto[:i]))
+    params = []
+    for a in proto[i + 1:proto.rindex(")")].split(","):
+        a = a.strip()
+        if a in ("", "void"):
+            continue
+        if a == "...":
+            fd.setVarArgs(True)
+            continue
+        m = re.match(r"^(.*?)(\w+)$", a)
+        params.append(ParameterDefinitionImpl(m.group(2), resolve(m.group(1)), None))
+    fd.setArguments(params)
+    ApplyFunctionSignatureCmd(toAddr(addr), fd, SourceType.USER_DEFINED).applyTo(currentProgram)
+
+typed = 0
+for addr, kind, name, proto in TYPES:
+    try:
+        if kind == "func":
+            apply_func(addr, name, proto)
+        else:
+            dt = resolve(proto)
+            a = toAddr(addr)
+            clearListing(a, a.add(dt.getLength() - 1))
+            createData(a, dt)
+        typed += 1
+    except Exception as e:
+        print("type for %s not applied: %s" % (name, e))
+print("Applied %d structs and %d symbol types" % (len(STRUCTS), typed))

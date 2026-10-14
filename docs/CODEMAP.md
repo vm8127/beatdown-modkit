@@ -21,15 +21,17 @@ Status words used below: **confirmed** means the code was read and the data chec
 
 ## Using the symbols
 
-`symbols/symbols.tsv` is the list of every name in this file (address, kind, name, comment). `python tools/codemap.py symbols ISO/SLUS_211.50 symbols` regenerates three exports in `symbols/`:
+`symbols/symbols.tsv` is the list of every name in this file (address, kind, name, comment, and the C type when known: `void (Fighter *fighter, int damage)` for a function, `Person[210]` for a table). `symbols/structs.tsv` holds the structs field by field (`Fighter`, `Person`, `PersonDef`, `Preset`, `OutfitSlot`, `ClassRow`, `Command`, `CmdInput`, `HitRecord`, `ActionScript`, `AnimGroup`, `ItemDef`, `Inventory`, `SystemData`, `ScriptOpcode`, `TitleMenuElement`, `Battle`); the tables in this file are the prose version, and a new field goes in both. `python tools/codemap.py symbols ISO/SLUS_211.50 symbols` regenerates three exports in `symbols/` plus the C mod headers `tools/cmod/structs.h` and `tools/cmod/symbols.h`:
 
 | File | For |
 |---|---|
 | `SLUS_211.50.sym` | PCSX2 debugger. One `ADDRESS name` per line (the no$ format PCSX2's symbol importer reads). In PCSX2 2.x: Settings, Debug, Analysis, add it as a symbol file, then reboot the game. Not tried on Daniel's PCSX2 yet. |
-| `ImportBeatdownSymbols.py` | Ghidra. Load `SLUS_211.50` at 0x00100000 (MIPS R5900, or the emotionengine-reloaded extension), then run it from the Script Manager. Creates functions, labels and plate comments. |
+| `ImportBeatdownSymbols.py` | Ghidra. Load `SLUS_211.50` at 0x00100000 (MIPS R5900, or the emotionengine-reloaded extension), then run it from the Script Manager. Creates functions, labels and plate comments, maps the zero-initialized globals, creates the structs and applies the types. |
 | `beatdown_symbols.csv` | Anything else (spreadsheets, IDA, scripts). |
 
-Other `codemap.py` commands: `commands` (a style's command table with damage), `hits` (one action's hit records), `persons` (all 602 person templates), `actions` (an action's motion script: which animations it plays), `anim-check` (animations a class's groups don't load), `pnach-map` (addresses each cheat writes, and overlaps). Their output for every style and person is in `dumps/commands.txt` and `dumps/persons.txt`.
+To see a struct's known fields with real values, `python tools/pcsx2.py show Fighter g_Fighters --state <save state>` (or live from the sandbox PCSX2 without `--state`).
+
+Other `codemap.py` commands: `infer-types` (struct pointer parameters for Ghidra, see README "Ghidra"), `commands` (a style's command table with damage), `hits` (one action's hit records), `persons` (all 602 person templates), `actions` (an action's motion script: which animations it plays), `anim-check` (animations a class's groups don't load), `pnach-map` (addresses each cheat writes, and overlaps). Their output for every style and person is in `dumps/commands.txt` and `dumps/persons.txt`.
 
 ## Memory map
 
@@ -181,7 +183,7 @@ Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind 
 |---|---|
 | `+0x000` | flags (bit 0 active) |
 | `+0x004`, `+0x008` | person id |
-| `+0x018` | in use |
+| `+0x018` | a heap pointer in a fight (0x01694A20 in a save state; was listed as "in use") |
 | `+0x2AC` | position, float x3 |
 | `+0x3FA4` / `+0x3FA6` | current / previous animation (id + 1; the overlay's MOT) |
 | `+0x3FD4`, `+0x3FD8` | current action's motion script / second stream (docs/ANIMATION.md has the other motion fields) |

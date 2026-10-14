@@ -1,0 +1,166 @@
+# The game's structs: the single source for tools/cmod/structs.h (C mods) and the Ghidra types
+# (symbols/ImportBeatdownSymbols.py). Regenerate both with: python tools/codemap.py symbols ISO/SLUS_211.50 symbols
+#
+# One line per field: struct, offset, type, name, comment. A line with offset "size" starts a struct and gives
+# its size in bytes ("?" = not known yet; the struct then ends after its last field) and its description.
+# Types: s8 u8 s16 u16 s32 u32 s64 u64 f32, void, char, another struct defined above, then any number of "*",
+# then an optional [count]. Gaps between fields become padding. Only add fields that the code or a test
+# confirms; say how sure a field is in its comment when it's a guess.
+# struct	offset	type	name	comment
+OutfitSlot	size	0x24		one outfit slot: an item and the model parts it adds
+OutfitSlot	0x00	u32	item	index into g_ItemTable
+OutfitSlot	0x04	s16[16]	parts	ARCHIVE.XAF part ids, ending -1
+
+PresetParams	size	0x180		body parameters after a preset's 22 outfit slots
+PresetParams	0x00	s32	p0	copied to person +5
+PresetParams	0x04	s32	p1	copied to person +6
+PresetParams	0x08	s32	p2	copied to person +4
+PresetParams	0x0C	s32	number	the preset's own number
+PresetParams	0x18	s32	boss	1 for boss presets; sets fighter flag 8
+
+Preset	size	0x498		outfit preset (CDATA.XAF entry 0, 189 records), read through Preset_Get
+Preset	0x000	OutfitSlot[22]	slots	copied to person +0x68 and fighter +0x3FF8
+Preset	0x318	PresetParams	params
+
+PersonDef	size	0x48		person template, g_PersonDefs (602 records); Person_Init copies it into a person
+PersonDef	0x04	s16	preset	outfit preset: the model
+PersonDef	0x06	u16	class_row	row in g_ClassTable: body, style, animation groups
+PersonDef	0x08	u8	unk08	copied to the person record
+PersonDef	0x0D	u8	kind	5 = story boss (Person_IsBoss); 2 is also tested
+PersonDef	0x0E	s16	level
+PersonDef	0x10	s16	max_hp
+PersonDef	0x12	s16	pride	Pride Gauge max ("guard" in dumps/persons.txt)
+PersonDef	0x15	s8	attack_rank	index into g_AttackRankMul
+PersonDef	0x18	s32	money
+PersonDef	0x28	s32	weapon_break_mod	added to the weapon loss chance (heroes -20 to 0)
+PersonDef	0x34	u8[16]	start_entries	two entries applied at spawn, probably weapons (copied to person +0x390)
+
+Person	size	0x43C		person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get
+Person	0x000	u32	flags
+Person	0x03A	u8	status	bit 1 = in hospital; 1 = probably in jail
+Person	0x03E	s16	id	person id (ids 200-209 are looked up by this)
+Person	0x040	s32	money	0-99,999,999
+Person	0x044	s16	preset	outfit preset: the model
+Person	0x048	s32	exp	0-99; 100 = next level
+Person	0x04C	s16	level	1-50
+Person	0x04E	s16	max_hp	cap 9999
+Person	0x051	s8	attack_rank	index into g_AttackRankMul
+Person	0x052	u16	class_row	row in g_ClassTable (moveset)
+Person	0x054	s16	hp	cap 9999
+Person	0x068	OutfitSlot[22]	outfit	copied from the preset
+Person	0x380	s16	attack_percent	normally 100
+Person	0x382	s16	bonus_max_hp
+Person	0x388	u32	flags388	bit 31 hides the Pride bar
+Person	0x390	u8[16]	start_entries	two entries applied at spawn (0x2FBC50), probably weapons
+Person	0x3A6	s16	pride_max	Pride Gauge max
+Person	0x3A8	u8	ally_flags	bit 0 = ally (party or recruited)
+Person	0x3B4	s16	bonus_max_hp2	added by Person_RecalcMaxHP
+
+Fighter	size	0x4730		fighter in a fight, g_Fighters (0 = player, 2-12 = NPC slots)
+Fighter	0x0000	u32	flags	bit 0 active; bit 1 motion playing, bit 2 action running, bit 3 ready for the next motion
+Fighter	0x0018	void*	unk18	CODEMAP said "in use"; holds a heap pointer (0x01694A20) in a fight
+Fighter	0x02AC	f32[3]	pos	position x, y, z
+Fighter	0x3FA4	s16	motion	current animation slot (anim id + 1; the overlay's MOT + 1)
+Fighter	0x3FA6	s16	prev_motion
+Fighter	0x3FA8	f32	blend	blend time (seconds)
+Fighter	0x3FD4	u8*	motion_script	current action's motion script (docs/ANIMATION.md)
+Fighter	0x3FD8	u8*	second_stream	current action's second stream
+Fighter	0x3FDC	u8*	loop_start	motion script loop start
+Fighter	0x3FE0	f32	motion_start	motion start time (seconds)
+Fighter	0x3FE4	f32	motion_end	motion end time (seconds)
+Fighter	0x3FE8	f32	speed	playback speed (1.0)
+Fighter	0x3FEC	s32	loop_count	motion script loop counter
+Fighter	0x3FF8	OutfitSlot[22]	outfit	copy of the person's outfit
+Fighter	0x432C	s16	weapon	held weapon item, -1 = none
+Fighter	0x4346	s16	action	current action id (the overlay's TASK)
+Fighter	0x4348	s16	hit_action	attack action used for the hit lookup
+Fighter	0x4378	u32	state	2 = ATTACK, 4 = HOLD, 0x1E0 = damage states
+Fighter	0x4388	u32	flags4388	0x4000 = holding a weapon
+Fighter	0x4390	u8	flags4390	bit 2: armour or special state (no counter/combo scaling)
+Fighter	0x4414	f32	attack_mul	attack multiplier
+Fighter	0x4418	f32	defense_mul	defense multiplier, normally 1.0
+Fighter	0x441C	s16	hp
+Fighter	0x441E	s16	max_hp
+Fighter	0x4420	f32	pride	Pride Gauge
+Fighter	0x4424	s16	pride_max
+Fighter	0x4426	s16	stagger	damage/stagger meter, capped at max HP
+Fighter	0x4428	s16	stagger_max	500
+Fighter	0x442A	s16	tired	tired meter
+Fighter	0x442C	s16	tired_max	1.5 x max HP
+Fighter	0x4434	s16[6]	limb_pool	per-limb attack pool
+Fighter	0x4440	s16[6]	limb_pool_max
+Fighter	0x44B0	s16	pending_damage
+Fighter	0x44B8	f32	limb_fatigue	per-limb float lowered by 0.1 every 30 points used (array; length not known)
+Fighter	0x44EE	s16	hit_count
+Fighter	0x450E	s16	combo_hits	combo count used for damage scaling
+Fighter	0x451C	s16	rev	REV meter
+Fighter	0x451E	s16	rev_max
+Fighter	0x4570	u8	hit_index	current hit within the action
+Fighter	0x4683	u8	target	target fighter slot
+Fighter	0x46C0	s32	class_row	class row (type id - 1); picks the remap table
+Fighter	0x46C8	s32	body	body size 0 S, 1 M, 2 L
+Fighter	0x471C	u32	flags471C	bit 13 = takes no damage
+
+ClassRow	size	0x10		g_ClassTable row (row = type id - 1): what a fighter class fights with
+ClassRow	0x0	u32	body	0 small, 1 medium, 2 large
+ClassRow	0x4	u32	style	fighting style: picks g_StyleCommands[style]
+ClassRow	0x8	s16*	action_remap	g_ActionRemap_S/M/L
+ClassRow	0xC	s16*	groups	animation group ids ending 9999
+
+CmdInput	size	0x8		one input of a command sequence
+CmdInput	0x0	u32	code	input code (0xFFFFFFFF ends the sequence)
+CmdInput	0x4	s16	action	action id; set on the last input only
+
+Command	size	0x8		one command of a style's command list
+Command	0x0	u8*	condition	16-byte unlock condition {u16 move list line, stat levels...}, 0 = always
+Command	0x4	CmdInput*	sequence	0 ends the list
+
+HitRecord	size	0x10		one hit of an action (g_ActionHits)
+HitRecord	0x0	u32	kind
+HitRecord	0x4	u32	unk4
+HitRecord	0x8	u16	damage	base damage
+HitRecord	0xA	u16	unkA
+HitRecord	0xC	u16	unkC
+HitRecord	0xE	u16	flags
+
+ActionScript	size	0x8		g_ActionScripts entry; Fighter_SetAction copies it to fighter +0x3FD4
+ActionScript	0x0	u8*	motion_script
+ActionScript	0x4	u8*	second_stream
+
+AnimGroup	size	0x8		g_AnimGroups entry
+AnimGroup	0x0	s16	stage_entry	STAGE.XAF entry
+AnimGroup	0x4	s16*	anims	animation ids
+
+ItemDef	size	0x34		g_ItemTable entry (more fields further on: weapon class at +126 and +145 belong to another record)
+ItemDef	0x00	u32	category
+ItemDef	0x08	u32	flags
+ItemDef	0x0C	void*	use_handler
+ItemDef	0x12	s16[17]	parts	ARCHIVE.XAF part ids ending -1
+
+Inventory	size	0x804		g_Inventory (saved)
+Inventory	0x0	u32	count
+Inventory	0x4	u32[512]	items	bits 0-11 item, 12-15 quantity
+
+SystemData	size	0x248		g_SystemData, the system save file (options, unlocks)
+SystemData	0x04	u8	difficulty	indexes g_EnemyDamageByDifficulty
+SystemData	0x10	u8	language	0 JP, 1 EN, 2 FR, 3 DE, 4 ES, 5 IT
+
+ScriptOpcode	size	0x14		g_ScriptOpcodes entry: an EXF_* script command
+ScriptOpcode	0x00	char*	name
+ScriptOpcode	0x10	char*	arg_types
+
+TitleMenuElement	size	0x14		g_TitleMenuElements entry
+TitleMenuElement	0x00	f32	x
+TitleMenuElement	0x04	f32	y
+TitleMenuElement	0x08	f32	scale
+TitleMenuElement	0x0C	u16	label	label index
+TitleMenuElement	0x10	u32*	colour
+
+Battle	size	?		battle context, *g_Battle (docs/PLAN-auto-negotiation.md)
+Battle	0x10	s32	state	0 = fighting, 2 = a side went down
+Battle	0x58	s32	unk58	cleared when the after-KO talk starts
+Battle	0x60	s32	winner
+Battle	0x64	s32	loser
+Battle	0x6C	s32	talk_kind	0 threaten menu, 1 after a knockout, 3 beg for your life
+Battle	0x9C	u32	flags9C	bit 0 = resume the fight
+Battle	0xB8	s32	down	records a knockout (Battle_OnFighterDown)

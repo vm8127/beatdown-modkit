@@ -57,7 +57,8 @@ All commands below are run from the top of the workspace.
 | `docs/PLAN-auto-negotiation.md` | **Negotiation on knockout** (built, tested): the plan, the battle and talk-scene code it hooks, and the test runs |
 | `docs/ANIMATION.md` | **Animation system**: animation groups and the global animation slots, action motion scripts (which animation each move plays, frame ranges), body remap tables, and what that means for moveset mods |
 | `docs/MEMORY-MAP.md` | **Memory used by our cheats**: every address each cheat writes, the code caves (used and free), and which cheats can't be on together |
-| `symbols/symbols.tsv` | Every name we've given an address (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
+| `symbols/symbols.tsv` | Every name we've given an address, with its C type when known (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
+| `symbols/structs.tsv` | The game's structs (fighter, person, template, class row, preset, hit record, battle...) field by field; `codemap.py symbols` turns it into `tools/cmod/structs.h` and Ghidra types |
 | `tools/ghidra/ExportDecompiled.py` | Ghidra script that writes the decompiled C of every function to `decomp/` (see "Ghidra") |
 | `tools/ghidra/ApplyPS2Signatures.py`, `ps2sigdb.py` | Name the Sony PS2 SDK library functions (sceCdRead, scePadRead, memcpy, sprintf...) by signature before the export (see "Ghidra") |
 | `dumps/ps2_sdk_functions.tsv` | The 707 Sony library functions the signatures find: address, name, library, size, strong or weak match (`ps2sigdb.py`) |
@@ -72,7 +73,8 @@ All commands below are run from the top of the workspace.
 | `dumps/xaf_ARCHIVE.txt` | Outfit and body part names (HAI_ hair, EYE_, MOU_ mouth, WEA_ weapons...) |
 | `mods/SLUS-21150_C9F6EF9A.pnach` | Finished patches (PCSX2 cheats), one `[section]` per mod |
 | `mods/roster.json` | The story roster `bdkit.py roster` builds its cheat section from (see docs/ROSTER.md) |
-| `tools/cmod.py`, `tools/cmod/game.h` | Builds mods written in C into cheat sections (see "Mods in C") |
+| `tools/cmod.py`, `tools/cmod/game.h` | Builds mods written in C into cheat sections (see "Mods in C"); `structs.h` and `symbols.h` next to `game.h` are generated |
+| `tools/pcsx2.py` | Sandbox PCSX2 for testing: start/stop, memory over PINE, keys, screenshots, save states, struct viewer, free-RAM check, function trace (see "Testing in a sandbox PCSX2") |
 | `mods/c/` | Mods written in C, one file each |
 | `__external_tools/`, `disc/` | Ghidra, JDK, PyGhidra and the PS2 compiler; your disc image. Never committed (see "External tools") |
 
@@ -234,6 +236,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
 | `0x003E0130` | 20 unused zero words before the VU microcode. `swap-model` uses `0x003E0130`-`0x003E0164`; the negotiation-on-knockout mod uses `0x003E0168`-`0x003E017C`. Full. |
 | `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to: roster hooks `0x00216538`-`0x00216737`, mix-moveset `0x00217000`-`0x00218EFF`, negotiation-on-knockout `0x00218F00`-`0x00218F43`. C mods (`tools/cmod.py`) `0x00216738`-`0x00216FFF`. Free: `0x00218F44`-`0x00218FEF`. See docs/MEMORY-MAP.md. |
+| `0x000A0000` | Free RAM below the program: the **mod area** `0x000A0000`-`0x000DFFFF` (C mod code), the **mod data area** `0x000E0000`-`0x000EFFFF` (C mod globals) and debug scratch `0x000F0000`-`0x000FFFFF`. Zero in every save state checked and never addressed by the game. See docs/MEMORY-MAP.md. |
 
 ## Addresses, offsets and patching
 
@@ -253,6 +256,7 @@ Third-party programs the workflow needs live in `__external_tools/` at the top o
 | `jdk-21.0.12.1+1/` | Java 21 (Ghidra 12 needs it) | Ghidra | [Temurin JDK 21](https://adoptium.net), unzip here. Then in `ghidra_12.1.4_PUBLIC\support\launch.properties` set `JAVA_HOME_OVERRIDE=` to this folder's **full** path with doubled backslashes, e.g. `C:\\Users\\V\\source\\_personal\\claude\\ReBeatdown\\__external_tools\\jdk-21.0.12.1+1` |
 | `pyghidra-venv/` | Python venv with PyGhidra, so Ghidra runs our Python scripts | rebuilding `decomp/` | `py -3.13 -m venv __external_tools\pyghidra-venv`, then `__external_tools\pyghidra-venv\Scripts\python -m pip install --no-index -f __external_tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\pypkg\dist pyghidra` (the wheels ship with Ghidra) |
 | `ps2dev/` | PS2 toolchain: `ee\bin\mips64r5900el-ps2-elf-gcc` (GCC 15.2) and binutils for the game's CPU | compiling mods written in C | [ps2dev releases](https://github.com/ps2dev/ps2dev/releases) v2.0.0, `ps2dev-windows-latest.tar.gz` (272 MB); unpack so `ps2dev\ee\bin` exists (tar's errors about `ps2sdk\ports\bin` links don't matter). The build is **32-bit** and ships without its MinGW DLLs: take the 32-bit ones from the [MSYS2 mingw32 repo](https://mirror.msys2.org/mingw/mingw32/) packages `mingw-w64-i686-{gmp,isl,mpc,mpfr,libiconv,libwinpthread,zstd,libgcc}` (`tar -xf` unpacks the `.pkg.tar.zst`) and copy `libgmp-10.dll`, `libisl-23.dll`, `libmpc-3.dll`, `libmpfr-6.dll`, `libiconv-2.dll`, `libwinpthread-1.dll`, `libzstd.dll` and `libgcc_s_dw2-1.dll` into `ee\bin`, `ee\libexec\gcc\mips64r5900el-ps2-elf\15.2.0` and `ee\mips64r5900el-ps2-elf\bin`. 64-bit DLLs (Git's, for example) fail with error `0xC000007B` |
+| `pcsx2-sandbox/` | a copy of the portable PCSX2 for testing, made by `python tools/pcsx2.py setup` | `tools/pcsx2.py` | made by the tool from `C:\Games\Emu\PCSX2` |
 | `_dl/` | the downloaded archives, kept for reinstalling | nothing | |
 
 If this folder moves, recreate `pyghidra-venv` (a venv stores its own path) and fix `JAVA_HOME_OVERRIDE`. Everything else moves freely.
@@ -266,10 +270,10 @@ Ghidra turns the game's MIPS code into C-like pseudocode. Ghidra itself lives in
 Import, name, analyze and export in one headless run, from this folder:
 
 ```
-__external_tools\pyghidra-venv\Scripts\python __external_tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py __external_tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ApplyPS2Signatures.py -postScript ExportDecompiled.py decomp
+__external_tools\pyghidra-venv\Scripts\python __external_tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py __external_tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ApplyPS2Signatures.py -postScript ApplyInferredTypes.py -postScript ExportDecompiled.py decomp
 ```
 
-`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv`) names our known functions and tables before analysis, so the pseudocode uses those names. `ApplyPS2Signatures.py` then names the Sony library functions (next section). `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `__external_tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
+`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv` and `symbols/structs.tsv`) names our known functions and tables before analysis, maps the game's zero-initialized globals (`0x005FEB00`-`0x00788180`, which the ELF loader leaves out), creates our structs and applies every type from `symbols.tsv`, so the pseudocode reads `fighter->hp` and `g_Persons[0].money`. `ApplyInferredTypes.py` then types the parameters listed in `symbols/inferred_types.tsv` (made by `python tools/codemap.py infer-types decomp/all.c symbols/inferred_types.tsv` from the previous export: a parameter used only at offsets only a `Fighter` has becomes `Fighter *`; the list keeps growing, so run it after each export and Ghidra again). With the first 98 typed symbols, 18 structs and 176 inferred parameters, about 9,000 of the 30,500 raw `*(type *)(p + 0x...)` accesses became named fields. `ApplyPS2Signatures.py` then names the Sony library functions (next section). `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `__external_tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
 
 ### Sony library signatures
 
@@ -298,21 +302,53 @@ About 740 of the game's functions (`0x00100000-0x00133500`, plus the sound libra
 | Aaron uses the cut TESTER moveset | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game (tested by Claude in PCSX2, 2026-10-13): TESTER's action IDs confirmed with the debug overlay. In VS mode Aaron starts with a knife, which uses knife moves until it's gone. Aaron cheat: one at a time |
 | Cut content: boxers use the short boxer style 0x1C | `mods/SLUS-21150_C9F6EF9A.pnach` | Style 0x1C works (tested by Claude in PCSX2 on a stand-in fighter, 2026-10-13); not yet seen on street boxers in story mode |
 | Aaron uses Ignacy's moveset and Chester's model (C version): the first mod written in C (`mods/c/aaron_chester_model.c`, built by `tools/cmod.py`); same effect as the hand-written cheat above | `mods/SLUS-21150_C9F6EF9A.pnach` | Works in-game, same as the hand-written version, so C mods work (tested by Daniel, 2026-10-14). Aaron cheat: one at a time |
+| C mod test: the player takes half damage (`mods/c/test_half_damage.c`): tests `@hook` (a hook on `Fighter_ApplyDamage` that calls the original), the mod area `0x000A0000` and `@bss` globals (damage totals at `0x000E0000`) | `mods/SLUS-21150_C9F6EF9A.pnach` | Untested. Can be on with any other cheat. Works if the player's HP bar drops half as fast as usual |
 
 When adding a new mod, add a new `[section]` to that same pnach file, because PCSX2 reads one file per game. All the Aaron cheats write Aaron's row, so turn on only one of them, and restart the game after switching (a cheat that is turned off leaves its last values in memory). Only one mixed-moveset cheat can be on at a time, because `mix-moveset` always uses the same code space. Everything else can be combined; `python tools/codemap.py pnach-map mods/SLUS-21150_C9F6EF9A.pnach` prints every cheat's addresses and any overlaps, and docs/MEMORY-MAP.md has the full table.
 
 ### Mods in C
 
-Mods can be written in C instead of hand-assembled MIPS. `tools/cmod.py` compiles a C file with the PS2 compiler (`__external_tools/ps2dev`, see "External tools"), places it at a fixed address in a free code cave, links it against every name in `symbols/symbols.tsv`, and prints a pnach section with the code and the hooks:
+Mods can be written in C instead of hand-assembled MIPS. `tools/cmod.py` compiles a C file with the PS2 compiler (`__external_tools/ps2dev`, see "External tools"), places it at a fixed address in free memory, links it against every name in `symbols/symbols.tsv`, and prints a pnach section with the code and the hooks:
 
 ```
 python tools/cmod.py build ISO/SLUS_211.50 mods/c/aaron_chester_model.c --asm
 python tools/cmod.py install ISO/SLUS_211.50 mods/c/aaron_chester_model.c
 ```
 
-`install` adds or replaces the section in `mods/` and in the PCSX2 cheats folder (both get a `.bak`). The C file says where it goes and what it hooks in `// @` comment lines; `mods/c/aaron_chester_model.c` is the example and the top of `tools/cmod.py` lists them all (`@section`, `@description`, `@org`, `@max`, `@jal SITE FUNC`, `@jump SITE FUNC`, `@ptr SITE FUNC`, `@word SITE VALUE`). `tools/cmod/game.h` declares the game functions with known prototypes; add to it as functions get understood.
+`install` adds or replaces the section in `mods/` and in the PCSX2 cheats folder (both get a `.bak`). The C file says where it goes and what it hooks in `// @` comment lines; `mods/c/aaron_chester_model.c` is the example and the top of `tools/cmod.py` lists them all:
 
-Limits: no writable globals (cheats rewrite the code every frame, so a variable would reset; keep state in game memory), and mods don't use registers s0-s7 (the game saves them as 128-bit values, this compiler as 64-bit). Pass only int and pointer arguments to game functions. Every C mod gets its own `@org` range inside the C mod area `0x00216738`-`0x00216FFF` (docs/MEMORY-MAP.md).
+| Directive | Does |
+|---|---|
+| `@section`, `@description` | the cheat's name and description |
+| `@org ADDR`, `@max SIZE` | where the code goes and how big it may get: the C mod cave `0x00216738`-`0x00216FFF` for small mods, the **mod area** `0x000A0000`-`0x000DFFFF` (256 KB) for big ones |
+| `@bss ADDR SIZE` | where writable globals go, in the **mod data area** `0x000E0000`-`0x000EFFFF` (64 KB): zero at boot, kept between frames, saved in save states |
+| `@hook FUNC MYFUNC` | every call to game function `FUNC` runs `MYFUNC`, which can call the original as `orig_FUNC(...)` |
+| `@jal SITE FUNC` | one call site calls `FUNC` instead |
+| `@jump SITE FUNC` | replace a whole function |
+| `@ptr SITE FUNC`, `@word SITE VALUE` | function pointers and table entries |
+
+A hook that changes how damage works, keeping the game's own code for the rest:
+
+```c
+// @section Half damage for the player
+// @org 0x000A0000
+// @max 0x100
+// @hook Fighter_ApplyDamage My_ApplyDamage
+#include "game.h"
+
+void orig_Fighter_ApplyDamage(Fighter *f, int damage);
+
+void My_ApplyDamage(Fighter *f, int damage)
+{
+    if (f == &g_Fighters[FIGHTER_PLAYER])
+        damage /= 2;
+    orig_Fighter_ApplyDamage(f, damage);
+}
+```
+
+**Types.** `game.h` includes two generated headers: `structs.h` (from `symbols/structs.tsv`: `Fighter`, `Person`, `PersonDef`, `ClassRow`, `Preset`, `HitRecord`, `Battle` and more, with every known field at its offset, checked at compile time) and `symbols.h` (a declaration for every symbol with a type in `symbols.tsv`'s fifth column, so `Person_Get(0)->money` or `g_Fighters[0].hp` just work). The same files give Ghidra its types, so the pseudocode in `decomp/` says `fighter->hp` instead of `*(short *)(param_1 + 0x441c)`. Add a field to `structs.tsv` or a type to `symbols.tsv`, run `python tools/codemap.py symbols ISO/SLUS_211.50 symbols`, and both pick it up (rerun Ghidra for `decomp/`).
+
+Limits: no initialized writable globals (make tables `const`, or use zero-initialized globals with `@bss`), and mods don't use registers s0-s7 (the game saves them as 128-bit values, this compiler as 64-bit; the build reserves them, so this is automatic). Calls use the game's convention (EABI): ints and pointers in a0-a7 and floats in f12-f19, so float arguments and results work. A `@hook` needs a function whose first two instructions aren't jumps or branches; the build checks and says so.
 
 ### Testing a cheat in PCSX2
 
@@ -323,6 +359,24 @@ Limits: no writable globals (cheats rewrite the code every frame, so a variable 
 5. A save state next to the thing you're testing saves a lot of walking: street enemies with a Pride bar for the negotiation mod, a VS fight for movesets.
 
 In the table above, "tested by Daniel" means played in his own game; "tested by Claude" means checked in a separate copy of PCSX2 on his PC.
+
+### Testing in a sandbox PCSX2
+
+`tools/pcsx2.py` runs a copy of the portable PCSX2 in `__external_tools/pcsx2-sandbox` with PINE (memory access), cheats, a keyboard pad 1 and a plugged-in pad 2, so tests never touch the real settings, memory cards or save states (it copies the BIOS, the memory card and the game's save states once). Keys are posted to the sandbox window, so they work in the background and never reach another program.
+
+```
+python tools/pcsx2.py setup
+python tools/pcsx2.py cheats "Half damage for the player" "Cut content: developer debug mode (switch 5)"
+python tools/pcsx2.py start --state 1
+python tools/pcsx2.py show Fighter g_Fighters      # every known field of the player's fighter, live
+python tools/pcsx2.py keys "l2+r2 square*3 wait:500"
+python tools/pcsx2.py shot shot.png
+python tools/pcsx2.py stop
+```
+
+- `show STRUCT ADDR` prints a struct from `symbols/structs.tsv` from live memory, or from a save state with `--state FILE.p2s` (no emulator needed). `r32`/`w32` (and 8/16), `dump`, `save`/`load` cover the rest.
+- `freeram` lists the zero regions in save states and checks the mod areas (docs/MEMORY-MAP.md); run it on a new save state from a part of the game not seen before.
+- **Function trace**, to find the code behind something on screen: `trace build` puts a stub on every game function (from `decomp/index.tsv`) as the sandbox-only cheat "Trace: function coverage"; `cheats --trace ...`, restart, then `trace clear`, do the thing, `trace read`: every function that ran, with its last caller. Clear and read once while idle first to see what runs every frame.
 
 **Widescreen patch:** PCSX2's bundled "Widescreen 16:9" patch (ElHecht, pnach NTSC-U by Arapapa; Game Properties, Patches) is safe to use with every cheat here. It writes only three words, `0x375388`, `0x375394` and `0x37539C` (horizontal FOV code placed in unused zero words), plus `gsaspectratio=16:9`. None of our cheats write anywhere near those (our nearest writes are `0x31B3E4` and `0x3B75D0`; the code caves are at `0x3E0130`-`0x3E017F` and `0x216538`-`0x218FEF`; full list in docs/MEMORY-MAP.md). Checked 2026-10-13 against PCSX2/pcsx2_patches `SLUS-21150_C9F6EF9A.pnach`; not yet tested together in-game.
 
