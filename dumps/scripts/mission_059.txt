@@ -1,0 +1,66 @@
+; SCRIPT.XAF entry 1059: mission 59
+; script id 59, 7 pages, 0 strings, 480 bytes of code
+  00000  EVENT                    id=59
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00018  EXF_RECOVER_NPC          who=person 330, who_reg=r0, arg=0
+  00028  EXF_SET_NPC              npc=47
+  00030  EXF_SET_MARK             a=1, b=330
+  0003C  EXF_SET_NPC_MARK         a=330, b=0, clear=1
+  0004C  EXF_HIDE_NPC             who=person 330, show=1, slot=0, arg=0
+  00060  /PAGESET                 next=@1 ;jump
+@1:
+  00064  PAGESET                  page=@1
+  00068  EXF_SET_TYPE             mask=8, page=@2, arg=1 ;jump
+  00078  SVFLAG_OFF               flag=flag 0xa46
+  0007C  EXF_ITEM_CHECK           item=22, dst=r1, arg_reg=r0
+  0008C  JUMP_BEQUI               page=@2, value=0, reg=r1 ;jump
+  00098  SVFLAG_ON                flag=flag 0xa46
+  0009C  PAGE_JUMP                page=@2 ;jump
+  000A0  EVENT_END                
+  000A4  /PAGESET                 next=- ;jump
+@2:
+  000A8  PAGESET                  page=@2
+  000AC  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  000BC  EXF_CHECK_TALK_NPC       who=person 330, dst=r1
+  000C8  JUMP_BEQUI               page=@3, value=1, reg=r1 ;jump
+  000D4  EXF_PAGE_JUMP_EXIT       page=@1
+  000D8  EVENT_END                
+  000DC  /PAGESET                 next=- ;jump
+@3:
+  000E0  PAGESET                  page=@3
+  000E4  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  000F4  SVFLAG_BRON              flag=flag 0xa46, page=@4 ;jump
+  000FC  EXF_PAGE_JUMP_EXIT       page=@1
+  00100  EVENT_END                
+  00104  /PAGESET                 next=- ;jump
+@4:
+  00108  PAGESET                  page=@4
+  0010C  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  0011C  EXF_CNTL_MES             mode=0
+  00124  EXF_CNTL_MES             mode=0
+  0012C  EXF_RESULT               failed=0
+  00134  EXF_DISP_RESULT          failed=0 ;waits
+  0013C  EXF_ITEM_DEL             item=22, count=1, arg_reg=r0
+  0014C  EXF_ADD_MONEY            amount=1000, show=1, arg_reg=r0 ;waits
+  0015C  EXF_WAIT_ST               ;waits
+  00164  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  00174  PAGE_JUMP                page=@5 ;jump
+  00178  EVENT_END                
+  0017C  /PAGESET                 next=- ;jump
+@5:
+  00180  PAGESET                  page=@5
+  00184  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00194  EXF_CNTL_MES             mode=1
+  0019C  EXF_MESSAGE              message=949, speaker=person 594, speaker_reg=r0 ;waits
+  001AC  PAGE_JUMP                page=@6 ;jump
+  001B0  EVENT_END                
+  001B4  /PAGESET                 next=- ;jump
+@6:
+  001B8  PAGESET                  page=@6
+  001BC  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  001CC  EXF_EVENT_END            
+  001D4  EVENT_END                
+  001D8  /PAGESET                 next=- ;jump
+  001DC  /EVENT                   

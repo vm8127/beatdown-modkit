@@ -1,0 +1,95 @@
+; SCRIPT.XAF entry 1021: mission 21
+; script id 21, 8 pages, 4 strings, 744 bytes of code
+  00000  EVENT                    id=21
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00018  EXF_RECOVER_NPC          who=person 220, who_reg=r0, arg=0
+  00028  EXF_RECOVER_NPC          who=person 221, who_reg=r0, arg=0
+  00038  EXF_RECOVER_NPC          who=person 222, who_reg=r0, arg=0
+  00048  EXF_RECOVER_NPC          who=person 223, who_reg=r0, arg=0
+  00058  EXF_RECOVER_NPC          who=person 224, who_reg=r0, arg=0
+  00068  EXF_SET_NPC              npc=45
+  00070  EXF_SET_MARK             a=1, b=220
+  0007C  EXF_SET_NPC_MARK         a=220, b=0, clear=1
+  0008C  EXF_SET_NPC_MARK         a=221, b=1, clear=1
+  0009C  EXF_SET_NPC_MARK         a=222, b=2, clear=1
+  000AC  EXF_SET_NPC_MARK         a=223, b=3, clear=1
+  000BC  EXF_SET_NPC_MARK         a=224, b=4, clear=1
+  000CC  /PAGESET                 next=@1 ;jump
+@1:
+  000D0  PAGESET                  page=@1
+  000D4  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  000E4  EXF_CHECK_TALK_NPC       who=person 220, dst=r1
+  000F0  JUMP_BEQUI               page=@2, value=1, reg=r1 ;jump
+  000FC  EXF_CHECK_TALK_NPC       who=person 221, dst=r2
+  00108  JUMP_BEQUI               page=@2, value=1, reg=r2 ;jump
+  00114  EXF_CHECK_TALK_NPC       who=person 222, dst=r3
+  00120  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  0012C  EXF_CHECK_TALK_NPC       who=person 223, dst=r4
+  00138  JUMP_BEQUI               page=@2, value=1, reg=r4 ;jump
+  00144  EXF_CHECK_TALK_NPC       who=person 224, dst=r5
+  00150  JUMP_BEQUI               page=@2, value=1, reg=r5 ;jump
+  0015C  EXF_PAGE_JUMP_EXIT       page=@1
+  00160  EVENT_END                
+  00164  /PAGESET                 next=- ;jump
+@2:
+  00168  PAGESET                  page=@2
+  0016C  EXF_LOG_MESSAGE          
+  00174  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00184  EXF_CHECK_ST_BATTLE_END  dst=r0
+  00190  JUMP_BEQUI               page=@4, value=6, reg=r0 ;jump
+  0019C  JUMP_BEQUI               page=@4, value=4, reg=r0 ;jump
+  001A8  JUMP_BEQUI               page=@7, value=3, reg=r0 ;jump
+  001B4  JUMP_BEQUI               page=@7, value=2, reg=r0 ;jump
+  001C0  JUMP_BEQUI               page=@3, value=1, reg=r0 ;jump
+  001CC  JUMP_BEQUI               page=@3, value=0, reg=r0 ;jump
+  001D8  JUMP_BEQI                page=@7, value=11, reg=r0 ;jump
+  001E4  EVENT_END                
+  001E8  /PAGESET                 next=- ;jump
+@3:
+  001EC  PAGESET                  page=@3
+  001F0  EXF_CNTL_MES             mode=0
+  001F8  EXF_RESULT               failed=0
+  00200  EXF_DISP_RESULT          failed=0 ;waits
+  00208  EXF_ADD_MONEY            amount=2000, show=1, arg_reg=r0 ;waits
+  00218  EXF_WAIT_ST               ;waits
+  00220  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  00230  PAGE_JUMP                page=@5 ;jump
+  00234  EVENT_END                
+  00238  /PAGESET                 next=- ;jump
+@4:
+  0023C  PAGESET                  page=@4
+  00240  EXF_RESULT               failed=1
+  00248  EXF_EVENT_END            
+  00250  EVENT_END                
+  00254  /PAGESET                 next=- ;jump
+@5:
+  00258  PAGESET                  page=@5
+  0025C  EXF_LOG_MESSAGE          +4=1
+  00264  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00274  EXF_CNTL_MES             mode=1
+  0027C  EXF_MESSAGE              message=949, speaker=person 594, speaker_reg=r0 ;waits
+  0028C  PAGE_JUMP                page=@6 ;jump
+  00290  EVENT_END                
+  00294  /PAGESET                 next=- ;jump
+@6:
+  00298  PAGESET                  page=@6
+  0029C  EXF_LOG_MESSAGE          +4=2
+  002A4  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  002B4  EXF_EVENT_END            
+  002BC  EVENT_END                
+  002C0  /PAGESET                 next=- ;jump
+@7:
+  002C4  PAGESET                  page=@7
+  002C8  EXF_LOG_MESSAGE          +4=3
+  002D0  EXF_SET_SUBBTL           on=1
+  002D8  EXF_PAGE_JUMP_EXIT       page=@2
+  002DC  EVENT_END                
+  002E0  /PAGESET                 next=- ;jump
+  002E4  /EVENT                   
+; strings
+;   0: '2'
+;   1: '5'
+;   2: '6'
+;   3: '7'

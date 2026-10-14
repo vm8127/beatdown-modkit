@@ -21,6 +21,14 @@ typedef struct SystemData SystemData;
 typedef struct ScriptOpcode ScriptOpcode;
 typedef struct TitleMenuElement TitleMenuElement;
 typedef struct Battle Battle;
+typedef struct ScriptOpInfo ScriptOpInfo;
+typedef struct ScriptOpHandler ScriptOpHandler;
+typedef struct ScriptHeader ScriptHeader;
+typedef struct ScriptVM ScriptVM;
+typedef struct Job Job;
+typedef struct MissionReq MissionReq;
+typedef struct Mission Mission;
+typedef struct MissionMgr MissionMgr;
 
 /* one outfit slot: an item and the model parts it adds */
 struct OutfitSlot {
@@ -94,9 +102,12 @@ _Static_assert(sizeof(PersonDef) == 0x48, "sizeof PersonDef");
 /* person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get */
 struct Person {
     u32 flags;  /* +0x0 */
-    u8 _0004[0x36];
-    u8 status;  /* +0x3a bit 1 = in hospital; 1 = probably in jail */
-    u8 _003B[0x3];
+    u8 sex;  /* +0x4 0 or 1 (EXF_CHECK_SEX); which value is which isn't checked */
+    u8 _0005[0x35];
+    u8 status;  /* +0x3a bit 0 dead (EXF_KILL_CHR), bit 1 in hospital, bit 3 arrested (EXF_CHECK_ARREST) */
+    u8 _003B[0x1];
+    u8 kind;  /* +0x3c EXF_SET_CALLER picks allies by it (0, 1, 2) */
+    u8 _003D[0x1];
     s16 id;  /* +0x3e person id (ids 200-209 are looked up by this) */
     s32 money;  /* +0x40 0-99,999,999 */
     s16 preset;  /* +0x44 outfit preset: the model */
@@ -113,18 +124,22 @@ struct Person {
     s16 attack_percent;  /* +0x380 normally 100 */
     s16 bonus_max_hp;  /* +0x382 */
     u8 _0384[0x4];
-    u32 flags388;  /* +0x388 bit 31 hides the Pride bar */
+    u32 skills;  /* +0x388 skill bits set by EXF_SET_SKILL and tested by EXF_CHECK_ABILITY (bits 0, 1, 2, 4, 5, 7); bit 31 hides the Pride bar */
     u8 _038C[0x4];
     u8 start_entries[0x10];  /* +0x390 two entries applied at spawn (0x2FBC50), probably weapons */
     u8 _03A0[0x6];
     s16 pride_max;  /* +0x3a6 Pride Gauge max */
-    u8 ally_flags;  /* +0x3a8 bit 0 = ally (party or recruited) */
-    u8 _03A9[0xb];
+    u8 ally_flags;  /* +0x3a8 bit 0 = ally (party or recruited), bit 1 set by EXF_JOIN_FRIEND */
+    u8 _03A9[0x1];
+    s16 emotion;  /* +0x3aa EXF_SET_EMOTION */
+    u8 _03AC[0x8];
     s16 bonus_max_hp2;  /* +0x3b4 added by Person_RecalcMaxHP */
     u8 _03B6[0x86];
 };
 _Static_assert(__builtin_offsetof(Person, flags) == 0x0, "Person.flags");
+_Static_assert(__builtin_offsetof(Person, sex) == 0x4, "Person.sex");
 _Static_assert(__builtin_offsetof(Person, status) == 0x3a, "Person.status");
+_Static_assert(__builtin_offsetof(Person, kind) == 0x3c, "Person.kind");
 _Static_assert(__builtin_offsetof(Person, id) == 0x3e, "Person.id");
 _Static_assert(__builtin_offsetof(Person, money) == 0x40, "Person.money");
 _Static_assert(__builtin_offsetof(Person, preset) == 0x44, "Person.preset");
@@ -137,10 +152,11 @@ _Static_assert(__builtin_offsetof(Person, hp) == 0x54, "Person.hp");
 _Static_assert(__builtin_offsetof(Person, outfit) == 0x68, "Person.outfit");
 _Static_assert(__builtin_offsetof(Person, attack_percent) == 0x380, "Person.attack_percent");
 _Static_assert(__builtin_offsetof(Person, bonus_max_hp) == 0x382, "Person.bonus_max_hp");
-_Static_assert(__builtin_offsetof(Person, flags388) == 0x388, "Person.flags388");
+_Static_assert(__builtin_offsetof(Person, skills) == 0x388, "Person.skills");
 _Static_assert(__builtin_offsetof(Person, start_entries) == 0x390, "Person.start_entries");
 _Static_assert(__builtin_offsetof(Person, pride_max) == 0x3a6, "Person.pride_max");
 _Static_assert(__builtin_offsetof(Person, ally_flags) == 0x3a8, "Person.ally_flags");
+_Static_assert(__builtin_offsetof(Person, emotion) == 0x3aa, "Person.emotion");
 _Static_assert(__builtin_offsetof(Person, bonus_max_hp2) == 0x3b4, "Person.bonus_max_hp2");
 _Static_assert(sizeof(Person) == 0x43c, "sizeof Person");
 
@@ -411,5 +427,147 @@ _Static_assert(__builtin_offsetof(Battle, loser) == 0x64, "Battle.loser");
 _Static_assert(__builtin_offsetof(Battle, talk_kind) == 0x6c, "Battle.talk_kind");
 _Static_assert(__builtin_offsetof(Battle, flags9C) == 0x9c, "Battle.flags9C");
 _Static_assert(__builtin_offsetof(Battle, down) == 0xb8, "Battle.down");
+
+/* g_ScriptOpcodes entry: one script instruction (docs/SCRIPTS.md) */
+struct ScriptOpInfo {
+    u32 id;  /* +0x0 opcode, same as the index */
+    u32 words;  /* +0x4 instruction size in 32-bit words, opcode included */
+    u32 arg_count;  /* +0x8 */
+    u8 *arg_types;  /* +0xc one byte per argument (meaning not decoded; probably for the cut SCRIPT VIEWER) */
+    char *name;  /* +0x10 EXF_ADD_MONEY, JUMP_BEQI, ... */
+};
+_Static_assert(__builtin_offsetof(ScriptOpInfo, id) == 0x0, "ScriptOpInfo.id");
+_Static_assert(__builtin_offsetof(ScriptOpInfo, words) == 0x4, "ScriptOpInfo.words");
+_Static_assert(__builtin_offsetof(ScriptOpInfo, arg_count) == 0x8, "ScriptOpInfo.arg_count");
+_Static_assert(__builtin_offsetof(ScriptOpInfo, arg_types) == 0xc, "ScriptOpInfo.arg_types");
+_Static_assert(__builtin_offsetof(ScriptOpInfo, name) == 0x10, "ScriptOpInfo.name");
+_Static_assert(sizeof(ScriptOpInfo) == 0x14, "sizeof ScriptOpInfo");
+
+/* g_ScriptOpHandlers entry */
+struct ScriptOpHandler {
+    u32 flags;  /* +0x0 0 advance, 1 jump (advance only when the handler returns 1), 2 blocking (retry each frame until it returns 1) */
+    void *handler;  /* +0x4 int handler(ScriptVM *vm); returns 2 to end the script */
+};
+_Static_assert(__builtin_offsetof(ScriptOpHandler, flags) == 0x0, "ScriptOpHandler.flags");
+_Static_assert(__builtin_offsetof(ScriptOpHandler, handler) == 0x4, "ScriptOpHandler.handler");
+_Static_assert(sizeof(ScriptOpHandler) == 0x8, "sizeof ScriptOpHandler");
+
+/* start of a script image (SCRIPT.XAF 1000+, or one language part of 0-999); offsets count from +0x20, where the code starts */
+struct ScriptHeader {
+    u16 id;  /* +0x0 mission / script id */
+    u16 page_count;  /* +0x2 PAGESET blocks */
+    u32 page_table;  /* +0x4 u32 offset per page */
+    u32 string_count;  /* +0x8 */
+    u32 string_table;  /* +0xc u32 offset per string, from the table itself */
+    u8 _0010[0x4];
+    u32 end;  /* +0x14 end of the script image */
+    u8 _0018[0x8];
+};
+_Static_assert(__builtin_offsetof(ScriptHeader, id) == 0x0, "ScriptHeader.id");
+_Static_assert(__builtin_offsetof(ScriptHeader, page_count) == 0x2, "ScriptHeader.page_count");
+_Static_assert(__builtin_offsetof(ScriptHeader, page_table) == 0x4, "ScriptHeader.page_table");
+_Static_assert(__builtin_offsetof(ScriptHeader, string_count) == 0x8, "ScriptHeader.string_count");
+_Static_assert(__builtin_offsetof(ScriptHeader, string_table) == 0xc, "ScriptHeader.string_table");
+_Static_assert(__builtin_offsetof(ScriptHeader, end) == 0x14, "ScriptHeader.end");
+_Static_assert(sizeof(ScriptHeader) == 0x20, "sizeof ScriptHeader");
+
+/* event script VM state (one per running mission at mission +0xA0) */
+struct ScriptVM {
+    u32 page_count;  /* +0x0 from the header */
+    u8 *page_table;  /* +0x4 */
+    u8 *string_table;  /* +0x8 */
+    u8 *end;  /* +0xc */
+    u32 events;  /* +0x10 pending event bits (mission +8, copied each frame); EXF_SET_TYPE pages wait for them */
+    u16 *labels[0x8];  /* +0x14 LABEL_SET / LABEL_JUMP targets (vm->temp - 0x28 + 4n) */
+    u8 *regs;  /* +0x34 register block: 16 registers, s32 at regs + 0x40 + 4n, type byte at regs + 0x80 + n (SETTYPE) */
+    u32 scratch;  /* +0x38 cleared after each completed instruction */
+    u8 temp[0x20];  /* +0x3c per-instruction state of blocking instructions, cleared with scratch */
+    u16 script_id;  /* +0x5c from the header; Script_UsesRegArgs checks it */
+    s16 page;  /* +0x5e current page (-1 at start) */
+    s16 page_lo;  /* +0x60 page range kept by EXF_SET_TYPE */
+    s16 page_hi;  /* +0x62 */
+    ScriptHeader *script;  /* +0x64 */
+    u16 *ip;  /* +0x68 current instruction */
+    u16 *prev_ip;  /* +0x6c */
+};
+_Static_assert(__builtin_offsetof(ScriptVM, page_count) == 0x0, "ScriptVM.page_count");
+_Static_assert(__builtin_offsetof(ScriptVM, page_table) == 0x4, "ScriptVM.page_table");
+_Static_assert(__builtin_offsetof(ScriptVM, string_table) == 0x8, "ScriptVM.string_table");
+_Static_assert(__builtin_offsetof(ScriptVM, end) == 0xc, "ScriptVM.end");
+_Static_assert(__builtin_offsetof(ScriptVM, events) == 0x10, "ScriptVM.events");
+_Static_assert(__builtin_offsetof(ScriptVM, labels) == 0x14, "ScriptVM.labels");
+_Static_assert(__builtin_offsetof(ScriptVM, regs) == 0x34, "ScriptVM.regs");
+_Static_assert(__builtin_offsetof(ScriptVM, scratch) == 0x38, "ScriptVM.scratch");
+_Static_assert(__builtin_offsetof(ScriptVM, temp) == 0x3c, "ScriptVM.temp");
+_Static_assert(__builtin_offsetof(ScriptVM, script_id) == 0x5c, "ScriptVM.script_id");
+_Static_assert(__builtin_offsetof(ScriptVM, page) == 0x5e, "ScriptVM.page");
+_Static_assert(__builtin_offsetof(ScriptVM, page_lo) == 0x60, "ScriptVM.page_lo");
+_Static_assert(__builtin_offsetof(ScriptVM, page_hi) == 0x62, "ScriptVM.page_hi");
+_Static_assert(__builtin_offsetof(ScriptVM, script) == 0x64, "ScriptVM.script");
+_Static_assert(__builtin_offsetof(ScriptVM, ip) == 0x68, "ScriptVM.ip");
+_Static_assert(__builtin_offsetof(ScriptVM, prev_ip) == 0x6c, "ScriptVM.prev_ip");
+_Static_assert(sizeof(ScriptVM) == 0x70, "sizeof ScriptVM");
+
+/* g_Jobs entry: one of the 50 side jobs */
+struct Job {
+    u8 mission;  /* +0x0 mission id; its script is SCRIPT.XAF 1000 + id */
+    u8 difficulty;  /* +0x1 stars, 1-5 */
+    u16 reward;  /* +0x2 dollars */
+    u32 title;  /* +0x4 text id (CDATA.XAF 403-408) */
+    u32 description;  /* +0x8 text id */
+};
+_Static_assert(__builtin_offsetof(Job, mission) == 0x0, "Job.mission");
+_Static_assert(__builtin_offsetof(Job, difficulty) == 0x1, "Job.difficulty");
+_Static_assert(__builtin_offsetof(Job, reward) == 0x2, "Job.reward");
+_Static_assert(__builtin_offsetof(Job, title) == 0x4, "Job.title");
+_Static_assert(__builtin_offsetof(Job, description) == 0x8, "Job.description");
+_Static_assert(sizeof(Job) == 0xc, "sizeof Job");
+
+/* g_MissionReq entry, per mission id */
+struct MissionReq {
+    u16 chapters;  /* +0x0 bit n = allowed in story chapter n (g_StoryChapter) */
+    u8 min_rank;  /* +0x2 minimum MissionRank_Get (0x0060BADC) */
+    u8 min_percent;  /* +0x3 minimum % of jobs cleared (Jobs_PercentCleared) */
+};
+_Static_assert(__builtin_offsetof(MissionReq, chapters) == 0x0, "MissionReq.chapters");
+_Static_assert(__builtin_offsetof(MissionReq, min_rank) == 0x2, "MissionReq.min_rank");
+_Static_assert(__builtin_offsetof(MissionReq, min_percent) == 0x3, "MissionReq.min_percent");
+_Static_assert(sizeof(MissionReq) == 0x4, "sizeof MissionReq");
+
+/* one g_MissionMgr slot: a running mission or event script */
+struct Mission {
+    s32 id;  /* +0x0 mission id, -1 = free */
+    s32 state;  /* +0x4 loader state (Script_LoadEventList), 3 = running */
+    u32 events;  /* +0x8 event bits raised for it (Mission_RaiseEvent) */
+    ScriptHeader *script;  /* +0xc g_EventList, or g_BgMissionScript for missions 100 and 101 */
+    u8 regs[0x90];  /* +0x10 the VM's register block */
+    ScriptVM vm;  /* +0xa0 */
+};
+_Static_assert(__builtin_offsetof(Mission, id) == 0x0, "Mission.id");
+_Static_assert(__builtin_offsetof(Mission, state) == 0x4, "Mission.state");
+_Static_assert(__builtin_offsetof(Mission, events) == 0x8, "Mission.events");
+_Static_assert(__builtin_offsetof(Mission, script) == 0xc, "Mission.script");
+_Static_assert(__builtin_offsetof(Mission, regs) == 0x10, "Mission.regs");
+_Static_assert(__builtin_offsetof(Mission, vm) == 0xa0, "Mission.vm");
+_Static_assert(sizeof(Mission) == 0x110, "sizeof Mission");
+
+/* g_MissionMgr */
+struct MissionMgr {
+    s32 running;  /* +0x0 running missions */
+    s32 slot_count;  /* +0x4 2 */
+    u32 flags;  /* +0x8 MissionMgr_SetFlags; 0x80 = battle result pending */
+    s32 mission0;  /* +0xc id running in slot 0, -1 none */
+    s32 mission1;  /* +0x10 id running in slot 1 (missions 100, 101), -1 none */
+    u8 _0014[0x8];
+    Mission slots[0x2];  /* +0x1c */
+    u8 _023C[0xa8];
+};
+_Static_assert(__builtin_offsetof(MissionMgr, running) == 0x0, "MissionMgr.running");
+_Static_assert(__builtin_offsetof(MissionMgr, slot_count) == 0x4, "MissionMgr.slot_count");
+_Static_assert(__builtin_offsetof(MissionMgr, flags) == 0x8, "MissionMgr.flags");
+_Static_assert(__builtin_offsetof(MissionMgr, mission0) == 0xc, "MissionMgr.mission0");
+_Static_assert(__builtin_offsetof(MissionMgr, mission1) == 0x10, "MissionMgr.mission1");
+_Static_assert(__builtin_offsetof(MissionMgr, slots) == 0x1c, "MissionMgr.slots");
+_Static_assert(sizeof(MissionMgr) == 0x2e4, "sizeof MissionMgr");
 
 #endif

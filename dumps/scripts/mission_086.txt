@@ -1,0 +1,61 @@
+; SCRIPT.XAF entry 1086: mission 86
+; script id 86, 6 pages, 6 strings, 392 bytes of code
+  00000  EVENT                    id=86
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  EXF_RECOVER_NPC          who=person 535, who_reg=r0, arg=0
+  00030  SVFLAG_OFF               flag=flag 0x7da
+  00034  EXF_SET_NPC              npc=86
+  0003C  PAGE_JUMP                page=@1 ;jump
+  00040  /PAGESET                 next=- ;jump
+@1:
+  00044  PAGESET                  page=@1
+  00048  EXF_LOG_MESSAGE          +4=1
+  00050  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00060  SVFLAG_ON                flag=flag 0x849
+  00064  EXF_CAM_POS_START        x=65, y=3, z=65
+  00074  EXF_CAM_POS_END          x=80, y=17, z=30, frames=200, no_ease=0
+  0008C  EXF_CAM_TRGPOS_START     x=62, y=8, z=25.5
+  0009C  EXF_CAM_TRGPOS_END       x=61, y=13, z=41.1, frames=200, no_ease=0
+  000B4  EXF_CAM_MODE             mode=1
+  000BC  EXF_MESSAGE              message=852, speaker=person 535, speaker_reg=r0 ;waits
+  000CC  PAGE_JUMP                page=@2 ;jump
+  000D0  /PAGESET                 next=- ;jump
+@2:
+  000D4  PAGESET                  page=@2
+  000D8  EXF_LOG_MESSAGE          +4=2
+  000E0  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  000F0  SVFLAG_OFF               flag=flag 0x849
+  000F4  EXF_SET_BATTLE           battle=535
+  000FC  PAGE_JUMP                page=@3 ;jump
+  00100  /PAGESET                 next=- ;jump
+@3:
+  00104  PAGESET                  page=@3
+  00108  EXF_LOG_MESSAGE          +4=3
+  00110  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00120  EXF_CHECK_ST_BATTLE_END  dst=r0
+  0012C  EXF_EVENT_END            
+  00134  EVENT_END                
+  00138  /PAGESET                 next=- ;jump
+@4:
+  0013C  PAGESET                  page=@4
+  00140  EXF_LOG_MESSAGE          +4=4
+  00148  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00158  EVENT_END                
+  0015C  /PAGESET                 next=- ;jump
+@5:
+  00160  PAGESET                  page=@5
+  00164  EXF_LOG_MESSAGE          +4=5
+  0016C  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  0017C  EVENT_END                
+  00180  /PAGESET                 next=- ;jump
+  00184  /EVENT                   
+; strings
+;   0: 'PAGE0'
+;   1: 'PAGE1'
+;   2: 'PAGE'
+;   3: 'PAGE2'
+;   4: 'PAGE3'
+;   5: 'PAGE4'

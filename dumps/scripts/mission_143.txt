@@ -1,0 +1,52 @@
+; SCRIPT.XAF entry 1143: mission 143
+; script id 143, 4 pages, 4 strings, 364 bytes of code
+  00000  EVENT                    id=143
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  EXF_RECOVER_NPC          who=person 536, who_reg=r0, arg=0
+  00030  SVFLAG_OFF               flag=flag 0xf45
+  00034  SVFLAG_OFF               flag=flag 0x7da
+  00038  EXF_SET_NPC              npc=87
+  00040  PAGE_JUMP                page=@1 ;jump
+  00044  /PAGESET                 next=- ;jump
+@1:
+  00048  PAGESET                  page=@1
+  0004C  EXF_LOG_MESSAGE          +4=1
+  00054  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00064  SVFLAG_ON                flag=flag 0x849
+  00068  EXF_CAM_POS_START        x=55, y=60, z=135
+  00078  EXF_CAM_POS_END          x=107, y=22, z=385, frames=150, no_ease=0
+  00090  EXF_CAM_TRGPOS_START     x=120, y=37, z=172
+  000A0  EXF_CAM_TRGPOS_END       x=151, y=7, z=347, frames=150, no_ease=0
+  000B8  EXF_CAM_MODE             mode=1
+  000C0  EXF_NPC_RUN_TARGET       +4=536, +12=10
+  000D0  EXF_MESSAGE              message=853, speaker=person 536, speaker_reg=r0 ;waits
+  000E0  PAGE_JUMP                page=@2 ;jump
+  000E4  /PAGESET                 next=- ;jump
+@2:
+  000E8  PAGESET                  page=@2
+  000EC  EXF_LOG_MESSAGE          +4=2
+  000F4  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00104  EXF_CAM_MODE             mode=0
+  0010C  EXF_MESSAGE              message=853, speaker=person 536, speaker_reg=r0 ;waits
+  0011C  SVFLAG_OFF               flag=flag 0x849
+  00120  PAGE_JUMP                page=@3 ;jump
+  00124  /PAGESET                 next=- ;jump
+@3:
+  00128  PAGESET                  page=@3
+  0012C  EXF_LOG_MESSAGE          +4=3
+  00134  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00144  EXF_CHECK_ST_BATTLE_END  dst=r1
+  00150  SVFLAG_OFF               flag=flag 0x7da
+  00154  SVFLAG_OFF               flag=flag 0xf45
+  00158  EXF_EVENT_END            
+  00160  EVENT_END                
+  00164  /PAGESET                 next=- ;jump
+  00168  /EVENT                   
+; strings
+;   0: 'PAGE0'
+;   1: 'PAGE1'
+;   2: 'PAGE2'
+;   3: 'PAGE3'

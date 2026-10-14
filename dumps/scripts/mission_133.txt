@@ -1,0 +1,99 @@
+; SCRIPT.XAF entry 1133: mission 133
+; script id 133, 7 pages, 8 strings, 604 bytes of code
+  00000  EVENT                    id=133
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00018  EXF_LOG_MESSAGE          
+  00020  SVFLAG_ON                flag=flag 0xee0
+  00024  SVFLAG_OFF               flag=flag 0xee1
+  00028  SVFLAG_OFF               flag=flag 0xee2
+  0002C  SVFLAG_OFF               flag=flag 0xee3
+  00030  SVFLAG_OFF               flag=flag 0xee4
+  00034  SVFLAG_OFF               flag=flag 0xee5
+  00038  SVFLAG_OFF               flag=flag 0xee6
+  0003C  SVFLAG_OFF               flag=flag 0xee7
+  00040  SETREG_UB                dst=r0, value=0
+  00048  SETREG_UB                dst=r1, value=0
+  00050  SETREG_UB                dst=r2, value=0
+  00058  SETREG_UB                dst=r3, value=0
+  00060  SETREG_UB                dst=r4, value=0
+  00068  SETREG_UB                dst=r5, value=0
+  00070  SETREG_UB                dst=r6, value=0
+  00078  SETREG_UB                dst=r7, value=0
+  00080  SETREG_UB                dst=r8, value=0
+  00088  SETREG_UB                dst=r9, value=0
+  00090  PAGE_JUMP                page=@1 ;jump
+  00094  EVENT_END                
+  00098  /PAGESET                 next=- ;jump
+@1:
+  0009C  PAGESET                  page=@1
+  000A0  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  000B0  EXF_LOG_MESSAGE          +4=1
+  000B8  EXF_GET_PARTY_ID         member1_dst=r3, member2_dst=r4
+  000C0  EXF_RELEASE_PARTY        who=person 46, who_reg=r100
+  000CC  EXF_RELEASE_FRIEND       who=person 46
+  000D4  EXF_MESSAGE              message=964, speaker=person 46, speaker_reg=r9 ;waits
+  000E4  PAGE_JUMP                page=@2 ;jump
+  000E8  EVENT_END                
+  000EC  /PAGESET                 next=- ;jump
+@2:
+  000F0  PAGESET                  page=@2
+  000F4  EXF_LOG_MESSAGE          +4=2
+  000FC  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  0010C  EXF_SET_BATTLE           battle=46
+  00114  PAGE_JUMP                page=@3 ;jump
+  00118  EVENT_END                
+  0011C  /PAGESET                 next=- ;jump
+@3:
+  00120  PAGESET                  page=@3
+  00124  EXF_SET_TYPE             mask=16, page=@0, arg=0 ;jump
+  00134  EXF_LOG_MESSAGE          +4=3
+  0013C  SVFLAG_ON                flag=flag 0x34c
+  00140  PAGE_JUMP                page=@4 ;jump
+  00144  EVENT_END                
+  00148  /PAGESET                 next=- ;jump
+@4:
+  0014C  PAGESET                  page=@4
+  00150  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00160  EXF_LOG_MESSAGE          +4=4
+  00168  SVFLAG_OFF               flag=flag 0x34c
+  0016C  EXF_CHECK_ST_BATTLE_END  dst=r1
+  00178  JUMP_BEQUB               page=@5, value=0, reg=r1 ;jump
+  00184  JUMP_BEQUB               page=@5, value=1, reg=r1 ;jump
+  00190  JUMP_BEQUB               page=@6, value=7, reg=r1 ;jump
+  0019C  JUMP_BEQUB               page=@3, value=11, reg=r1 ;jump
+  001A8  EXF_LOG_MESSAGE          +4=5
+  001B0  JUMP_BEQUB               page=@3, value=5, reg=r1 ;jump
+  001BC  JUMP_BEQUB               page=@3, value=6, reg=r1 ;jump
+  001C8  EXF_PAGE_JUMP_EXIT       page=@4
+  001CC  EVENT_END                
+  001D0  /PAGESET                 next=- ;jump
+@5:
+  001D4  PAGESET                  page=@5
+  001D8  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  001E8  EXF_LOG_MESSAGE          +4=6
+  001F0  EXF_JOIN_FRIEND          who=person 46
+  001F8  EXF_RESULT               failed=1
+  00200  EXF_EVENT_END            
+  00208  EVENT_END                
+  0020C  /PAGESET                 next=- ;jump
+@6:
+  00210  PAGESET                  page=@6
+  00214  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00224  EXF_LOG_MESSAGE          +4=7
+  0022C  EXF_SET_EMOTION          who=person 46, a=100, b=1, who_reg=r0
+  00240  EXF_RESULT               failed=0
+  00248  EXF_EVENT_END            
+  00250  EVENT_END                
+  00254  /PAGESET                 next=- ;jump
+  00258  /EVENT                   
+; strings
+;   0: 'StratScript'
+;   1: '1'
+;   2: '2'
+;   3: '3'
+;   4: '4'
+;   5: 'ILLEGAL'
+;   6: '5'
+;   7: '6'

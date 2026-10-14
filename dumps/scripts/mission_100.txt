@@ -1,0 +1,113 @@
+; SCRIPT.XAF entry 1100: mission 100
+; script id 100, 9 pages, 12 strings, 716 bytes of code
+  00000  EVENT                    id=100
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  EXF_RECOVER_NPC          who=person 566, who_reg=r0, arg=0
+  00030  EXF_RECOVER_NPC          who=person 567, who_reg=r0, arg=0
+  00040  EXF_RECOVER_NPC          who=person 568, who_reg=r0, arg=0
+  00050  EXF_RECOVER_NPC          who=person 569, who_reg=r0, arg=0
+  00060  EXF_RECOVER_NPC          who=person 570, who_reg=r0, arg=0
+  00070  SVFLAG_ON                flag=flag 0xcba
+  00074  SVFLAG_OFF               flag=flag 0xcbb
+  00078  SVFLAG_OFF               flag=flag 0xcbc
+  0007C  SVFLAG_OFF               flag=flag 0xcbd
+  00080  SVFLAG_OFF               flag=flag 0xcbe
+  00084  SVFLAG_OFF               flag=flag 0xcbf
+  00088  PAGE_JUMP                page=@1 ;jump
+  0008C  /PAGESET                 next=- ;jump
+@1:
+  00090  PAGESET                  page=@1
+  00094  EXF_LOG_MESSAGE          +4=1
+  0009C  EXF_SET_TYPE             mask=8, page=@6, arg=1 ;jump
+  000AC  SVFLAG_BRON              flag=flag 0xcbe, page=@3 ;jump
+  000B4  EXF_GET_COUNTDOWN        dst=r2
+  000BC  JMI                      page=@2, reg=r2 ;jump
+  000C4  PAGE_JUMP                page=@3 ;jump
+  000C8  /PAGESET                 next=- ;jump
+@2:
+  000CC  PAGESET                  page=@2
+  000D0  EXF_LOG_MESSAGE          +4=2
+  000D8  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  000E8  SVFLAG_BRON              flag=flag 0xcbe, page=@3 ;jump
+  000F0  EXF_LOG_MESSAGE          +4=3
+  000F8  EXF_SET_NPC              npc=36
+  00100  SVFLAG_ON                flag=flag 0xcbe
+  00104  EXF_SET_CIRCUMSTANCE     what=21
+  0010C  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  00118  PAGE_JUMP                page=@3 ;jump
+  0011C  /PAGESET                 next=- ;jump
+@3:
+  00120  PAGESET                  page=@3
+  00124  EXF_LOG_MESSAGE          +4=4
+  0012C  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  0013C  SVFLAG_BRON              flag=flag 0xcbb, page=@5 ;jump
+  00144  SVFLAG_BRON              flag=flag 0xce5, page=@4 ;jump
+  0014C  PAGE_JUMP                page=@5 ;jump
+  00150  /PAGESET                 next=- ;jump
+@4:
+  00154  PAGESET                  page=@4
+  00158  EXF_LOG_MESSAGE          +4=5
+  00160  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00170  EXF_ADD_MONEY            amount=1000, show=1, arg_reg=r0 ;waits
+  00180  EXF_WAIT_ST              +4=30 ;waits
+  00188  SVFLAG_ON                flag=flag 0xcbb
+  0018C  PAGE_JUMP                page=@5 ;jump
+  00190  /PAGESET                 next=- ;jump
+@5:
+  00194  PAGESET                  page=@5
+  00198  EXF_LOG_MESSAGE          +4=6
+  001A0  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  001B0  SVFLAG_BRON              flag=flag 0xcbe, page=@6 ;jump
+  001B8  SVFLAG_OFF               flag=flag 0xce4
+  001BC  EXF_SET_COUNTDOWN        mode=0, seconds=1
+  001C8  EXF_EVENT_END            
+  001D0  EVENT_END                
+  001D4  /PAGESET                 next=- ;jump
+@6:
+  001D8  PAGESET                  page=@6
+  001DC  EXF_LOG_MESSAGE          +4=7
+  001E4  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  001F4  EXF_CHECK_STAGE          sub_area=0, dst=r5
+  00200  JUMP_BEQUI               page=@7, value=19, reg=r5 ;jump
+  0020C  EVENT_END                
+  00210  /PAGESET                 next=- ;jump
+@7:
+  00214  PAGESET                  page=@7
+  00218  EXF_LOG_MESSAGE          +4=8
+  00220  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00230  EXF_LOG_MESSAGE          +4=9
+  00238  EXF_LOG_MESSAGE          +4=10
+  00240  SVFLAG_ON                flag=flag 0x342
+  00244  BGM_PLAY                 channel=2, track=2522
+  0024C  EXF_NPC_RUN_TARGET       +4=567, +12=10
+  0025C  EXF_NPC_RUN_TARGET       +4=568, +12=10
+  0026C  EXF_NPC_RUN_TARGET       +4=569, +12=10
+  0027C  EXF_NPC_RUN_TARGET       +4=570, +12=10
+  0028C  EXF_PAGE_JUMP_EXIT       page=@8
+  00290  /PAGESET                 next=- ;jump
+@8:
+  00294  PAGESET                  page=@8
+  00298  EXF_LOG_MESSAGE          +4=11
+  002A0  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  002B0  SVFLAG_OFF               flag=flag 0xce4
+  002B4  SVFLAG_OFF               flag=flag 0x342
+  002B8  EXF_EVENT_END            
+  002C0  EVENT_END                
+  002C4  /PAGESET                 next=- ;jump
+  002C8  /EVENT                   
+; strings
+;   0: 'PAGE0'
+;   1: 'PAGE1'
+;   2: 'PAGE2'
+;   3: 'POLICE APPEAR IN THE STATION AREA!!'
+;   4: 'PAGE3'
+;   5: 'PAGE4'
+;   6: 'PAGE5'
+;   7: 'PAGE6'
+;   8: 'PAGE7'
+;   9: 'YOU ARE IN STATION AREA!!'
+;   10: '834PORTL CLOSE'
+;   11: 'PAGE8'

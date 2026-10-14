@@ -1,0 +1,8 @@
+; SCRIPT.XAF entry 1045: mission 45
+; script id 45, 1 pages, 0 strings, 20 bytes of code
+  00000  EVENT                    id=45
+@0:
+  00004  PAGESET                  page=@0
+  00008  EVENT_END                
+  0000C  /PAGESET                 next=- ;jump
+  00010  /EVENT                   

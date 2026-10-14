@@ -1,0 +1,215 @@
+; SCRIPT.XAF entry 1069: mission 69
+; script id 69, 19 pages, 5 strings, 1480 bytes of code
+  00000  EVENT                    id=69
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00018  EXF_EVSTAGE              value=4, on=1
+  00024  EXF_RECOVER_NPC          who=person 563, who_reg=r0, arg=0
+  00034  EXF_RECOVER_NPC          who=person 355, who_reg=r0, arg=0
+  00044  EXF_SET_NPC              npc=101
+  0004C  SVFLAG_ON                flag=flag 0xaa8
+  00050  SVFLAG_OFF               flag=flag 0xaa9
+  00054  SVFLAG_OFF               flag=flag 0xaaa
+  00058  SVFLAG_OFF               flag=flag 0xaab
+  0005C  SVFLAG_OFF               flag=flag 0xaac
+  00060  SVFLAG_OFF               flag=flag 0xaad
+  00064  SVFLAG_OFF               flag=flag 0xaae
+  00068  SVFLAG_OFF               flag=flag 0xaaf
+  0006C  SETREG_UB                dst=r0, value=0
+  00074  SETREG_UB                dst=r1, value=0
+  0007C  SETREG_UB                dst=r2, value=0
+  00084  SETREG_UB                dst=r3, value=0
+  0008C  SETREG_UB                dst=r4, value=0
+  00094  SETREG_UB                dst=r5, value=0
+  0009C  SETREG_UB                dst=r6, value=0
+  000A4  SETREG_UB                dst=r7, value=0
+  000AC  SETREG_UB                dst=r8, value=0
+  000B4  SETREG_UB                dst=r9, value=0
+  000BC  SETREG_UB                dst=r10, value=0
+  000C4  EXF_SET_NPC_MARK         a=563, b=0, clear=1
+  000D4  EXF_SET_MARK             a=47, b=563
+  000E0  SVFLAG_ON                flag=flag 0x377
+  000E4  EXF_HIDE_NPC             who=person 563, show=1, slot=1, arg=0
+  000F8  PAGE_JUMP                page=@1 ;jump
+  000FC  EVENT_END                
+  00100  /PAGESET                 next=- ;jump
+@1:
+  00104  PAGESET                  page=@1
+  00108  EXF_SET_TYPE             mask=8, page=@2, arg=1 ;jump
+  00118  PAGE_JUMP                page=@2 ;jump
+  0011C  EVENT_END                
+  00120  /PAGESET                 next=- ;jump
+@2:
+  00124  PAGESET                  page=@2
+  00128  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00138  EXF_CHECK_TALK_NPC       who=person 563, dst=r1
+  00144  JUMP_BEQUB               page=@3, value=1, reg=r1 ;jump
+  00150  EVENT_END                
+  00154  /PAGESET                 next=- ;jump
+@3:
+  00158  PAGESET                  page=@3
+  0015C  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  0016C  SVFLAG_OFF               flag=flag 0x377
+  00170  SVFLAG_ON                flag=flag 0xaaa
+  00174  EXF_SET_NPC_MARK         a=563, b=0, clear=0
+  00184  EXF_SET_MARK             a=0, b=563
+  00190  EXF_SET_MARK             a=4, b=355
+  0019C  EXF_SET_NPC_MARK         a=355, b=0, clear=1
+  001AC  SVFLAG_OFF               flag=flag 0x377
+  001B0  EXF_SET_COUNTDOWN        mode=1, seconds=120
+  001BC  EXF_LOG_MESSAGE          
+  001C4  EXF_PAGE_JUMP_EXIT       page=@4
+  001C8  /PAGESET                 next=- ;jump
+@4:
+  001CC  PAGESET                  page=@4
+  001D0  EXF_SET_TYPE             mask=8, page=@5, arg=4 ;jump
+  001E0  SVFLAG_OFF               flag=flag 0x377
+  001E4  EXF_GET_COUNTDOWN        dst=r3
+  001EC  JMI                      page=@6, reg=r3 ;jump
+  001F4  PAGE_JUMP                page=@5 ;jump
+  001F8  EVENT_END                
+  001FC  /PAGESET                 next=- ;jump
+@5:
+  00200  PAGESET                  page=@5
+  00204  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00214  EXF_CHECK_TALK_NPC       who=person 355, dst=r1
+  00220  JUMP_BEQUB               page=@7, value=1, reg=r1 ;jump
+  0022C  SVFLAG_BRON              flag=flag 0xaac, page=@12 ;jump
+  00234  EVENT_END                
+  00238  /PAGESET                 next=- ;jump
+@6:
+  0023C  PAGESET                  page=@6
+  00240  SVFLAG_BRON              flag=flag 0xaac, page=@5 ;jump
+  00248  SVFLAG_ON                flag=flag 0xaac
+  0024C  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  00258  SVFLAG_OFF               flag=flag 0x377
+  0025C  PAGE_JUMP                page=@5 ;jump
+  00260  EVENT_END                
+  00264  /PAGESET                 next=- ;jump
+@7:
+  00268  PAGESET                  page=@7
+  0026C  EXF_SET_TYPE             mask=8, page=@9, arg=7 ;jump
+  0027C  EXF_SET_SUBBTL           on=1
+  00284  EXF_SVFLAG_BROFF         flag=flag 0xaae, page=@4 ;jump
+  00290  SVFLAG_ON                flag=flag 0x327
+  00294  EXF_GET_COUNTDOWN        dst=r3
+  0029C  JPZ                      page=@9, reg=r3 ;jump
+  002A4  SVFLAG_ON                flag=flag 0xaac
+  002A8  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  002B4  PAGE_JUMP                page=@9 ;jump
+  002B8  EVENT_END                
+  002BC  /PAGESET                 next=- ;jump
+@8:
+  002C0  PAGESET                  page=@8
+  002C4  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  002D4  SVFLAG_ON                flag=flag 0xaac
+  002D8  PAGE_JUMP                page=@9 ;jump
+  002DC  EVENT_END                
+  002E0  /PAGESET                 next=- ;jump
+@9:
+  002E4  PAGESET                  page=@9
+  002E8  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  002F8  SVFLAG_OFF               flag=flag 0x327
+  002FC  EXF_SET_NPC_MARK         a=355, b=0, clear=0
+  0030C  EXF_SET_NPC_MARK         a=563, b=0, clear=1
+  0031C  EXF_SET_MARK             a=47, b=563
+  00328  SVFLAG_ON                flag=flag 0x377
+  0032C  EXF_CHECK_ST_BATTLE_END  dst=r2
+  00338  JUMP_BEQUB               page=@11, value=0, reg=r2 ;jump
+  00344  JUMP_BEQUB               page=@11, value=1, reg=r2 ;jump
+  00350  JUMP_BEQUB               page=@10, value=2, reg=r2 ;jump
+  0035C  JUMP_BEQUB               page=@10, value=3, reg=r2 ;jump
+  00368  EXF_SET_COUNTDOWN        mode=2, seconds=0
+  00374  EVENT_END                
+  00378  /PAGESET                 next=- ;jump
+@10:
+  0037C  PAGESET                  page=@10
+  00380  EXF_LOG_MESSAGE          +4=1
+  00388  EXF_SVFLAG_BRON          flag=flag 0xaac, page=@7 ;jump
+  00394  SVFLAG_ON                flag=flag 0xaac
+  00398  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  003A4  PAGE_JUMP                page=@12 ;jump
+  003A8  /PAGESET                 next=- ;jump
+@11:
+  003AC  PAGESET                  page=@11
+  003B0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  003C0  EXF_LOG_MESSAGE          +4=2
+  003C8  SVFLAG_ON                flag=flag 0xaab
+  003CC  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  003D8  PAGE_JUMP                page=@12 ;jump
+  003DC  EVENT_END                
+  003E0  /PAGESET                 next=- ;jump
+@12:
+  003E4  PAGESET                  page=@12
+  003E8  EXF_SET_TYPE             mask=8, page=@13, arg=12 ;jump
+  003F8  SVFLAG_ON                flag=flag 0x377
+  003FC  PAGE_JUMP                page=@13 ;jump
+  00400  EVENT_END                
+  00404  /PAGESET                 next=- ;jump
+@13:
+  00408  PAGESET                  page=@13
+  0040C  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  0041C  EXF_CHECK_TALK_NPC       who=person 563, dst=r1
+  00428  JUMP_BEQUB               page=@14, value=1, reg=r1 ;jump
+  00434  EVENT_END                
+  00438  /PAGESET                 next=- ;jump
+@14:
+  0043C  PAGESET                  page=@14
+  00440  EXF_LOG_MESSAGE          +4=3
+  00448  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00458  SVFLAG_BRON              flag=flag 0xaac, page=@15 ;jump
+  00460  EXF_CNTL_MES             mode=0
+  00468  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  00474  EXF_RESULT               failed=0
+  0047C  EXF_DISP_RESULT          failed=0 ;waits
+  00484  EXF_ADD_MONEY            amount=3000, show=1, arg_reg=r0 ;waits
+  00494  EXF_WAIT_ST               ;waits
+  0049C  EXF_MOVE_STAGE           area=25, arg_reg=r0, no_reg=0
+  004AC  SVFLAG_OFF               flag=flag 0x377
+  004B0  PAGE_JUMP                page=@16 ;jump
+  004B4  EVENT_END                
+  004B8  /PAGESET                 next=- ;jump
+@15:
+  004BC  PAGESET                  page=@15
+  004C0  EXF_LOG_MESSAGE          +4=4
+  004C8  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  004D8  EXF_SET_OUTLOW           a=0, b=0, c=0, d=65534
+  004EC  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  004F8  EXF_CNTL_MES             mode=0
+  00500  EXF_RESULT               failed=1
+  00508  EXF_DISP_RESULT          failed=1 ;waits
+  00510  EXF_MOVE_STAGE           area=25, arg_reg=r0, no_reg=0
+  00520  EXF_PAGE_JUMP_EXIT       page=@17
+  00524  EVENT_END                
+  00528  /PAGESET                 next=- ;jump
+@16:
+  0052C  PAGESET                  page=@16
+  00530  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00540  EXF_CNTL_MES             mode=1
+  00548  EXF_MESSAGE              message=951, speaker=person 106, speaker_reg=r0 ;waits
+  00558  PAGE_JUMP                page=@18 ;jump
+  0055C  EVENT_END                
+  00560  /PAGESET                 next=- ;jump
+@17:
+  00564  PAGESET                  page=@17
+  00568  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00578  EXF_CNTL_MES             mode=1
+  00580  EXF_MESSAGE              message=952, speaker=person 106, speaker_reg=r0 ;waits
+  00590  PAGE_JUMP                page=@18 ;jump
+  00594  EVENT_END                
+  00598  /PAGESET                 next=- ;jump
+@18:
+  0059C  PAGESET                  page=@18
+  005A0  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  005B0  SVFLAG_OFF               flag=flag 0x377
+  005B4  EXF_EVENT_END            
+  005BC  EVENT_END                
+  005C0  /PAGESET                 next=- ;jump
+  005C4  /EVENT                   
+; strings
+;   0: 'Start'
+;   1: 'Over'
+;   2: 'win'
+;   3: 'Safe'
+;   4: 'Out'

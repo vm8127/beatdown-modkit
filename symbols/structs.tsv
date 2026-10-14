@@ -37,7 +37,9 @@ PersonDef	0x34	u8[16]	start_entries	two entries applied at spawn, probably weapo
 
 Person	size	0x43C		person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get
 Person	0x000	u32	flags
-Person	0x03A	u8	status	bit 1 = in hospital; 1 = probably in jail
+Person	0x004	u8	sex	0 or 1 (EXF_CHECK_SEX); which value is which isn't checked
+Person	0x03A	u8	status	bit 0 dead (EXF_KILL_CHR), bit 1 in hospital, bit 3 arrested (EXF_CHECK_ARREST)
+Person	0x03C	u8	kind	EXF_SET_CALLER picks allies by it (0, 1, 2)
 Person	0x03E	s16	id	person id (ids 200-209 are looked up by this)
 Person	0x040	s32	money	0-99,999,999
 Person	0x044	s16	preset	outfit preset: the model
@@ -50,10 +52,11 @@ Person	0x054	s16	hp	cap 9999
 Person	0x068	OutfitSlot[22]	outfit	copied from the preset
 Person	0x380	s16	attack_percent	normally 100
 Person	0x382	s16	bonus_max_hp
-Person	0x388	u32	flags388	bit 31 hides the Pride bar
+Person	0x388	u32	skills	skill bits set by EXF_SET_SKILL and tested by EXF_CHECK_ABILITY (bits 0, 1, 2, 4, 5, 7); bit 31 hides the Pride bar
 Person	0x390	u8[16]	start_entries	two entries applied at spawn (0x2FBC50), probably weapons
 Person	0x3A6	s16	pride_max	Pride Gauge max
-Person	0x3A8	u8	ally_flags	bit 0 = ally (party or recruited)
+Person	0x3A8	u8	ally_flags	bit 0 = ally (party or recruited), bit 1 set by EXF_JOIN_FRIEND
+Person	0x3AA	s16	emotion	EXF_SET_EMOTION
 Person	0x3B4	s16	bonus_max_hp2	added by Person_RecalcMaxHP
 
 Fighter	size	0x4730		fighter in a fight, g_Fighters (0 = player, 2-12 = NPC slots)
@@ -164,3 +167,68 @@ Battle	0x64	s32	loser
 Battle	0x6C	s32	talk_kind	0 threaten menu, 1 after a knockout, 3 beg for your life
 Battle	0x9C	u32	flags9C	bit 0 = resume the fight
 Battle	0xB8	s32	down	records a knockout (Battle_OnFighterDown)
+
+ScriptOpInfo	size	0x14		g_ScriptOpcodes entry: one script instruction (docs/SCRIPTS.md)
+ScriptOpInfo	0x00	u32	id	opcode, same as the index
+ScriptOpInfo	0x04	u32	words	instruction size in 32-bit words, opcode included
+ScriptOpInfo	0x08	u32	arg_count
+ScriptOpInfo	0x0C	u8*	arg_types	one byte per argument (meaning not decoded; probably for the cut SCRIPT VIEWER)
+ScriptOpInfo	0x10	char*	name	EXF_ADD_MONEY, JUMP_BEQI, ...
+
+ScriptOpHandler	size	0x8		g_ScriptOpHandlers entry
+ScriptOpHandler	0x0	u32	flags	0 advance, 1 jump (advance only when the handler returns 1), 2 blocking (retry each frame until it returns 1)
+ScriptOpHandler	0x4	void*	handler	int handler(ScriptVM *vm); returns 2 to end the script
+
+ScriptHeader	size	0x20		start of a script image (SCRIPT.XAF 1000+, or one language part of 0-999); offsets count from +0x20, where the code starts
+ScriptHeader	0x00	u16	id	mission / script id
+ScriptHeader	0x02	u16	page_count	PAGESET blocks
+ScriptHeader	0x04	u32	page_table	u32 offset per page
+ScriptHeader	0x08	u32	string_count
+ScriptHeader	0x0C	u32	string_table	u32 offset per string, from the table itself
+ScriptHeader	0x14	u32	end	end of the script image
+
+ScriptVM	size	0x70		event script VM state (one per running mission at mission +0xA0)
+ScriptVM	0x00	u32	page_count	from the header
+ScriptVM	0x04	u8*	page_table
+ScriptVM	0x08	u8*	string_table
+ScriptVM	0x0C	u8*	end
+ScriptVM	0x10	u32	events	pending event bits (mission +8, copied each frame); EXF_SET_TYPE pages wait for them
+ScriptVM	0x14	u16*[8]	labels	LABEL_SET / LABEL_JUMP targets (vm->temp - 0x28 + 4n)
+ScriptVM	0x34	u8*	regs	register block: 16 registers, s32 at regs + 0x40 + 4n, type byte at regs + 0x80 + n (SETTYPE)
+ScriptVM	0x38	u32	scratch	cleared after each completed instruction
+ScriptVM	0x3C	u8[32]	temp	per-instruction state of blocking instructions, cleared with scratch
+ScriptVM	0x5C	u16	script_id	from the header; Script_UsesRegArgs checks it
+ScriptVM	0x5E	s16	page	current page (-1 at start)
+ScriptVM	0x60	s16	page_lo	page range kept by EXF_SET_TYPE
+ScriptVM	0x62	s16	page_hi
+ScriptVM	0x64	ScriptHeader*	script
+ScriptVM	0x68	u16*	ip	current instruction
+ScriptVM	0x6C	u16*	prev_ip
+
+Job	size	0xC		g_Jobs entry: one of the 50 side jobs
+Job	0x0	u8	mission	mission id; its script is SCRIPT.XAF 1000 + id
+Job	0x1	u8	difficulty	stars, 1-5
+Job	0x2	u16	reward	dollars
+Job	0x4	u32	title	text id (CDATA.XAF 403-408)
+Job	0x8	u32	description	text id
+
+MissionReq	size	0x4		g_MissionReq entry, per mission id
+MissionReq	0x0	u16	chapters	bit n = allowed in story chapter n (g_StoryChapter)
+MissionReq	0x2	u8	min_rank	minimum MissionRank_Get (0x0060BADC)
+MissionReq	0x3	u8	min_percent	minimum % of jobs cleared (Jobs_PercentCleared)
+
+Mission	size	0x110		one g_MissionMgr slot: a running mission or event script
+Mission	0x00	s32	id	mission id, -1 = free
+Mission	0x04	s32	state	loader state (Script_LoadEventList), 3 = running
+Mission	0x08	u32	events	event bits raised for it (Mission_RaiseEvent)
+Mission	0x0C	ScriptHeader*	script	g_EventList, or g_BgMissionScript for missions 100 and 101
+Mission	0x10	u8[0x90]	regs	the VM's register block
+Mission	0xA0	ScriptVM	vm	
+
+MissionMgr	size	0x2E4		g_MissionMgr
+MissionMgr	0x00	s32	running	running missions
+MissionMgr	0x04	s32	slot_count	2
+MissionMgr	0x08	u32	flags	MissionMgr_SetFlags; 0x80 = battle result pending
+MissionMgr	0x0C	s32	mission0	id running in slot 0, -1 none
+MissionMgr	0x10	s32	mission1	id running in slot 1 (missions 100, 101), -1 none
+MissionMgr	0x1C	Mission[2]	slots	

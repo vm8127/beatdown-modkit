@@ -1,0 +1,111 @@
+; SCRIPT.XAF entry 1120: mission 120
+; script id 120, 10 pages, 10 strings, 684 bytes of code
+  00000  EVENT                    id=120
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  SVFLAG_ON                flag=flag 0xe22
+  00024  SVFLAG_OFF               flag=flag 0xe23
+  00028  SVFLAG_OFF               flag=flag 0xe24
+  0002C  SVFLAG_OFF               flag=flag 0xe25
+  00030  SVFLAG_OFF               flag=flag 0xe26
+  00034  EXF_SET_NPC              npc=109
+  0003C  EXF_SET_MARK             a=44, b=168
+  00048  EXF_SET_NPC_MARK         a=168, b=0, clear=1
+  00058  SETREG_UB                dst=r0, value=0
+  00060  SETREG_UB                dst=r0, value=0
+  00068  SETREG_UB                dst=r0, value=0
+  00070  SETREG_UB                dst=r0, value=0
+  00078  SETREG_UB                dst=r0, value=0
+  00080  SETREG_UB                dst=r0, value=0
+  00088  SETREG_UB                dst=r0, value=0
+  00090  SETREG_UB                dst=r0, value=0
+  00098  SETREG_UB                dst=r0, value=0
+  000A0  SETREG_UB                dst=r0, value=0
+  000A8  SETREG_UB                dst=r0, value=0
+  000B0  PAGE_JUMP                page=@3 ;jump
+  000B4  /PAGESET                 next=- ;jump
+@1:
+  000B8  PAGESET                  page=@1
+  000BC  EXF_LOG_MESSAGE          +4=1
+  000C4  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  000D4  EVENT_END                
+  000D8  /PAGESET                 next=- ;jump
+@2:
+  000DC  PAGESET                  page=@2
+  000E0  EXF_LOG_MESSAGE          +4=2
+  000E8  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  000F8  EVENT_END                
+  000FC  /PAGESET                 next=- ;jump
+@3:
+  00100  PAGESET                  page=@3
+  00104  EXF_LOG_MESSAGE          +4=3
+  0010C  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  0011C  EXF_MESSAGE              message=586, speaker=player, speaker_reg=r0 ;waits
+  0012C  PAGE_JUMP                page=@4 ;jump
+  00130  EVENT_END                
+  00134  /PAGESET                 next=- ;jump
+@4:
+  00138  PAGESET                  page=@4
+  0013C  EXF_LOG_MESSAGE          +4=4
+  00144  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00154  EXF_SET_COUNTDOWN        mode=1, seconds=200
+  00160  PAGE_JUMP                page=@5 ;jump
+  00164  EVENT_END                
+  00168  /PAGESET                 next=- ;jump
+@5:
+  0016C  PAGESET                  page=@5
+  00170  EXF_LOG_MESSAGE          +4=5
+  00178  EXF_SET_TYPE             mask=8, page=@7, arg=5 ;jump
+  00188  EXF_GET_COUNTDOWN        dst=r0
+  00190  JUMP_BEQUI               page=@9, value=0, reg=r0 ;jump
+  0019C  PAGE_JUMP                page=@7 ;jump
+  001A0  /PAGESET                 next=- ;jump
+@6:
+  001A4  PAGESET                  page=@6
+  001A8  EXF_LOG_MESSAGE          +4=6
+  001B0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  001C0  JUMP_BEQUI               page=@7, value=1, reg=r2 ;jump
+  001CC  EVENT_END                
+  001D0  /PAGESET                 next=- ;jump
+@7:
+  001D4  PAGESET                  page=@7
+  001D8  EXF_LOG_MESSAGE          +4=7
+  001E0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  001F0  EXF_CHECK_TALK_NPC       who=person 2, dst=r1
+  001FC  JUMP_BEQUI               page=@8, value=1, reg=r1 ;jump
+  00208  EVENT_END                
+  0020C  /PAGESET                 next=- ;jump
+@8:
+  00210  PAGESET                  page=@8
+  00214  EXF_LOG_MESSAGE          +4=8
+  0021C  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  0022C  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  00238  SVFLAG_ON                flag=flag 0xe23
+  0023C  EXF_MESSAGE              message=586, speaker=player, speaker_reg=r0 ;waits
+  0024C  EXF_EVENT_END            
+  00254  EVENT_END                
+  00258  /PAGESET                 next=- ;jump
+@9:
+  0025C  PAGESET                  page=@9
+  00260  EXF_LOG_MESSAGE          +4=9
+  00268  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00278  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  00284  SVFLAG_ON                flag=flag 0xe26
+  00288  EXF_MESSAGE              message=586, speaker=player, speaker_reg=r0 ;waits
+  00298  EXF_EVENT_END            
+  002A0  EVENT_END                
+  002A4  /PAGESET                 next=- ;jump
+  002A8  /EVENT                   
+; strings
+;   0: 'P0'
+;   1: 'P1'
+;   2: 'P2'
+;   3: 'P3'
+;   4: 'P3'
+;   5: 'P4'
+;   6: 'P5'
+;   7: 'P6'
+;   8: 'P7'
+;   9: 'P8'

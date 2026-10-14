@@ -55,6 +55,8 @@ All commands below are run from the top of the workspace.
 | `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
 | `docs/ROSTER.md` | **Story roster**: recast the five story heroes (model, moves, HP bar name, starting stats) from one file, `mods/roster.json`, with `bdkit.py roster` |
 | `docs/PLAN-auto-negotiation.md` | **Negotiation on knockout** (built, tested): the plan, the battle and talk-scene code it hooks, and the test runs |
+| `docs/SCRIPTS.md` | **Scripts, missions, side jobs, events and dialogue**: how missions start (job menu, area load, talking, story flags), their requirements and results, the 50 side jobs, the script file format, the event VM and all 204 commands, with a worked example and modding notes |
+| `tools/scriptkit.py` | Disassembles SCRIPT.XAF (mission and dialogue scripts) and lists every mission (`dumps/missions.txt`, `dumps/scripts/`, `dumps/script_ops.txt`) |
 | `docs/ANIMATION.md` | **Animation system**: animation groups and the global animation slots, action motion scripts (which animation each move plays, frame ranges), body remap tables, and what that means for moveset mods |
 | `docs/MEMORY-MAP.md` | **Memory used by our cheats**: every address each cheat writes, the code caves (used and free), and which cheats can't be on together |
 | `symbols/symbols.tsv` | Every name we've given an address, with its C type when known (single source); `symbols/` also holds the generated PCSX2 `.sym`, Ghidra script and CSV |
@@ -388,5 +390,5 @@ python tools/pcsx2.py stop
 - **Game mechanics**: damage formula, Pride Gauge, EXP, ability points and Criminal Level are mapped. See docs/MECHANICS.md; its "Open leads" lists what is left (status effects, disguises, item effects, negotiation outcomes).
 - **CDATA.XAF entry 0**: 189 appearance presets of 1176 bytes: 22 outfit slots `{u32 item, s16 parts[16]}` then body parameters. See docs/CODEMAP.md, "Character loading".
 - **CDATA.XAF entries 1-4**: blocks starting with `f21b`, probably compressed.
-- **SCRIPT.XAF**: entries 0-999 are 964+ byte bytecode files and 1000+ are indexed event lists. The ELF has opcode names like `EXF_SET_SKILL`, `EXF_SET_MOTION` and `EXF_MOVE_STAGE` near `0x004101E8`.
+- **SCRIPT.XAF**: decoded (docs/SCRIPTS.md). Entries 1000 + n are mission n's script (story chapters, the 50 side jobs, random events), 0-999 are dialogue scripts in six languages; both are disassembled by `tools/scriptkit.py`. Next: the dialogue player's commands, the job menu, and a first script mod (a new or changed job).
 - **Ghidra**: set up on Daniel's PC (see "Ghidra" above). 6,855 of 6,856 functions are exported as pseudocode; rebuild it after adding many symbols so the new names show up. Sony library signatures added 2026-10-13 (`ApplyPS2Signatures.py`, 707 names); not run on Daniel's PC yet.

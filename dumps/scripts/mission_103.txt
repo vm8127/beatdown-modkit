@@ -1,0 +1,185 @@
+; SCRIPT.XAF entry 1103: mission 103
+; script id 103, 15 pages, 15 strings, 1344 bytes of code
+  00000  EVENT                    id=103
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  SVFLAG_ON                flag=flag 0x7f4
+  00024  EXF_RECOVER_NPC          who=person 577, who_reg=r0, arg=0
+  00034  EXF_RECOVER_NPC          who=person 578, who_reg=r0, arg=0
+  00044  EXF_RECOVER_NPC          who=person 579, who_reg=r0, arg=0
+  00054  EXF_SET_NPC              npc=52
+  0005C  SVFLAG_ON                flag=flag 0xcf8
+  00060  SVFLAG_ON                flag=flag 0xcf6
+  00064  EXF_HIDE_NPC             who=person 577, show=1, slot=0, arg=0
+  00078  EXF_HIDE_NPC             who=person 578, show=1, slot=1, arg=0
+  0008C  EXF_HIDE_NPC             who=person 579, show=1, slot=2, arg=0
+  000A0  EXF_STOP_PLAYER          mode=2
+  000A8  /PAGESET                 next=@1 ;jump
+@1:
+  000AC  PAGESET                  page=@1
+  000B0  EXF_LOG_MESSAGE          +4=1
+  000B8  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  000C8  EXF_CNTL_MES             mode=4
+  000D0  SVFLAG_OFF               flag=flag 0x7f4
+  000D4  EXF_STOP_PLAYER          mode=1
+  000DC  SVFLAG_ON                flag=flag 0x347
+  000E0  EXF_CAM_POS_START        x=58, y=20, z=5
+  000F0  EXF_CAM_POS_END          x=19, y=20, z=26, frames=200, no_ease=0
+  00108  EXF_CAM_TRGPOS_START     x=27, y=16, z=39
+  00118  EXF_CAM_TRGPOS_END       x=27, y=16, z=39, frames=200, no_ease=0
+  00130  EXF_CAM_MODE             mode=1
+  00138  EXF_WAIT                 frames=40 ;waits
+  00140  EXF_MESTURN              on=1
+  00148  EXF_MESSAGE              message=907, speaker=player, speaker_reg=r0 ;waits
+  00158  EXF_SET_MOTION           who=person 577, motion=536, mode=0, who_reg=r0
+  0016C  EXF_WAIT                 frames=140 ;waits
+  00174  EXF_CAM_MODE             mode=0
+  0017C  EXF_STOP_PLAYER          mode=0
+  00184  EXF_CAM_POS_START        x=-89.6, y=20, z=4.25
+  00194  EXF_CAM_POS_END          x=-89.6, y=20, z=4.25, frames=1, no_ease=0
+  001AC  EXF_CAM_TRGPOS_START     x=-39.907, y=16, z=-1
+  001BC  EXF_CAM_TRGPOS_END       x=-39.907, y=16, z=-1, frames=1, no_ease=0
+  001D4  EXF_CAM_MODE             mode=1
+  001DC  EXF_WAIT                 frames=1 ;waits
+  001E4  EXF_CAM_MODE             mode=0
+  001EC  EXF_CNTL_MES             mode=5
+  001F4  EXF_PAGE_JUMP_EXIT       page=@2
+  001F8  /PAGESET                 next=- ;jump
+@2:
+  001FC  PAGESET                  page=@2
+  00200  EXF_LOG_MESSAGE          +4=2
+  00208  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00218  SVFLAG_ON                flag=flag 0x347
+  0021C  EXF_WAIT                 frames=1 ;waits
+  00224  EXF_CAM_MODE             mode=0
+  0022C  EXF_MESTURN              on=0
+  00234  PAGE_JUMP                page=@3 ;jump
+  00238  /PAGESET                 next=- ;jump
+@3:
+  0023C  PAGESET                  page=@3
+  00240  EXF_LOG_MESSAGE          +4=3
+  00248  EXF_SET_TYPE             mask=64, page=@4, arg=0 ;jump
+  00258  EXF_CHECK_TALK_NPC       who=person 577, dst=r1
+  00264  JUMP_BEQUI               page=@7, value=1, reg=r1 ;jump
+  00270  EXF_CHECK_TALK_NPC       who=person 578, dst=r1
+  0027C  JUMP_BEQUI               page=@9, value=1, reg=r1 ;jump
+  00288  EXF_CHECK_TALK_NPC       who=person 579, dst=r1
+  00294  JUMP_BEQUI               page=@9, value=1, reg=r1 ;jump
+  002A0  PAGE_JUMP                page=@4 ;jump
+  002A4  /PAGESET                 next=- ;jump
+@4:
+  002A8  PAGESET                  page=@4
+  002AC  EXF_LOG_MESSAGE          +4=4
+  002B4  EXF_SET_TYPE             mask=4, page=@5, arg=0 ;jump
+  002C4  EXF_SET_OUTLOW           a=0, b=0, c=0, d=65534
+  002D8  PAGE_JUMP                page=@6 ;jump
+  002DC  /PAGESET                 next=- ;jump
+@5:
+  002E0  PAGESET                  page=@5
+  002E4  EXF_LOG_MESSAGE          +4=5
+  002EC  EXF_PAGE_JUMP_EXIT       page=@3
+  002F0  /PAGESET                 next=- ;jump
+@6:
+  002F4  PAGESET                  page=@6
+  002F8  EXF_LOG_MESSAGE          +4=6
+  00300  SVFLAG_ON                flag=flag 0x7ee
+  00304  EXF_EVENT_END            
+  0030C  EVENT_END                
+  00310  /PAGESET                 next=- ;jump
+@7:
+  00314  PAGESET                  page=@7
+  00318  EXF_LOG_MESSAGE          +4=7
+  00320  SVFLAG_BROFF             flag=flag 0xcf7, page=@13 ;jump
+  00328  PAGE_JUMP                page=@8 ;jump
+  0032C  EXF_EVENT_END            
+  00334  EVENT_END                
+  00338  /PAGESET                 next=- ;jump
+@8:
+  0033C  PAGESET                  page=@8
+  00340  EXF_LOG_MESSAGE          +4=8
+  00348  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00358  EXF_RESULT               failed=0
+  00360  SVFLAG_OFF               flag=flag 0xcf7
+  00364  SVFLAG_OFF               flag=flag 0xcf6
+  00368  EXF_CNTL_MES             mode=0
+  00370  EXF_ADD_MONEY            amount=1000, show=1, arg_reg=r0 ;waits
+  00380  EXF_WAIT_ST               ;waits
+  00388  EXF_CNTL_MES             mode=1
+  00390  EXF_SET_NPC_MARK         a=577, b=0, clear=0
+  003A0  PAGE_JUMP                page=@13 ;jump
+  003A4  EVENT_END                
+  003A8  /PAGESET                 next=- ;jump
+@9:
+  003AC  PAGESET                  page=@9
+  003B0  EXF_LOG_MESSAGE          +4=9
+  003B8  EXF_SET_TYPE             mask=16, page=@0, arg=0 ;jump
+  003C8  EXF_SET_SUBBTL           on=1
+  003D0  PAGE_JUMP                page=@10 ;jump
+  003D4  EVENT_END                
+  003D8  /PAGESET                 next=- ;jump
+@10:
+  003DC  PAGESET                  page=@10
+  003E0  EXF_LOG_MESSAGE          +4=10
+  003E8  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  003F8  EXF_SET_SUBBTL           on=1
+  00400  SVFLAG_ON                flag=flag 0xcf7
+  00404  EXF_CHECK_ST_BATTLE_END  dst=r0
+  00410  JUMP_BEQUI               page=@14, value=6, reg=r0 ;jump
+  0041C  JUMP_BEQUI               page=@14, value=5, reg=r0 ;jump
+  00428  JUMP_BEQUI               page=@6, value=4, reg=r0 ;jump
+  00434  JUMP_BEQUI               page=@6, value=3, reg=r0 ;jump
+  00440  JUMP_BEQUI               page=@6, value=2, reg=r0 ;jump
+  0044C  JUMP_BEQUI               page=@11, value=1, reg=r0 ;jump
+  00458  JUMP_BEQUI               page=@11, value=0, reg=r0 ;jump
+  00464  EVENT_END                
+  00468  /PAGESET                 next=- ;jump
+@11:
+  0046C  PAGESET                  page=@11
+  00470  EXF_LOG_MESSAGE          +4=11
+  00478  EXF_SET_TYPE             mask=8, page=@13, arg=11 ;jump
+  00488  PAGE_JUMP                page=@12 ;jump
+  0048C  EVENT_END                
+  00490  /PAGESET                 next=- ;jump
+@12:
+  00494  PAGESET                  page=@12
+  00498  EXF_LOG_MESSAGE          +4=12
+  004A0  EXF_SET_TYPE             mask=64, page=@13, arg=0 ;jump
+  004B0  EXF_CHECK_TALK_NPC       who=person 577, dst=r1
+  004BC  JUMP_BEQUI               page=@8, value=1, reg=r1 ;jump
+  004C8  EVENT_END                
+  004CC  /PAGESET                 next=- ;jump
+@13:
+  004D0  PAGESET                  page=@13
+  004D4  EXF_LOG_MESSAGE          +4=13
+  004DC  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  004EC  SVFLAG_OFF               flag=flag 0x7ee
+  004F0  PAGE_JUMP                page=@6 ;jump
+  004F4  EVENT_END                
+  004F8  /PAGESET                 next=- ;jump
+@14:
+  004FC  PAGESET                  page=@14
+  00500  EXF_LOG_MESSAGE          +4=14
+  00508  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00518  EXF_SET_OUTLOW           a=0, b=0, c=0, d=65534
+  0052C  EXF_EVENT_END            
+  00534  EVENT_END                
+  00538  /PAGESET                 next=- ;jump
+  0053C  /EVENT                   
+; strings
+;   0: 'P0'
+;   1: 'P1'
+;   2: 'P2'
+;   3: 'P3'
+;   4: 'P4'
+;   5: 'P5'
+;   6: 'P6'
+;   7: 'P7'
+;   8: 'P8'
+;   9: 'P9'
+;   10: 'P10'
+;   11: 'P11'
+;   12: 'P12'
+;   13: 'P13'
+;   14: 'P4'

@@ -18,6 +18,8 @@ All tools read game files from `ISO/`, which holds the user's own disc unpacked 
 | `docs/MECHANICS.md` | What the stats and meters do, with formulas |
 | `docs/CUTCONTENT.md` | Cut content and unreachable code, with restore cheats |
 | `docs/ANIMATION.md` | Animation groups and slots, action motion scripts, body remap tables |
+| `docs/SCRIPTS.md` | Missions, side jobs, events, dialogue: the mission manager, the script format, the event VM and every command |
+| `tools/scriptkit.py` | Script disassembler (`dis`), mission table (`missions`), command use counts (`stats`) |
 | `docs/MEMORY-MAP.md` | Every address our cheats write, the code caves (used and free), which cheats conflict |
 | `docs/ROSTER.md` | Story roster system (`bdkit.py roster`, `mods/roster.json`) |
 | `docs/PLAN-auto-negotiation.md` | Negotiation-on-knockout mod: battle and talk-scene code, tests |

@@ -1,0 +1,9 @@
+; SCRIPT.XAF entry 1123: mission 123
+; script id 123, 1 pages, 0 strings, 28 bytes of code
+  00000  EVENT                    id=123
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_EVENT_END            
+  00010  EVENT_END                
+  00014  /PAGESET                 next=- ;jump
+  00018  /EVENT                   

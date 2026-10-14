@@ -1,0 +1,170 @@
+; SCRIPT.XAF entry 1138: mission 138
+; script id 138, 13 pages, 13 strings, 1268 bytes of code
+  00000  EVENT                    id=138
+  00004  EVENT                    id=138
+@0:
+  00008  PAGESET                  page=@0
+  0000C  EXF_LOG_MESSAGE          
+  00014  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00024  SVFLAG_OFF               flag=flag 0xf12
+  00028  SVFLAG_OFF               flag=flag 0xf13
+  0002C  SVFLAG_OFF               flag=flag 0xf14
+  00030  SVFLAG_OFF               flag=flag 0xf15
+  00034  SVFLAG_OFF               flag=flag 0xf16
+  00038  SVFLAG_OFF               flag=flag 0xf17
+  0003C  EXF_SET_NPC              npc=112
+  00044  EXF_HIDE_NPC             who=person 574, show=1, slot=0, arg=0
+  00058  EXF_HIDE_NPC             who=person 288, show=1, slot=1, arg=0
+  0006C  EXF_HIDE_NPC             who=person 287, show=1, slot=2, arg=0
+  00080  /PAGESET                 next=@1 ;jump
+@1:
+  00084  PAGESET                  page=@1
+  00088  EXF_LOG_MESSAGE          +4=1
+  00090  EXF_SET_TYPE             mask=8, page=@11, arg=1 ;jump
+  000A0  EXF_CHECK_DRESS          item=1001, variant=-1, dst=r3
+  000B0  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  000BC  EXF_CHECK_DRESS          item=1002, variant=-1, dst=r3
+  000CC  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  000D8  EXF_CHECK_DRESS          item=1003, variant=-1, dst=r3
+  000E8  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  000F4  EXF_CHECK_DRESS          item=1004, variant=-1, dst=r3
+  00104  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  00110  EXF_CHECK_DRESS          item=1005, variant=-1, dst=r3
+  00120  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  0012C  EXF_CHECK_DRESS          item=1006, variant=-1, dst=r3
+  0013C  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  00148  EXF_CHECK_DRESS          item=1007, variant=-1, dst=r3
+  00158  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  00164  EXF_CHECK_DRESS          item=1008, variant=-1, dst=r3
+  00174  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  00180  EXF_CHECK_DRESS          item=1009, variant=-1, dst=r3
+  00190  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  0019C  EXF_CHECK_DRESS          item=1010, variant=-1, dst=r3
+  001AC  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  001B8  EXF_CHECK_DRESS          item=1011, variant=-1, dst=r3
+  001C8  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  001D4  EXF_CHECK_DRESS          item=1012, variant=-1, dst=r3
+  001E4  JUMP_BEQUI               page=@2, value=1, reg=r3 ;jump
+  001F0  SVFLAG_OFF               flag=flag 0xf12
+  001F4  PAGE_JUMP                page=@3 ;jump
+  001F8  EVENT_END                
+  001FC  /PAGESET                 next=- ;jump
+@2:
+  00200  PAGESET                  page=@2
+  00204  EXF_LOG_MESSAGE          +4=2
+  0020C  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  0021C  SVFLAG_ON                flag=flag 0xf12
+  00220  PAGE_JUMP                page=@3 ;jump
+  00224  EVENT_END                
+  00228  /PAGESET                 next=- ;jump
+@3:
+  0022C  PAGESET                  page=@3
+  00230  EXF_LOG_MESSAGE          +4=3
+  00238  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00248  SVFLAG_BRON              flag=flag 0xf16, page=@5 ;jump
+  00250  SVFLAG_BROFF             flag=flag 0xf15, page=@5 ;jump
+  00258  SVFLAG_BRON              flag=flag 0xf15, page=@4 ;jump
+  00260  PAGE_JUMP                page=@4 ;jump
+  00264  /PAGESET                 next=- ;jump
+@4:
+  00268  PAGESET                  page=@4
+  0026C  EXF_LOG_MESSAGE          +4=4
+  00274  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00284  EXF_CAM_POS_START        x=-328, y=26, z=-149
+  00294  EXF_CAM_POS_END          x=-347, y=15, z=-137, frames=180, no_ease=0
+  002AC  EXF_CAM_TRGPOS_START     x=-385, y=20, z=-139
+  002BC  EXF_CAM_TRGPOS_END       x=-385, y=20, z=-139, frames=180, no_ease=0
+  002D4  EXF_CAM_MODE             mode=1
+  002DC  SVFLAG_OFF               flag=flag 0xf15
+  002E0  SVFLAG_ON                flag=flag 0xfa9
+  002E4  SVFLAG_ON                flag=flag 0xf16
+  002E8  PAGE_JUMP                page=@5 ;jump
+  002EC  /PAGESET                 next=- ;jump
+@5:
+  002F0  PAGESET                  page=@5
+  002F4  EXF_LOG_MESSAGE          +4=5
+  002FC  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  0030C  SVFLAG_BRON              flag=flag 0xf17, page=@6 ;jump
+  00314  PAGE_JUMP                page=@7 ;jump
+  00318  /PAGESET                 next=- ;jump
+@6:
+  0031C  PAGESET                  page=@6
+  00320  EXF_LOG_MESSAGE          +4=6
+  00328  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00338  EXF_CAM_MODE             mode=0
+  00340  SVFLAG_OFF               flag=flag 0xf17
+  00344  SVFLAG_OFF               flag=flag 0xf15
+  00348  PAGE_JUMP                page=@7 ;jump
+  0034C  /PAGESET                 next=- ;jump
+@7:
+  00350  PAGESET                  page=@7
+  00354  EXF_LOG_MESSAGE          +4=7
+  0035C  EXF_SET_TYPE             mask=4, page=@8, arg=0 ;jump
+  0036C  EXF_CHECK_STAGE          sub_area=0, dst=r2
+  00378  JUMP_BEQUI               page=@12, value=20, reg=r2 ;jump
+  00384  JUMP_BEQUI               page=@12, value=47, reg=r2 ;jump
+  00390  JUMP_BEQUI               page=@12, value=39, reg=r2 ;jump
+  0039C  JUMP_BEQUI               page=@12, value=1, reg=r2 ;jump
+  003A8  JUMP_BEQUI               page=@12, value=26, reg=r2 ;jump
+  003B4  JUMP_BEQUI               page=@12, value=46, reg=r2 ;jump
+  003C0  JUMP_BEQUI               page=@12, value=6, reg=r2 ;jump
+  003CC  PAGE_JUMP                page=@8 ;jump
+  003D0  EVENT_END                
+  003D4  /PAGESET                 next=- ;jump
+@8:
+  003D8  PAGESET                  page=@8
+  003DC  EXF_LOG_MESSAGE          +4=8
+  003E4  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  003F4  EXF_CHECK_TALK_NPC       who=person 574, dst=r1
+  00400  JUMP_BEQUI               page=@9, value=1, reg=r1 ;jump
+  0040C  EXF_PAGE_JUMP_EXIT       page=@1
+  00410  EVENT_END                
+  00414  /PAGESET                 next=- ;jump
+@9:
+  00418  PAGESET                  page=@9
+  0041C  EXF_LOG_MESSAGE          +4=9
+  00424  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00434  SVFLAG_BRON              flag=flag 0xf12, page=@10 ;jump
+  0043C  EVENT_END                
+  00440  /PAGESET                 next=- ;jump
+@10:
+  00444  PAGESET                  page=@10
+  00448  EXF_LOG_MESSAGE          +4=10
+  00450  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00460  SVFLAG_BRON              flag=flag 0xf14, page=@11 ;jump
+  00468  EXF_CNTL_MES             mode=0
+  00470  EXF_ADD_MONEY            amount=2000, show=1, arg_reg=r0 ;waits
+  00480  EXF_WAIT_ST               ;waits
+  00488  EXF_CNTL_MES             mode=1
+  00490  SVFLAG_ON                flag=flag 0xf14
+  00494  PAGE_JUMP                page=@11 ;jump
+  00498  EVENT_END                
+  0049C  /PAGESET                 next=- ;jump
+@11:
+  004A0  PAGESET                  page=@11
+  004A4  EXF_LOG_MESSAGE          +4=11
+  004AC  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  004BC  EVENT_END                
+  004C0  /PAGESET                 next=- ;jump
+@12:
+  004C4  PAGESET                  page=@12
+  004C8  EXF_LOG_MESSAGE          +4=12
+  004D0  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  004E0  EXF_EVENT_END            
+  004E8  EVENT_END                
+  004EC  /PAGESET                 next=- ;jump
+  004F0  /EVENT                   
+; strings
+;   0: 'P0'
+;   1: 'P1'
+;   2: 'P2'
+;   3: 'P3'
+;   4: 'P4'
+;   5: 'P5'
+;   6: 'P6'
+;   7: 'P7'
+;   8: 'P8'
+;   9: 'P9'
+;   10: 'P10'
+;   11: 'P11'
+;   12: 'P12'

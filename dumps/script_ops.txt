@@ -1,0 +1,204 @@
+ op  name                     missions dialogue  flags
+  1  EVENT                         153     1015  0
+  2  /EVENT                        147      984  0
+  3  EXF_SET_POS                   292        1  0
+  4  EXF_SET_BATTLE                 36        1  0
+  5  EXF_JOIN_PARTY                 30        0  2
+  6  EXF_JOIN_FRIEND                20        0  0
+  7  EXF_RELEASE_FRIEND             30        0  0
+  8  EXF_CALL_TELPHONE              39      242  2
+  9  EXF_ADD_REGS2                   1        0  0
+ 10  EXF_GAMEOVER                    3        0  0
+ 11  EXF_SET_COUNTDOWN              50        0  0
+ 12  EXF_NPC_WALK_TARGET             0        0  0
+ 13  EXF_NPC_RUN_TARGET              6        0  0
+ 14  EXF_SET_MESNAMES                0      152  0
+ 15  EXF_ADD_REGS                   12        0  0
+ 16  EXF_NPC_WALK_POS               19        0  0
+ 17  EXF_NPC_RUN_POS                 1        0  0
+ 18  EXF_GET_COUNTDOWN              14        0  0
+ 19  EXF_COUNT_CONTENT               0        0  0
+ 20  EXF_HEART                       0        2  0
+ 21  EXF_CHECK_TOUCH_NPC             0        0  0
+ 22  EXF_ITEM_ADD                   36        0  0
+ 23  EXF_ITEM_DEL                   42        0  0
+ 24  EXF_ITEM_CHECK                  5        0  0
+ 25  EXF_CHECK_ST_BATTLE_END       105        0  0
+ 26  EXF_SET_CIRCUMSTANCE            8        0  0
+ 27  EXF_RESULT                    179        0  0
+ 28  EXF_EVENT_END                 261        0  0
+ 29  EXF_DISP_RESULT               151        0  2
+ 30  EXF_CHECK_TALK_NPC            172        0  0
+ 31  EXF_LOG_MESSAGE              1601        0  0
+ 32  EXF_MESSAGE                   278        0  2
+ 33  EXF_SET_BATTLE_PLURAL          11        0  0
+ 34  EXF_SET_NPC                   139        0  0
+ 35  EXF_ADD_MONEY                 125        1  2
+ 36  EXF_CHECK_STAGE                81        0  0
+ 37  EXF_WAIT                      197        0  2
+ 38  EXF_CHECK_BUSTED                0        0  0
+ 39  EXF_CHECK_DRESS                83        0  0
+ 40  EXF_SET_EMOTION                13        0  0
+ 41  EXF_SET_ESCAPE                  1        0  0
+ 42  EXF_CHECK_LIFE                 28        0  0
+ 43  EXF_CHECK_MONEY                 2        0  0
+ 44  EXF_WAIT_ST                   126        1  2
+ 45  EXF_RANDOM                      5        0  0
+ 46  EXF_CHECK_CAPTURE               0        0  0
+ 47  EXF_RELEASE_PARTY              55        0  0
+ 48  EXF_CHECK_ABILITY              12        0  0
+ 49  EXF_WAIT_NPC                    0        0  0
+ 50  EXF_CHANGE_TARGET               0        0  0
+ 51  EXF_SET_SUBBTL                 48       42  0
+ 52  EXF_CHECK_PUNCHED_NPC           2        0  0
+ 53  EXF_CHECK_NAKAMAWARE            0       16  2
+ 54  EXF_CHECK_POS                  15      193  0
+ 55  EXF_WAIT_BATTLE_END            24        0  2
+ 56  EXF_SET_SKILL                   0        0  0
+ 57  EXF_HIDE_NPC                  143        0  0
+ 58  EXF_CHECK_PARTY                14        0  0
+ 59  EXF_CHECK_DRESS_CATE           13        0  0
+ 60  EXF_MOVE_STAGE                141        0  0
+ 61  EXF_CNTL_MES                  477        0  0
+ 62  EXF_SET_TYPE                 1737        0  1
+ 63  EXF_PAGE_JUMP_EXIT            259        0  0
+ 64  EXF_CHECK_SEX                  36        0  0
+ 65  EXF_SET_MOTION                160        0  0
+ 66  EXF_SET_MARK                  197        0  0
+ 67  EXF_CHECK_MONEY2               14        0  0
+ 68  EXF_SET_NPC_MARK              271        0  0
+ 69  EXF_KILL_NPC                   46        0  0
+ 70  EXF_SET_NPC_BEF                10        0  0
+ 71  EXF_SVFLAG_BRON                45        0  1
+ 72  EXF_SVFLAG_BROFF                6        0  1
+ 73  EXF_GEN_INIT                    6        0  0
+ 74  EXF_GEN_SET                    18        0  0
+ 75  EXF_SET_CALLER                  1        0  0
+ 76  EXF_TRANS_REG                  58        0  0
+ 77  EXF_KILL_RECRUITE               1        3  0
+ 78  EXF_SET_OUTLOW                 70       82  0
+ 79  EXF_EXIT_BATTLE                17        0  0
+ 80  EXF_RECOVER_NPC               383        0  0
+ 81  EXF_GET_CRIME                   1        0  0
+ 82  EXF_MUL_REG                     2        0  0
+ 83  EXF_SET_GROW                   12        0  0
+ 84  EXF_STOP_PLAYER               128        0  0
+ 85  EXF_CAM_MODE                  218        0  0
+ 86  EXF_CAM_POS_START             133        0  0
+ 87  EXF_CAM_POS_END               133        0  0
+ 88  EXF_CAM_TRGPOS_START          133        0  0
+ 89  EXF_CAM_TRGPOS_END            133        0  0
+ 90  EXF_NPC_ROT                   278        0  0
+ 91  EXF_REMOVE                     22        0  0
+ 92  EXF_EVSTAGE                    35        0  0
+ 93  EXF_CHECK_ARREST                2        0  0
+ 94  EXF_KILL_CHR                    7        0  0
+ 95  EXF_GET_PARTY_ID                5        0  0
+ 96  EXF_BAININ                      2        0  0
+ 97  EXF_ADD_DRESS                   2        0  0
+ 98  EXF_CNTL_TEL                    4        0  0
+ 99  EXF_SURI                        4        0  0
+100  EXF_MESTURN                    43        1  0
+101  PAGESET                      2033     3250  0
+102  /PAGESET                     2033     3270  1
+103  PAGE_JUMP                    1128      228  1
+104  JUMP_BEQI                      34      541  1
+105  JUMP_BEQUI                   1124      305  1
+106  JUMP_BEQS                       0        0  1
+107  JUMP_BEQUS                     10        1  1
+108  JUMP_BEQB                       0        0  1
+109  JUMP_BEQUB                     69        0  1
+110  JUMP_BEQF                       0        0  1
+111  JUMP_BNEI                       0        0  1
+112  JUMP_BNEUI                     10        0  1
+113  JUMP_BNES                       0        0  1
+114  JUMP_BNEUS                      0        0  1
+115  JUMP_BNEB                       0        0  1
+116  JUMP_BNEUB                      2        0  1
+117  JUMP_BNEF                       0        0  1
+118  JZE                             0        0  1
+119  JNZ                             0        0  1
+120  JMI                            20        0  1
+121  JPZ                             2       25  1
+122  TEX_LOAD                        0        0  0
+123  TEX_RELEASE                     0        0  0
+124  SPRITE                          0        0  0
+125  SPRSET_XYZ                      0      173  0
+126  SPRSET_SCALE                    0        0  0
+127  SPRSET_COLOR                    0       19  0
+128  SPRDISP_ON                      0        0  0
+129  SPRCLEAR                        0        0  0
+130  SPRCNG_XYZ                      0        0  0
+131  SPRCNG_COLOR                    0        0  0
+132  SPRCNG_SCALE                    0        0  0
+133  SPRCNG_TURN                     0        0  0
+134  SPRCALCSTART                    0        0  0
+135  WAIT_SPR                        0        0  0
+136  TEX_CHECK                       0        0  0
+137  SPRDISP_OFF                     0        0  0
+138  SPRALLCALCSTART                 0        0  0
+139  PADBTN_SET                      0        0  0
+140  BGM_PLAY                        6      922  0
+141  BGM_STOP                        0        0  0
+142  BGM_FADE                        0        0  0
+143  BGM_SETVOLUME                   0        0  0
+144  BGM_PAUSE                       0        0  0
+145  SE_PLAY                        13       60  0
+146  SE_STOP                         3        0  0
+147  PAD_PRESS                       0        0  2
+148  TEXTSET                         0     4436  0
+149  TEXTDISP_ON                     0        0  0
+150  TEXT_FADEIN                     0     3799  0
+151  TEXT_FADEOUT                    0     3804  0
+152  TEXTCLEAR                       0     4390  0
+153  TEXT_CNG_XY                     0        0  0
+154  TEXT_CNG_COLOR                  0        1  0
+155  PROPORTIONAL                    0     1739  0
+156  TEXTDISP_OFF                    0        0  0
+157  REG2STRBOX                      0        0  0
+158  SVFLAG_ON                     617      713  0
+159  SVFLAG_OFF                   1165       48  0
+160  SVFLAG_BRON                   324     1363  1
+161  SVFLAG_BROFF                   71       44  1
+162  GET_STATUS                      0        0  0
+163  SET_STATUS                      0        0  0
+164  WAIT_TEXT                       0      145  0
+165  WAIT_BGM                        0       63  2
+166  WAIT_EXEC                       0       76  0
+167  STOP_EXEC                       0        0  0
+168  FADEIN                         64        6  0
+169  FADEOUT                        44        6  0
+170  FADEIN_CHK                     64        0  2
+171  FADEOUT_CHK                    44        6  2
+172  WAIT_BT                         0     2713  0
+173  LABEL_SET                       0        0  0
+174  LABEL_JUMP                      0        0  1
+175  FLAG_INT                        0     3067  0
+176  FLAG_UINT                       0        0  0
+177  FLAG_FLOAT                      0        0  0
+178  PAUSE                           0        0  0
+179  DOOR_OPEN                       0        0  0
+180  DOOR_CLOSE                      0        0  0
+181  SETREG_I                        0      592  0
+182  SETREG_UI                       0       23  0
+183  SETREG_S                       49        0  0
+184  SETREG_US                       0        0  0
+185  SETREG_B                       10        0  0
+186  SETREG_UB                     311        0  0
+187  SETREG_F                        0        0  0
+188  SETTYPE                         0       10  0
+189  REGADDNUM_S                     0        0  0
+190  REGADDNUM_U                     0        0  0
+191  REGADDNUM_F                     0        0  0
+192  REGADDREG                       0        5  0
+193  REGSUBNUM_S                     1        0  0
+194  REGSUBNUM_U                     0        0  0
+195  REGSUBNUM_F                     0        0  0
+196  REGSUBREG                       0       30  0
+197  REGMULREG                       0        5  0
+198  REGDIVREG_Q                     0        5  0
+199  REGDIVREG_R                     0       23  0
+200  REGCPYREG                       1        0  0
+201  RANDAM                          0       28  0
+202  CALLFUNC                        0     1178  2
+203  EVENT_END                    1429     2703  0

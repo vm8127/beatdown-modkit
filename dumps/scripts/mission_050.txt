@@ -1,0 +1,288 @@
+; SCRIPT.XAF entry 1050: mission 50
+; script id 50, 24 pages, 19 strings, 2144 bytes of code
+  00000  EVENT                    id=50
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  EXF_RECOVER_NPC          who=person 169, who_reg=r0, arg=1
+  00030  EXF_RECOVER_NPC          who=person 533, who_reg=r0, arg=0
+  00040  EXF_RECOVER_NPC          who=person 534, who_reg=r0, arg=0
+  00050  EXF_RECOVER_NPC          who=person 423, who_reg=r0, arg=0
+  00060  EXF_RECOVER_NPC          who=person 425, who_reg=r0, arg=0
+  00070  EXF_RECOVER_NPC          who=person 463, who_reg=r0, arg=0
+  00080  EXF_RECOVER_NPC          who=person 388, who_reg=r0, arg=0
+  00090  EXF_RECOVER_NPC          who=person 390, who_reg=r0, arg=0
+  000A0  EXF_RECOVER_NPC          who=person 472, who_reg=r0, arg=0
+  000B0  EXF_RECOVER_NPC          who=person 475, who_reg=r0, arg=0
+  000C0  EXF_RECOVER_NPC          who=person 470, who_reg=r0, arg=0
+  000D0  SVFLAG_ON                flag=flag 0x9ea
+  000D4  SVFLAG_OFF               flag=flag 0x9eb
+  000D8  EXF_SET_NPC              npc=102
+  000E0  SVFLAG_OFF               flag=flag 0x9ec
+  000E4  EXF_EVSTAGE              value=7, on=1
+  000F0  EXF_HIDE_NPC             who=person 169, show=1, slot=0, arg=0
+  00104  SVFLAG_OFF               flag=flag 0x9ed
+  00108  SVFLAG_OFF               flag=flag 0x9ee
+  0010C  SVFLAG_OFF               flag=flag 0x9ef
+  00110  SVFLAG_OFF               flag=flag 0x9f0
+  00114  EXF_SET_MARK             a=13, b=169
+  00120  EXF_SET_NPC_MARK         a=169, b=0, clear=1
+  00130  PAGE_JUMP                page=@1 ;jump
+  00134  /PAGESET                 next=- ;jump
+@1:
+  00138  PAGESET                  page=@1
+  0013C  EXF_LOG_MESSAGE          +4=1
+  00144  EXF_SET_TYPE             mask=8, page=@5, arg=1 ;jump
+  00154  SVFLAG_ON                flag=flag 0x390
+  00158  EXF_CHECK_PARTY          dst=r7
+  00164  JUMP_BEQUB               page=@2, value=3, reg=r7 ;jump
+  00170  SVFLAG_OFF               flag=flag 0x9ec
+  00174  PAGE_JUMP                page=@3 ;jump
+  00178  /PAGESET                 next=- ;jump
+@2:
+  0017C  PAGESET                  page=@2
+  00180  EXF_LOG_MESSAGE          +4=2
+  00188  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00198  SVFLAG_ON                flag=flag 0x9ec
+  0019C  PAGE_JUMP                page=@3 ;jump
+  001A0  /PAGESET                 next=- ;jump
+@3:
+  001A4  PAGESET                  page=@3
+  001A8  EXF_LOG_MESSAGE          +4=3
+  001B0  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  001C0  EXF_CHECK_TALK_NPC       who=person 169, dst=r1
+  001CC  JUMP_BEQUI               page=@4, value=1, reg=r1 ;jump
+  001D8  EVENT_END                
+  001DC  /PAGESET                 next=- ;jump
+@4:
+  001E0  PAGESET                  page=@4
+  001E4  EXF_LOG_MESSAGE          +4=4
+  001EC  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  001FC  SVFLAG_BROFF             flag=flag 0x9ec, page=@5 ;jump
+  00204  EVENT_END                
+  00208  /PAGESET                 next=- ;jump
+@5:
+  0020C  PAGESET                  page=@5
+  00210  EXF_LOG_MESSAGE          +4=5
+  00218  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00228  EXF_SET_NPC_MARK         a=169, b=0, clear=0
+  00238  EXF_JOIN_PARTY           who=person 169, who_reg=r0 ;waits
+  00244  EXF_REMOVE               value=169, mode=1
+  00250  EXF_HIDE_NPC             who=person 169, show=0, slot=0, arg=0
+  00264  EXF_SET_NPC              npc=103
+  0026C  SVFLAG_ON                flag=flag 0x9ed
+  00270  EXF_SET_MARK             a=47, b=27
+  0027C  PAGE_JUMP                page=@6 ;jump
+  00280  /PAGESET                 next=- ;jump
+@6:
+  00284  PAGESET                  page=@6
+  00288  EXF_LOG_MESSAGE          +4=6
+  00290  EXF_SET_TYPE             mask=8, page=@10, arg=6 ;jump
+  002A0  SVFLAG_ON                flag=flag 0x390
+  002A4  SVFLAG_ON                flag=flag 0x9ef
+  002A8  EXF_CHECK_LIFE           who=person 169, who_reg=r0, dst=r9
+  002B8  JUMP_BEQUI               page=@21, value=0, reg=r9 ;jump
+  002C4  SVFLAG_OFF               flag=flag 0x9ef
+  002C8  PAGE_JUMP                page=@8 ;jump
+  002CC  /PAGESET                 next=- ;jump
+@7:
+  002D0  PAGESET                  page=@7
+  002D4  EXF_LOG_MESSAGE          +4=7
+  002DC  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  002EC  EXF_CNTL_MES             mode=1
+  002F4  EXF_RECOVER_NPC          who=person 169, who_reg=r0, arg=0
+  00304  EXF_MESSAGE              message=950, speaker=person 594, speaker_reg=r0 ;waits
+  00314  PAGE_JUMP                page=@19 ;jump
+  00318  EVENT_END                
+  0031C  /PAGESET                 next=- ;jump
+@8:
+  00320  PAGESET                  page=@8
+  00324  EXF_LOG_MESSAGE          +4=8
+  0032C  EXF_SET_TYPE             mask=32, page=@10, arg=0 ;jump
+  0033C  SVFLAG_BRON              flag=flag 0x9ef, page=@9 ;jump
+  00344  EXF_CHECK_ST_BATTLE_END  dst=r0
+  00350  JUMP_BEQUI               page=@17, value=6, reg=r0 ;jump
+  0035C  JUMP_BEQUI               page=@14, value=4, reg=r0 ;jump
+  00368  JUMP_BEQUI               page=@23, value=2, reg=r0 ;jump
+  00374  JUMP_BEQUI               page=@23, value=3, reg=r0 ;jump
+  00380  JUMP_BEQI                page=@23, value=11, reg=r0 ;jump
+  0038C  PAGE_JUMP                page=@10 ;jump
+  00390  /PAGESET                 next=- ;jump
+@9:
+  00394  PAGESET                  page=@9
+  00398  EXF_LOG_MESSAGE          +4=9
+  003A0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  003B0  EXF_CHECK_ST_BATTLE_END  dst=r0
+  003BC  JUMP_BEQUI               page=@17, value=6, reg=r0 ;jump
+  003C8  EXF_CNTL_MES             mode=0
+  003D0  EXF_RESULT               failed=1
+  003D8  EXF_DISP_RESULT          failed=1 ;waits
+  003E0  EXF_RELEASE_PARTY        who=person 169, who_reg=r0
+  003EC  EXF_RELEASE_FRIEND       who=person 169
+  003F4  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  00404  PAGE_JUMP                page=@7 ;jump
+  00408  EVENT_END                
+  0040C  /PAGESET                 next=- ;jump
+@10:
+  00410  PAGESET                  page=@10
+  00414  EXF_LOG_MESSAGE          +4=10
+  0041C  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  0042C  SVFLAG_BRON              flag=flag 0x9ef, page=@9 ;jump
+  00434  EXF_CHECK_STAGE          sub_area=0, dst=r5
+  00440  JUMP_BEQUI               page=@11, value=47, reg=r5 ;jump
+  0044C  EVENT_END                
+  00450  /PAGESET                 next=- ;jump
+@11:
+  00454  PAGESET                  page=@11
+  00458  EXF_LOG_MESSAGE          +4=11
+  00460  SVFLAG_ON                flag=flag 0x9ee
+  00464  EXF_SET_MARK             a=0, b=27
+  00470  EXF_RELEASE_PARTY        who=person 169, who_reg=r0
+  0047C  EXF_RELEASE_FRIEND       who=person 169
+  00484  EXF_MESSAGE              message=642, speaker=person 169, speaker_reg=r0 ;waits
+  00494  EXF_SET_POS              who=player, x=-396, y=10, z=-16, who_reg=r0
+  004AC  EXF_NPC_ROT              who=player, angle=1117126656, who_reg=r0, arg=1
+  004C0  EXF_SET_POS              who=person 169, x=-379, y=10, z=-11, who_reg=r0
+  004D8  EXF_NPC_ROT              who=person 169, angle=-1029308416, who_reg=r0, arg=1
+  004EC  EXF_CAM_POS_START        x=-429, y=7, z=-7
+  004FC  EXF_CAM_POS_END          x=-411, y=4, z=2, frames=600, no_ease=0
+  00514  EXF_CAM_TRGPOS_START     x=-390, y=10, z=-19
+  00524  EXF_CAM_TRGPOS_END       x=-387, y=14, z=-17, frames=600, no_ease=0
+  0053C  EXF_CAM_MODE             mode=1
+  00544  PAGE_JUMP                page=@12 ;jump
+  00548  EVENT_END                
+  0054C  /PAGESET                 next=- ;jump
+@12:
+  00550  PAGESET                  page=@12
+  00554  EXF_LOG_MESSAGE          +4=12
+  0055C  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  0056C  EXF_CAM_MODE             mode=0
+  00574  EXF_SET_OUTLOW           a=0, b=2, c=0, d=0
+  00588  EXF_CNTL_MES             mode=0
+  00590  EXF_RESULT               failed=0
+  00598  EXF_DISP_RESULT          failed=0 ;waits
+  005A0  EXF_ADD_MONEY            amount=3500, show=1, arg_reg=r0 ;waits
+  005B0  EXF_WAIT_ST               ;waits
+  005B8  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  005C8  PAGE_JUMP                page=@13 ;jump
+  005CC  /PAGESET                 next=- ;jump
+@13:
+  005D0  PAGESET                  page=@13
+  005D4  EXF_LOG_MESSAGE          +4=13
+  005DC  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  005EC  EXF_CNTL_MES             mode=1
+  005F4  EXF_MESSAGE              message=949, speaker=person 594, speaker_reg=r0 ;waits
+  00604  PAGE_JUMP                page=@19 ;jump
+  00608  EVENT_END                
+  0060C  /PAGESET                 next=- ;jump
+@14:
+  00610  PAGESET                  page=@14
+  00614  EXF_LOG_MESSAGE          +4=14
+  0061C  EXF_SET_NPC              npc=102
+  00624  EXF_SET_MARK             a=0, b=27
+  00630  SVFLAG_ON                flag=flag 0x9f0
+  00634  EXF_RELEASE_PARTY        who=person 169, who_reg=r0
+  00640  EXF_RELEASE_FRIEND       who=person 169
+  00648  PAGE_JUMP                page=@15 ;jump
+  0064C  /PAGESET                 next=- ;jump
+@15:
+  00650  PAGESET                  page=@15
+  00654  EXF_LOG_MESSAGE          +4=15
+  0065C  EXF_EVENT_END            
+  00664  EVENT_END                
+  00668  /PAGESET                 next=- ;jump
+@16:
+  0066C  PAGESET                  page=@16
+  00670  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00680  EXF_MESTURN              on=0
+  00688  EXF_CNTL_MES             mode=0
+  00690  EXF_RESULT               failed=1
+  00698  EXF_DISP_RESULT          failed=1 ;waits
+  006A0  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  006B0  EXF_RECOVER_NPC          who=person 169, who_reg=r0, arg=0
+  006C0  EXF_RELEASE_PARTY        who=person 169, who_reg=r0
+  006CC  EXF_RELEASE_FRIEND       who=person 169
+  006D4  PAGE_JUMP                page=@7 ;jump
+  006D8  EVENT_END                
+  006DC  /PAGESET                 next=- ;jump
+@17:
+  006E0  PAGESET                  page=@17
+  006E4  EXF_LOG_MESSAGE          +4=16
+  006EC  EXF_SET_NPC              npc=102
+  006F4  EXF_SET_MARK             a=0, b=27
+  00700  SVFLAG_ON                flag=flag 0x9f0
+  00704  EXF_RELEASE_PARTY        who=person 169, who_reg=r0
+  00710  EXF_RELEASE_FRIEND       who=person 169
+  00718  PAGE_JUMP                page=@18 ;jump
+  0071C  /PAGESET                 next=- ;jump
+@18:
+  00720  PAGESET                  page=@18
+  00724  EXF_LOG_MESSAGE          +4=17
+  0072C  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  0073C  EXF_MESTURN              on=1
+  00744  EXF_MESSAGE              message=642, speaker=person 169, speaker_reg=r0 ;waits
+  00754  EXF_RECOVER_NPC          who=person 169, who_reg=r0, arg=0
+  00764  PAGE_JUMP                page=@16 ;jump
+  00768  /PAGESET                 next=- ;jump
+@19:
+  0076C  PAGESET                  page=@19
+  00770  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00780  EXF_EVENT_END            
+  00788  EVENT_END                
+  0078C  /PAGESET                 next=- ;jump
+@20:
+  00790  PAGESET                  page=@20
+  00794  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  007A4  EXF_CNTL_MES             mode=0
+  007AC  EXF_RESULT               failed=1
+  007B4  EXF_DISP_RESULT          failed=1 ;waits
+  007BC  EXF_CNTL_MES             mode=1
+  007C4  EXF_EVENT_END            
+  007CC  EVENT_END                
+  007D0  /PAGESET                 next=- ;jump
+@21:
+  007D4  PAGESET                  page=@21
+  007D8  EXF_SET_GROW             off=0
+  007E0  EXF_EXIT_BATTLE          
+  007E8  PAGE_JUMP                page=@22 ;jump
+  007EC  EVENT_END                
+  007F0  /PAGESET                 next=- ;jump
+@22:
+  007F4  PAGESET                  page=@22
+  007F8  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00808  EXF_MESTURN              on=1
+  00810  EXF_STOP_PLAYER          mode=1
+  00818  EXF_MESSAGE              message=642, speaker=person 169, speaker_reg=r0 ;waits
+  00828  EXF_STOP_PLAYER          mode=1
+  00830  PAGE_JUMP                page=@16 ;jump
+  00834  EVENT_END                
+  00838  /PAGESET                 next=- ;jump
+@23:
+  0083C  PAGESET                  page=@23
+  00840  EXF_LOG_MESSAGE          +4=18
+  00848  EXF_SET_SUBBTL           on=1
+  00850  EXF_PAGE_JUMP_EXIT       page=@6
+  00854  EVENT_END                
+  00858  /PAGESET                 next=- ;jump
+  0085C  /EVENT                   
+; strings
+;   0: 'PAGE0'
+;   1: 'PAGE1'
+;   2: 'PAGE2'
+;   3: 'PAGE3'
+;   4: 'PAGE4'
+;   5: 'PAGE5'
+;   6: 'PAGE6'
+;   7: 'PAGE7'
+;   8: 'PAGE8'
+;   9: 'PAGE9'
+;   10: 'PAGE10'
+;   11: 'PAGE11'
+;   12: 'PAGE12'
+;   13: 'PAGE13'
+;   14: 'PAGE14'
+;   15: 'PAGE15'
+;   16: 'PAGE14'
+;   17: 'PAGE15'
+;   18: '23'

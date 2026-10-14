@@ -79,7 +79,7 @@
 0034ea50	func	zenGetIOPReply
 00387760	func	Text_LoadLanguage	localized text from CDATA entries 385-432
 00387980	func	Text_Get	(text id) -> string	const char *(int text_id, int zero)
-003a4f40	func	Script_LoadEventList	loads SCRIPT.XAF entry 1000+n into 0x76F100
+003a4f40	func	Script_LoadEventList	mission loader state machine: queues SCRIPT.XAF entry 1000 + mission id into g_EventList (0x00776100 for missions 100 and 101), then starts it (0x003A50B0)
 004f2400	data	g_ItemTable	488 x 52 bytes: {u32 category, u32 ?, u32 flags, u32 use handler, u16 icon?, s16 parts[...] -1}	ItemDef[488]
 004fb4c0	data	g_AnimGroups	317 x 8 bytes: {s16 STAGE.XAF entry, s16 0, s16* anim IDs}	AnimGroup[317]
 0050b990	data	g_ActionRemap_M	s16 per action ID, medium body (class row +8)
@@ -101,7 +101,7 @@
 0060a680	data	g_EventFlags	1024 bytes = 8192 story/event flags (saved)	u8[1024]
 0060b6e0	data	g_SaveBlock_365AC	1024 bytes (saved)
 0060bae0	data	g_SaveBlock_369AC	200 bytes (saved)
-0060be10	data	g_SaveBlock_357B0	56 bytes (saved)
+0060be10	data	g_StoryChapter	u32 story chapter (1-11): first word of save block 0x357B0 (56 bytes); g_MissionReq masks test it	s32
 0060be50	data	g_SaveBlock_35FF4	156 bytes (saved)
 0060bef0	data	g_Inventory	2052 bytes: u32 count, u32 items[512] (bits 0-11 item, 12-15 qty) (saved)	Inventory
 0060c700	data	g_SystemData	584 bytes: the system save file (options, unlocks); +4 difficulty, +0x10 language	SystemData
@@ -111,9 +111,8 @@
 0060d360	data	g_Persons	210 x 1084-byte person records; 0 = the player; 0-199 are saved	Person[210]
 0060d3a0	data	g_PlayerMoney	s32 = g_Persons[0] +0x40	s32
 00413130	data	g_PersonDefs	602 x 72-byte person templates (heroes, enemies, NPCs)	PersonDef[602]
-00411acc	data	g_ScriptOpcodes	118 x 20 bytes {char* name, id, argc, ?, char* argtypes}: EXF_* script commands	ScriptOpcode[118]
 006cfb70	data	g_Fighters	fighters, 0x4730 bytes each; 0 = player, 2..12 = NPC slots	Fighter[13]
-0076f100	data	g_EventList	SCRIPT.XAF event list buffer
+0076f100	data	g_EventList	script buffer of the running mission (SCRIPT.XAF 1000 + id), loaded by Script_LoadEventList
 001db720	func	Save_BuildGameFile	calls SaveData_Pack before the memory card write
 001dd1f0	func	Load_ApplyGameFile	calls SaveData_Unpack after a memory card read
 00340c60	func	VsMode_Main	VS MODE screen (title items VS MODE NORMAL/CUSTOM); calls VsMode_CharacterSelect/StageSelect and SaveData_Unpack. Was named SaveLoadScreen
@@ -220,3 +219,267 @@
 006c7860	data	g_AnimGroupRefs	u8[317]: how many times each animation group is loaded
 006c79a0	data	g_AnimSlotResident	u8 per slot: loaded while the resident flag was on; Anim_ResetAll keeps it
 006c8080	data	g_ClassGroupBuf	copy of the group list Anim_LoadClassGroups is loading
+00411ac0	data	g_ScriptOpcodes	204 x {u32 id, u32 size in words, u32 arg count, u8* arg types, char* name}: the script instruction set shared by the event VM and the text script player (docs/SCRIPTS.md)	ScriptOpInfo[204]
+005dacf0	data	g_ScriptOpHandlers	204 x {u32 flags, handler}: event VM dispatch by opcode; flags 0 advance, 1 jump (advance only when the handler returns 1), 2 blocking (retry next frame until it returns 1)	ScriptOpHandler[204]
+005b3360	data	g_ScriptCallFuncs	CALLFUNC n calls entry n; the handler returns 1 when done
+0039bd20	func	ScriptVM_Init	(vm, script, regs) points the VM at a script image: ip = script + 0x20, page/string tables, register block	int (ScriptVM *vm, void *script, void *regs)
+0039bdd0	func	ScriptVM_Run	(vm) runs instructions until one blocks or jumps out; returns 1 when the script ended	int (ScriptVM *vm)
+0039baa0	func	Script_UsesRegArgs	(script id, reg, vm) 1 for the generated jobs (ids 0x27-0x29, 0x48, 0x54, 0x57, 0x58, 0x6A, 0x6E, 0x6F, 0x75, 0x85): their EXF arguments come from VM register reg (0 = 9) instead of the instruction
+0039bca0	func	Script_FighterByPerson	(person id) -> fighter; 0 = the player, else NPC slots 2-12 by fighter +4	Fighter *(int person_id)
+003a50b0	func	Mission_StartScript	(mission) ScriptVM_Init on the loaded script with the mission's registers (mission +0x10), state 3
+003a4ea0	func	Mission_Step	(mission) runs the mission's VM (mission +0xA0) once per frame; flags at +8
+001335a0	func	Xaf_LoadLangPart	(state, ?, archive, entry, buffer) loads an XAF entry made of six language parts and keeps the current language's
+00133590	func	Dialogue_Load	(state, entry, buffer) loads dialogue script `entry` (SCRIPT.XAF 0-999, this language's part)
+00133810	func	Dialogue_Init	(page, script) starts a dialogue script at a page (0xFFFF = from the top)
+001338a0	func	Dialogue_Task	task that plays a dialogue script with Dialogue_Step until it ends
+00133b00	func	Dialogue_Step	the dialogue script player: a 16 KB switch over the same commands as the event VM (text boxes, sprites, BGM, pad, flags, registers)
+00138cb0	func	Script_OpSize	(opcode) -> instruction size in bytes from g_ScriptOpcodes	int (int op)
+003255d0	func	Dialogue_RunEntry	task state machine: loads a dialogue script (entry from its argument) and plays it
+0033ba70	func	Message_Step	state machine of Message_Task: Dialogue_Load(message), plays it, cleans up
+0039bf50	func	ScrOp_EVENT	event VM handler for opcode 1 EVENT (flags 0)	int (ScriptVM *vm)
+0039bf70	func	ScrOp_END_EVENT	event VM handler for opcode 2 END_EVENT (flags 0)	int (ScriptVM *vm)
+0039bfa0	func	ScrOp_EXF_SET_POS	event VM handler for opcode 3 EXF_SET_POS (flags 0)	int (ScriptVM *vm)
+0039c120	func	ScrOp_EXF_SET_BATTLE	event VM handler for opcode 4 EXF_SET_BATTLE (flags 0)	int (ScriptVM *vm)
+0039c1a0	func	ScrOp_EXF_JOIN_PARTY	event VM handler for opcode 5 EXF_JOIN_PARTY (blocking; flags 2)	int (ScriptVM *vm)
+0039c430	func	ScrOp_EXF_JOIN_FRIEND	event VM handler for opcode 6 EXF_JOIN_FRIEND (flags 0)	int (ScriptVM *vm)
+0039c4c0	func	ScrOp_EXF_RELEASE_FRIEND	event VM handler for opcode 7 EXF_RELEASE_FRIEND (flags 0)	int (ScriptVM *vm)
+0039c520	func	ScrOp_EXF_CALL_TELPHONE	event VM handler for opcode 8 EXF_CALL_TELPHONE (blocking; flags 2)	int (ScriptVM *vm)
+0039c7a0	func	ScrOp_EXF_ADD_REGS2	event VM handler for opcode 9 EXF_ADD_REGS2 (flags 0)	int (ScriptVM *vm)
+0039c830	func	ScrOp_EXF_GAMEOVER	event VM handler for opcode 10 EXF_GAMEOVER (flags 0)	int (ScriptVM *vm)
+0039c950	func	ScrOp_EXF_SET_COUNTDOWN	event VM handler for opcode 11 EXF_SET_COUNTDOWN (flags 0)	int (ScriptVM *vm)
+0039cb50	func	ScrOp_EXF_NPC_WALK_TARGET	event VM handler for opcode 12 EXF_NPC_WALK_TARGET (flags 0)	int (ScriptVM *vm)
+0039cb70	func	ScrOp_EXF_NPC_RUN_TARGET	event VM handler for opcode 13 EXF_NPC_RUN_TARGET (flags 0)	int (ScriptVM *vm)
+0039cb90	func	ScrOp_EXF_SET_MESNAMES	event VM handler for opcode 14 EXF_SET_MESNAMES (flags 0)	int (ScriptVM *vm)
+0039cba0	func	ScrOp_EXF_ADD_REGS	event VM handler for opcode 15 EXF_ADD_REGS (flags 0)	int (ScriptVM *vm)
+0039cc00	func	ScrOp_EXF_NPC_WALK_POS	event VM handler for opcode 16 EXF_NPC_WALK_POS (flags 0)	int (ScriptVM *vm)
+0039ccf0	func	ScrOp_EXF_NPC_RUN_POS	event VM handler for opcode 17 EXF_NPC_RUN_POS (flags 0)	int (ScriptVM *vm)
+0039cde0	func	ScrOp_EXF_GET_COUNTDOWN	event VM handler for opcode 18 EXF_GET_COUNTDOWN (flags 0)	int (ScriptVM *vm)
+0039ce80	func	ScrOp_EXF_COUNT_CONTENT	event VM handler for opcode 19 EXF_COUNT_CONTENT (flags 0)	int (ScriptVM *vm)
+0039cf40	func	ScrOp_EXF_HEART	event VM handler for opcode 20 EXF_HEART (flags 0)	int (ScriptVM *vm)
+0039cfd0	func	ScrOp_EXF_CHECK_TOUCH_NPC	event VM handler for opcode 21 EXF_CHECK_TOUCH_NPC (flags 0)	int (ScriptVM *vm)
+0039d100	func	ScrOp_EXF_ITEM_ADD	event VM handler for opcode 22 EXF_ITEM_ADD (flags 0)	int (ScriptVM *vm)
+0039d1b0	func	ScrOp_EXF_ITEM_DEL	event VM handler for opcode 23 EXF_ITEM_DEL (flags 0)	int (ScriptVM *vm)
+0039d260	func	ScrOp_EXF_ITEM_CHECK	event VM handler for opcode 24 EXF_ITEM_CHECK (flags 0)	int (ScriptVM *vm)
+0039d2f0	func	ScrOp_EXF_CHECK_ST_BATTLE_END	event VM handler for opcode 25 EXF_CHECK_ST_BATTLE_END (flags 0)	int (ScriptVM *vm)
+0039d490	func	ScrOp_EXF_SET_CIRCUMSTANCE	event VM handler for opcode 26 EXF_SET_CIRCUMSTANCE (flags 0)	int (ScriptVM *vm)
+0039d500	func	ScrOp_EXF_RESULT	event VM handler for opcode 27 EXF_RESULT (flags 0)	int (ScriptVM *vm)
+0039d540	func	ScrOp_EXF_EVENT_END	event VM handler for opcode 28 EXF_EVENT_END (flags 0)	int (ScriptVM *vm)
+0039d560	func	ScrOp_EXF_DISP_RESULT	event VM handler for opcode 29 EXF_DISP_RESULT (blocking; flags 2)	int (ScriptVM *vm)
+0039d6e0	func	ScrOp_EXF_CHECK_TALK_NPC	event VM handler for opcode 30 EXF_CHECK_TALK_NPC (flags 0)	int (ScriptVM *vm)
+0039d770	func	ScrOp_EXF_LOG_MESSAGE	event VM handler for opcode 31 EXF_LOG_MESSAGE (flags 0)	int (ScriptVM *vm)
+0039d780	func	ScrOp_EXF_MESSAGE	event VM handler for opcode 32 EXF_MESSAGE (blocking; flags 2)	int (ScriptVM *vm)
+0039d8e0	func	ScrOp_EXF_SET_BATTLE_PLURAL	event VM handler for opcode 33 EXF_SET_BATTLE_PLURAL (flags 0)	int (ScriptVM *vm)
+0039d960	func	ScrOp_EXF_SET_NPC	event VM handler for opcode 34 EXF_SET_NPC (flags 0)	int (ScriptVM *vm)
+0039d9a0	func	ScrOp_EXF_ADD_MONEY	event VM handler for opcode 35 EXF_ADD_MONEY (blocking; flags 2)	int (ScriptVM *vm)
+0039dad0	func	ScrOp_EXF_CHECK_STAGE	event VM handler for opcode 36 EXF_CHECK_STAGE (flags 0)	int (ScriptVM *vm)
+0039db50	func	ScrOp_EXF_WAIT	event VM handler for opcode 37 EXF_WAIT (blocking; flags 2)	int (ScriptVM *vm)
+0039dbc0	func	ScrOp_EXF_CHECK_BUSTED	event VM handler for opcode 38 EXF_CHECK_BUSTED (flags 0)	int (ScriptVM *vm)
+0039dbd0	func	ScrOp_EXF_CHECK_DRESS	event VM handler for opcode 39 EXF_CHECK_DRESS (flags 0)	int (ScriptVM *vm)
+0039dcd0	func	ScrOp_EXF_SET_EMOTION	event VM handler for opcode 40 EXF_SET_EMOTION (flags 0)	int (ScriptVM *vm)
+0039dda0	func	ScrOp_EXF_SET_ESCAPE	event VM handler for opcode 41 EXF_SET_ESCAPE (flags 0)	int (ScriptVM *vm)
+0039dde0	func	ScrOp_EXF_CHECK_LIFE	event VM handler for opcode 42 EXF_CHECK_LIFE (flags 0)	int (ScriptVM *vm)
+0039e060	func	ScrOp_EXF_CHECK_MONEY	event VM handler for opcode 43 EXF_CHECK_MONEY (flags 0)	int (ScriptVM *vm)
+0039e0c0	func	ScrOp_EXF_WAIT_ST	event VM handler for opcode 44 EXF_WAIT_ST (blocking; flags 2)	int (ScriptVM *vm)
+0039e100	func	ScrOp_EXF_RANDOM	event VM handler for opcode 45 EXF_RANDOM (flags 0)	int (ScriptVM *vm)
+0039e190	func	ScrOp_EXF_CHECK_CAPTURE	event VM handler for opcode 46 EXF_CHECK_CAPTURE (flags 0)	int (ScriptVM *vm)
+0039e1a0	func	ScrOp_EXF_RELEASE_PARTY	event VM handler for opcode 47 EXF_RELEASE_PARTY (flags 0)	int (ScriptVM *vm)
+0039e210	func	ScrOp_EXF_CHECK_ABILITY	event VM handler for opcode 48 EXF_CHECK_ABILITY (flags 0)	int (ScriptVM *vm)
+0039e3f0	func	ScrOp_EXF_WAIT_NPC	event VM handler for opcode 49 EXF_WAIT_NPC (flags 0)	int (ScriptVM *vm)
+0039e4d0	func	ScrOp_EXF_CHANGE_TARGET	event VM handler for opcode 50 EXF_CHANGE_TARGET (flags 0)	int (ScriptVM *vm)
+0039e660	func	ScrOp_EXF_SET_SUBBTL	event VM handler for opcode 51 EXF_SET_SUBBTL (flags 0)	int (ScriptVM *vm)
+0039e740	func	ScrOp_EXF_CHECK_PUNCHED_NPC	event VM handler for opcode 52 EXF_CHECK_PUNCHED_NPC (flags 0)	int (ScriptVM *vm)
+0039e7a0	func	ScrOp_EXF_CHECK_NAKAMAWARE	event VM handler for opcode 53 EXF_CHECK_NAKAMAWARE (blocking; flags 2)	int (ScriptVM *vm)
+0039eb00	func	ScrOp_EXF_CHECK_POS	event VM handler for opcode 54 EXF_CHECK_POS (flags 0)	int (ScriptVM *vm)
+0039ec70	func	ScrOp_EXF_WAIT_BATTLE_END	event VM handler for opcode 55 EXF_WAIT_BATTLE_END (blocking; flags 2)	int (ScriptVM *vm)
+0039ece0	func	ScrOp_EXF_SET_SKILL	event VM handler for opcode 56 EXF_SET_SKILL (flags 0)	int (ScriptVM *vm)
+0039ed60	func	ScrOp_EXF_HIDE_NPC	event VM handler for opcode 57 EXF_HIDE_NPC (flags 0)	int (ScriptVM *vm)
+0039edc0	func	ScrOp_EXF_CHECK_PARTY	event VM handler for opcode 58 EXF_CHECK_PARTY (flags 0)	int (ScriptVM *vm)
+0039eea0	func	ScrOp_EXF_CHECK_DRESS_CATE	event VM handler for opcode 59 EXF_CHECK_DRESS_CATE (flags 0)	int (ScriptVM *vm)
+0039f0e0	func	ScrOp_EXF_MOVE_STAGE	event VM handler for opcode 60 EXF_MOVE_STAGE (flags 0)	int (ScriptVM *vm)
+0039f1b0	func	ScrOp_EXF_CNTL_MES	event VM handler for opcode 61 EXF_CNTL_MES (flags 0)	int (ScriptVM *vm)
+0039f290	func	ScrOp_EXF_SET_TYPE	event VM handler for opcode 62 EXF_SET_TYPE (jump; flags 1)	int (ScriptVM *vm)
+0039f430	func	ScrOp_EXF_PAGE_JUMP_EXIT	event VM handler for opcode 63 EXF_PAGE_JUMP_EXIT (flags 0)	int (ScriptVM *vm)
+0039f4b0	func	ScrOp_EXF_CHECK_SEX	event VM handler for opcode 64 EXF_CHECK_SEX (flags 0)	int (ScriptVM *vm)
+0039f550	func	ScrOp_EXF_SET_MOTION	event VM handler for opcode 65 EXF_SET_MOTION (flags 0)	int (ScriptVM *vm)
+0039f700	func	ScrOp_EXF_SET_MARK	event VM handler for opcode 66 EXF_SET_MARK (flags 0)	int (ScriptVM *vm)
+0039f730	func	ScrOp_EXF_CHECK_MONEY2	event VM handler for opcode 67 EXF_CHECK_MONEY2 (flags 0)	int (ScriptVM *vm)
+0039f800	func	ScrOp_EXF_SET_NPC_MARK	event VM handler for opcode 68 EXF_SET_NPC_MARK (flags 0)	int (ScriptVM *vm)
+0039f850	func	ScrOp_EXF_KILL_NPC	event VM handler for opcode 69 EXF_KILL_NPC (flags 0)	int (ScriptVM *vm)
+0039f880	func	ScrOp_EXF_SET_NPC_BEF	event VM handler for opcode 70 EXF_SET_NPC_BEF (flags 0)	int (ScriptVM *vm)
+0039f8d0	func	ScrOp_EXF_SVFLAG_BRON	event VM handler for opcode 71 EXF_SVFLAG_BRON (jump; flags 1)	int (ScriptVM *vm)
+0039f980	func	ScrOp_EXF_SVFLAG_BROFF	event VM handler for opcode 72 EXF_SVFLAG_BROFF (jump; flags 1)	int (ScriptVM *vm)
+0039fa30	func	ScrOp_EXF_GEN_INIT	event VM handler for opcode 73 EXF_GEN_INIT (flags 0)	int (ScriptVM *vm)
+0039fa50	func	ScrOp_EXF_GEN_SET	event VM handler for opcode 74 EXF_GEN_SET (flags 0)	int (ScriptVM *vm)
+0039faf0	func	ScrOp_EXF_SET_CALLER	event VM handler for opcode 75 EXF_SET_CALLER (flags 0)	int (ScriptVM *vm)
+0039fd20	func	ScrOp_EXF_TRANS_REG	event VM handler for opcode 76 EXF_TRANS_REG (flags 0)	int (ScriptVM *vm)
+0039ecd0	func	ScrOp_EXF_KILL_RECRUITE	event VM handler for opcode 77 EXF_KILL_RECRUITE (flags 0)	int (ScriptVM *vm)
+0039fde0	func	ScrOp_EXF_SET_OUTLOW	event VM handler for opcode 78 EXF_SET_OUTLOW (flags 0)	int (ScriptVM *vm)
+0039fe10	func	ScrOp_EXF_EXIT_BATTLE	event VM handler for opcode 79 EXF_EXIT_BATTLE (flags 0)	int (ScriptVM *vm)
+0039ffa0	func	ScrOp_EXF_RECOVER_NPC	event VM handler for opcode 80 EXF_RECOVER_NPC (flags 0)	int (ScriptVM *vm)
+0039fff0	func	ScrOp_EXF_GET_CRIME	event VM handler for opcode 81 EXF_GET_CRIME (flags 0)	int (ScriptVM *vm)
+003a0050	func	ScrOp_EXF_MUL_REG	event VM handler for opcode 82 EXF_MUL_REG (flags 0)	int (ScriptVM *vm)
+003a00c0	func	ScrOp_EXF_SET_GROW	event VM handler for opcode 83 EXF_SET_GROW (flags 0)	int (ScriptVM *vm)
+003a00f0	func	ScrOp_EXF_STOP_PLAYER	event VM handler for opcode 84 EXF_STOP_PLAYER (flags 0)	int (ScriptVM *vm)
+003a01f0	func	ScrOp_EXF_CAM_MODE	event VM handler for opcode 85 EXF_CAM_MODE (flags 0)	int (ScriptVM *vm)
+003a02b0	func	ScrOp_EXF_CAM_POS_START	event VM handler for opcode 86 EXF_CAM_POS_START (flags 0)	int (ScriptVM *vm)
+003a02e0	func	ScrOp_EXF_CAM_POS_END	event VM handler for opcode 87 EXF_CAM_POS_END (flags 0)	int (ScriptVM *vm)
+003a0340	func	ScrOp_EXF_CAM_TRGPOS_START	event VM handler for opcode 88 EXF_CAM_TRGPOS_START (flags 0)	int (ScriptVM *vm)
+003a0370	func	ScrOp_EXF_CAM_TRGPOS_END	event VM handler for opcode 89 EXF_CAM_TRGPOS_END (flags 0)	int (ScriptVM *vm)
+003a03d0	func	ScrOp_EXF_NPC_ROT	event VM handler for opcode 90 EXF_NPC_ROT (flags 0)	int (ScriptVM *vm)
+003a0820	func	ScrOp_EXF_REMOVE	event VM handler for opcode 91 EXF_REMOVE (flags 0)	int (ScriptVM *vm)
+003a08a0	func	ScrOp_EXF_EVSTAGE	event VM handler for opcode 92 EXF_EVSTAGE (flags 0)	int (ScriptVM *vm)
+003a05e0	func	ScrOp_EXF_CHECK_ARREST	event VM handler for opcode 93 EXF_CHECK_ARREST (flags 0)	int (ScriptVM *vm)
+003a0a80	func	ScrOp_EXF_KILL_CHR	event VM handler for opcode 94 EXF_KILL_CHR (flags 0)	int (ScriptVM *vm)
+003a0b50	func	ScrOp_EXF_GET_PARTY_ID	event VM handler for opcode 95 EXF_GET_PARTY_ID (flags 0)	int (ScriptVM *vm)
+003a0c30	func	ScrOp_EXF_BAININ	event VM handler for opcode 96 EXF_BAININ (flags 0)	int (ScriptVM *vm)
+003a0dd0	func	ScrOp_EXF_ADD_DRESS	event VM handler for opcode 97 EXF_ADD_DRESS (flags 0)	int (ScriptVM *vm)
+003a0e10	func	ScrOp_EXF_CNTL_TEL	event VM handler for opcode 98 EXF_CNTL_TEL (flags 0)	int (ScriptVM *vm)
+003a0eb0	func	ScrOp_EXF_SURI	event VM handler for opcode 99 EXF_SURI (flags 0)	int (ScriptVM *vm)
+003a0ed0	func	ScrOp_EXF_MESTURN	event VM handler for opcode 100 EXF_MESTURN (flags 0)	int (ScriptVM *vm)
+003a0f10	func	ScrOp_PAGESET	event VM handler for opcode 101 PAGESET (flags 0)	int (ScriptVM *vm)
+003a0f30	func	ScrOp_END_PAGESET	event VM handler for opcode 102 END_PAGESET (jump; flags 1)	int (ScriptVM *vm)
+003a0fc0	func	ScrOp_PAGE_JUMP	event VM handler for opcode 103 PAGE_JUMP (jump; flags 1)	int (ScriptVM *vm)
+003a1040	func	ScrOp_JUMP_BEQI	event VM handler for opcode 104 JUMP_BEQI (jump; flags 1)	int (ScriptVM *vm)
+003a10e0	func	ScrOp_JUMP_BEQUI	event VM handler for opcode 105 JUMP_BEQUI (jump; flags 1)	int (ScriptVM *vm)
+003a1180	func	ScrOp_JUMP_BEQS	event VM handler for opcode 106 JUMP_BEQS (jump; flags 1)	int (ScriptVM *vm)
+003a1220	func	ScrOp_JUMP_BEQUS	event VM handler for opcode 107 JUMP_BEQUS (jump; flags 1)	int (ScriptVM *vm)
+003a12c0	func	ScrOp_JUMP_BEQB	event VM handler for opcode 108 JUMP_BEQB (jump; flags 1)	int (ScriptVM *vm)
+003a1360	func	ScrOp_JUMP_BEQUB	event VM handler for opcode 109 JUMP_BEQUB (jump; flags 1)	int (ScriptVM *vm)
+003a1400	func	ScrOp_JUMP_BEQF	event VM handler for opcode 110 JUMP_BEQF (jump; flags 1)	int (ScriptVM *vm)
+003a14a0	func	ScrOp_JUMP_BNEI	event VM handler for opcode 111 JUMP_BNEI (jump; flags 1)	int (ScriptVM *vm)
+003a1540	func	ScrOp_JUMP_BNEUI	event VM handler for opcode 112 JUMP_BNEUI (jump; flags 1)	int (ScriptVM *vm)
+003a15e0	func	ScrOp_JUMP_BNES	event VM handler for opcode 113 JUMP_BNES (jump; flags 1)	int (ScriptVM *vm)
+003a1680	func	ScrOp_JUMP_BNEUS	event VM handler for opcode 114 JUMP_BNEUS (jump; flags 1)	int (ScriptVM *vm)
+003a1720	func	ScrOp_JUMP_BNEB	event VM handler for opcode 115 JUMP_BNEB (jump; flags 1)	int (ScriptVM *vm)
+003a17c0	func	ScrOp_JUMP_BNEUB	event VM handler for opcode 116 JUMP_BNEUB (jump; flags 1)	int (ScriptVM *vm)
+003a1860	func	ScrOp_JUMP_BNEF	event VM handler for opcode 117 JUMP_BNEF (jump; flags 1)	int (ScriptVM *vm)
+003a1900	func	ScrOp_JZE	event VM handler for opcode 118 JZE (jump; flags 1)	int (ScriptVM *vm)
+003a19a0	func	ScrOp_JNZ	event VM handler for opcode 119 JNZ (jump; flags 1)	int (ScriptVM *vm)
+003a1a40	func	ScrOp_JMI	event VM handler for opcode 120 JMI (jump; flags 1)	int (ScriptVM *vm)
+003a1ae0	func	ScrOp_JPZ	event VM handler for opcode 121 JPZ (jump; flags 1)	int (ScriptVM *vm)
+003a1b80	func	ScrOp_TEX_LOAD	event VM handler for opcode 122 TEX_LOAD (flags 0)	int (ScriptVM *vm)
+003a1b90	func	ScrOp_TEX_RELEASE	event VM handler for opcode 123 TEX_RELEASE (flags 0)	int (ScriptVM *vm)
+003a1ba0	func	ScrOp_SPRITE	event VM handler for opcode 124 SPRITE (flags 0)	int (ScriptVM *vm)
+003a1bb0	func	ScrOp_SPRSET_XYZ	event VM handler for opcode 125 SPRSET_XYZ (flags 0)	int (ScriptVM *vm)
+003a1bc0	func	ScrOp_SPRSET_SCALE	event VM handler for opcode 126 SPRSET_SCALE (flags 0)	int (ScriptVM *vm)
+003a1bd0	func	ScrOp_SPRSET_COLOR	event VM handler for opcode 127 SPRSET_COLOR (flags 0)	int (ScriptVM *vm)
+003a1be0	func	ScrOp_SPRDISP_ON	event VM handler for opcode 128 SPRDISP_ON (flags 0)	int (ScriptVM *vm)
+003a1bf0	func	ScrOp_SPRCLEAR	event VM handler for opcode 129 SPRCLEAR (flags 0)	int (ScriptVM *vm)
+003a1c00	func	ScrOp_SPRCNG_XYZ	event VM handler for opcode 130 SPRCNG_XYZ (flags 0)	int (ScriptVM *vm)
+003a1c10	func	ScrOp_SPRCNG_COLOR	event VM handler for opcode 131 SPRCNG_COLOR (flags 0)	int (ScriptVM *vm)
+003a1c20	func	ScrOp_SPRCNG_SCALE	event VM handler for opcode 132 SPRCNG_SCALE (flags 0)	int (ScriptVM *vm)
+003a1c30	func	ScrOp_SPRCNG_TURN	event VM handler for opcode 133 SPRCNG_TURN (flags 0)	int (ScriptVM *vm)
+003a1c40	func	ScrOp_SPRCALCSTART	event VM handler for opcode 134 SPRCALCSTART (flags 0)	int (ScriptVM *vm)
+003a1c50	func	ScrOp_WAIT_SPR	event VM handler for opcode 135 WAIT_SPR (flags 0)	int (ScriptVM *vm)
+003a1c60	func	ScrOp_TEX_CHECK	event VM handler for opcode 136 TEX_CHECK (flags 0)	int (ScriptVM *vm)
+003a1c70	func	ScrOp_SPRDISP_OFF	event VM handler for opcode 137 SPRDISP_OFF (flags 0)	int (ScriptVM *vm)
+003a1c80	func	ScrOp_SPRALLCALCSTART	event VM handler for opcode 138 SPRALLCALCSTART (flags 0)	int (ScriptVM *vm)
+003a1c90	func	ScrOp_PADBTN_SET	event VM handler for opcode 139 PADBTN_SET (flags 0)	int (ScriptVM *vm)
+003a1ca0	func	ScrOp_BGM_PLAY	event VM handler for opcode 140 BGM_PLAY (flags 0)	int (ScriptVM *vm)
+003a1d00	func	ScrOp_BGM_STOP	event VM handler for opcode 141 BGM_STOP (flags 0)	int (ScriptVM *vm)
+003a1d30	func	ScrOp_BGM_FADE	event VM handler for opcode 142 BGM_FADE (flags 0)	int (ScriptVM *vm)
+003a1d70	func	ScrOp_BGM_SETVOLUME	event VM handler for opcode 143 BGM_SETVOLUME (flags 0)	int (ScriptVM *vm)
+003a1da0	func	ScrOp_BGM_PAUSE	event VM handler for opcode 144 BGM_PAUSE (flags 0)	int (ScriptVM *vm)
+003a1dd0	func	ScrOp_SE_PLAY	event VM handler for opcode 145 SE_PLAY (flags 0)	int (ScriptVM *vm)
+003a1e30	func	ScrOp_SE_STOP	event VM handler for opcode 146 SE_STOP (flags 0)	int (ScriptVM *vm)
+003a1e60	func	ScrOp_PAD_PRESS	event VM handler for opcode 147 PAD_PRESS (blocking; flags 2)	int (ScriptVM *vm)
+003a1fc0	func	ScrOp_TEXTSET	event VM handler for opcode 148 TEXTSET (flags 0)	int (ScriptVM *vm)
+003a1ff0	func	ScrOp_TEXTDISP_ON	event VM handler for opcode 149 TEXTDISP_ON (flags 0)	int (ScriptVM *vm)
+003a2000	func	ScrOp_TEXT_FADEIN	event VM handler for opcode 150 TEXT_FADEIN (flags 0)	int (ScriptVM *vm)
+003a2010	func	ScrOp_TEXT_FADEOUT	event VM handler for opcode 151 TEXT_FADEOUT (flags 0)	int (ScriptVM *vm)
+003a2020	func	ScrOp_TEXTCLEAR	event VM handler for opcode 152 TEXTCLEAR (flags 0)	int (ScriptVM *vm)
+003a2030	func	ScrOp_TEXT_CNG_XY	event VM handler for opcode 153 TEXT_CNG_XY (flags 0)	int (ScriptVM *vm)
+003a2040	func	ScrOp_TEXT_CNG_COLOR	event VM handler for opcode 154 TEXT_CNG_COLOR (flags 0)	int (ScriptVM *vm)
+003a2050	func	ScrOp_PROPORTIONAL	event VM handler for opcode 155 PROPORTIONAL (flags 0)	int (ScriptVM *vm)
+003a2060	func	ScrOp_TEXTDISP_OFF	event VM handler for opcode 156 TEXTDISP_OFF (flags 0)	int (ScriptVM *vm)
+003a2070	func	ScrOp_REG2STRBOX	event VM handler for opcode 157 REG2STRBOX (flags 0)	int (ScriptVM *vm)
+003a2080	func	ScrOp_SVFLAG_ON	event VM handler for opcode 158 SVFLAG_ON (flags 0)	int (ScriptVM *vm)
+003a20b0	func	ScrOp_SVFLAG_OFF	event VM handler for opcode 159 SVFLAG_OFF (flags 0)	int (ScriptVM *vm)
+003a20e0	func	ScrOp_SVFLAG_BRON	event VM handler for opcode 160 SVFLAG_BRON (jump; flags 1)	int (ScriptVM *vm)
+003a2190	func	ScrOp_SVFLAG_BROFF	event VM handler for opcode 161 SVFLAG_BROFF (jump; flags 1)	int (ScriptVM *vm)
+003a2240	func	ScrOp_GET_STATUS	event VM handler for opcode 162 GET_STATUS (flags 0)	int (ScriptVM *vm)
+003a2250	func	ScrOp_SET_STATUS	event VM handler for opcode 163 SET_STATUS (flags 0)	int (ScriptVM *vm)
+003a2260	func	ScrOp_WAIT_TEXT	event VM handler for opcode 164 WAIT_TEXT (flags 0)	int (ScriptVM *vm)
+003a2270	func	ScrOp_WAIT_BGM	event VM handler for opcode 165 WAIT_BGM (blocking; flags 2)	int (ScriptVM *vm)
+003a22a0	func	ScrOp_WAIT_EXEC	event VM handler for opcode 166 WAIT_EXEC (flags 0)	int (ScriptVM *vm)
+003a22b0	func	ScrOp_STOP_EXEC	event VM handler for opcode 167 STOP_EXEC (flags 0)	int (ScriptVM *vm)
+003a22c0	func	ScrOp_FADEIN	event VM handler for opcode 168 FADEIN (flags 0)	int (ScriptVM *vm)
+003a22e0	func	ScrOp_FADEOUT	event VM handler for opcode 169 FADEOUT (flags 0)	int (ScriptVM *vm)
+003a2360	func	ScrOp_FADEIN_CHK	event VM handler for opcode 170 FADEIN_CHK (blocking; flags 2)	int (ScriptVM *vm)
+003a2380	func	ScrOp_FADEOUT_CHK	event VM handler for opcode 171 FADEOUT_CHK (blocking; flags 2)	int (ScriptVM *vm)
+003a23a0	func	ScrOp_WAIT_BT	event VM handler for opcode 172 WAIT_BT (flags 0)	int (ScriptVM *vm)
+003a23b0	func	ScrOp_LABEL_SET	event VM handler for opcode 173 LABEL_SET (flags 0)	int (ScriptVM *vm)
+003a2400	func	ScrOp_LABEL_JUMP	event VM handler for opcode 174 LABEL_JUMP (jump; flags 1)	int (ScriptVM *vm)
+003a2430	func	ScrOp_FLAG_INT	event VM handler for opcode 175 FLAG_INT (flags 0)	int (ScriptVM *vm)
+003a2440	func	ScrOp_FLAG_UINT	event VM handler for opcode 176 FLAG_UINT (flags 0)	int (ScriptVM *vm)
+003a2450	func	ScrOp_FLAG_FLOAT	event VM handler for opcode 177 FLAG_FLOAT (flags 0)	int (ScriptVM *vm)
+003a2460	func	ScrOp_PAUSE	event VM handler for opcode 178 PAUSE (flags 0)	int (ScriptVM *vm)
+003a2470	func	ScrOp_DOOR_OPEN	event VM handler for opcode 179 DOOR_OPEN (flags 0)	int (ScriptVM *vm)
+003a2480	func	ScrOp_DOOR_CLOSE	event VM handler for opcode 180 DOOR_CLOSE (flags 0)	int (ScriptVM *vm)
+003a2490	func	ScrOp_SETREG_I	event VM handler for opcode 181 SETREG_I (flags 0)	int (ScriptVM *vm)
+003a24c0	func	ScrOp_SETREG_UI	event VM handler for opcode 182 SETREG_UI (flags 0)	int (ScriptVM *vm)
+003a24f0	func	ScrOp_SETREG_S	event VM handler for opcode 183 SETREG_S (flags 0)	int (ScriptVM *vm)
+003a2520	func	ScrOp_SETREG_US	event VM handler for opcode 184 SETREG_US (flags 0)	int (ScriptVM *vm)
+003a2550	func	ScrOp_SETREG_B	event VM handler for opcode 185 SETREG_B (flags 0)	int (ScriptVM *vm)
+003a2580	func	ScrOp_SETREG_UB	event VM handler for opcode 186 SETREG_UB (flags 0)	int (ScriptVM *vm)
+003a25b0	func	ScrOp_SETREG_F	event VM handler for opcode 187 SETREG_F (flags 0)	int (ScriptVM *vm)
+003a25e0	func	ScrOp_SETTYPE	event VM handler for opcode 188 SETTYPE (flags 0)	int (ScriptVM *vm)
+003a2930	func	ScrOp_REGADDNUM_S	event VM handler for opcode 189 REGADDNUM_S (flags 0)	int (ScriptVM *vm)
+003a2990	func	ScrOp_REGADDNUM_U	event VM handler for opcode 190 REGADDNUM_U (flags 0)	int (ScriptVM *vm)
+003a29f0	func	ScrOp_REGADDNUM_F	event VM handler for opcode 191 REGADDNUM_F (flags 0)	int (ScriptVM *vm)
+003a2a50	func	ScrOp_REGADDREG	event VM handler for opcode 192 REGADDREG (flags 0)	int (ScriptVM *vm)
+003a2a80	func	ScrOp_REGSUBNUM_S	event VM handler for opcode 193 REGSUBNUM_S (flags 0)	int (ScriptVM *vm)
+003a2ae0	func	ScrOp_REGSUBNUM_U	event VM handler for opcode 194 REGSUBNUM_U (flags 0)	int (ScriptVM *vm)
+003a2b40	func	ScrOp_REGSUBNUM_F	event VM handler for opcode 195 REGSUBNUM_F (flags 0)	int (ScriptVM *vm)
+003a2ba0	func	ScrOp_REGSUBREG	event VM handler for opcode 196 REGSUBREG (flags 0)	int (ScriptVM *vm)
+003a2bd0	func	ScrOp_REGMULREG	event VM handler for opcode 197 REGMULREG (flags 0)	int (ScriptVM *vm)
+003a2c00	func	ScrOp_REGDIVREG_Q	event VM handler for opcode 198 REGDIVREG_Q (flags 0)	int (ScriptVM *vm)
+003a2c30	func	ScrOp_REGDIVREG_R	event VM handler for opcode 199 REGDIVREG_R (flags 0)	int (ScriptVM *vm)
+003a2c60	func	ScrOp_REGCPYREG	event VM handler for opcode 200 REGCPYREG (flags 0)	int (ScriptVM *vm)
+003a2cc0	func	ScrOp_RANDAM	event VM handler for opcode 201 RANDAM (flags 0)	int (ScriptVM *vm)
+003a2d20	func	ScrOp_CALLFUNC	event VM handler for opcode 202 CALLFUNC (blocking; flags 2)	int (ScriptVM *vm)
+003a2d60	func	ScrOp_EVENT_END	event VM handler for opcode 203 EVENT_END (flags 0)	int (ScriptVM *vm)
+0033ad00	func	Message_Start	({speaker slot, message}) starts dialogue script `message` (EXF_MESSAGE, EXF_CALL_TELPHONE); does nothing while one is running
+0033b3c0	func	Message_Task	task started by Message_Start; posts mission event 7 (bit 0x40) when the dialogue ends
+003a3180	func	MissionMgr_Init	clears g_MissionMgr (2 slots), the event queue and the mission globals; starts MissionMgr_Task
+003a32e0	func	MissionMgr_Task	per frame: turns posted event codes into mission event bits (g_MissionEventHandlers), then runs the slots
+003a34b0	func	Mission_Post	(code) posts an event code to the mission manager queue 0x0076EF9C (docs/SCRIPTS.md, "Events")	int (int code)
+003a3b30	func	Mission_RaiseEvent	(bits, 1) sets event bits on every running mission	int (u32 bits, int on)
+003a3be0	func	MissionMgr_SetFlags	(bits, on) g_MissionMgr +8 flags	void (u32 bits, int on)
+003a3500	func	Mission_End	(mission id) ends a running mission (EXF_EVENT_END)	int (int mission)
+003a3590	func	Mission_Start	(mission id) starts a mission in a free slot (slot 1 for 100/101); returns 1 if it started	int (int mission)
+003a3c40	func	Mission_FreeSlot	-> a free g_MissionMgr slot or 0
+003a4020	func	Mission_ResetState	(mission id) clears the mission globals and the mission's own story flags (g_MissionFlagRanges); called by Mission_Cleanup	void (int mission)
+003a45b0	func	JobList_Build	(list 0 = A, 1 = B) -> 0-terminated list of available g_Jobs entries for the job menu
+003a47d0	func	Mission_SetResult	(mission id, 2 = done / 3 = failed) stores the 2-bit job result; 2 also sets the cleared bit	void (int mission, int result)
+003a4890	func	Job_GetResult	(job index) -> 2-bit result from g_JobResults (0 never, 2 done, 3 failed)	int (int job)
+003a4970	func	Job_IndexOf	(mission id) -> index in g_Jobs or -1	int (int mission)
+003a4a30	func	Mission_IsJob	(mission id) 1 if it is one of the 50 jobs	int (int mission)
+003a4a70	func	Jobs_PercentCleared	-> % of the 50 jobs ever cleared (g_JobCleared)	int (void)
+003a4400	func	Mission_Current	-> the running mission id (slot 1 wins), 0 if none	int (void)
+003a4cd0	func	Mission_Cleanup	(slot) after a mission script ends: per-mission cleanup, Mission_ResetState, frees the slot
+003a5230	func	Script_StartBattle	(person or battle id, group) starts a fight from a script (EXF_SET_BATTLE, EXF_SET_BATTLE_PLURAL)
+003a5350	func	Battle_ScriptResult	-> the battle result code EXF_CHECK_ST_BATTLE_END stores (0/1 won, 4/6 lost, 2/3/10/11 other; docs/SCRIPTS.md)	int (void)
+003b0030	func	Mission_AutoStart	(area) on entering an area: starts every g_AutoMissions entry whose requirements and condition function (g_AutoMissionChecks) allow
+003b0610	func	Mission_TalkStart	(person) when talking to someone: may start g_TalkMissions (20% chance with some people)
+003b08a0	func	Mission_FlagTrigger	({state ptr, s16 flag, u8 mission, u8 step}) starts a mission when its story flag gets set
+003b02c0	func	Mission_Unavailable	(mission, chapter, % jobs cleared) 0 if g_MissionReq allows the mission now (plus per-mission special cases)	int (int mission, int chapter, int percent)
+003b0270	func	Mission_SlotBusy	(mission) 1 if that mission's slot (0, or 1 for 100/101) is running something
+003df540	func	MissionRank_Get	-> u32 at 0x0060BADC, the second g_MissionReq threshold (meaning not known)	int (void)
+0039a3e0	func	Script_MessageBusy	nonzero while a message or menu is up; blocking commands wait for it
+0039bbc0	func	Script_PlayerBusy	nonzero while the player can't be interrupted; blocking commands wait for it
+00172e10	func	StoryVar_Sub	(index) g_StoryVars[index] -= 1 if above 0 (EXF_ITEM_DEL)	int (int index)
+00139bd0	func	Script_GlobalRegs	-> the global register array EXF_TRANS_REG copies to and from
+005db470	data	g_Jobs	50 x {u8 mission id, u8 difficulty 1-5, u16 reward $, u32 title text, u32 description text}: the side jobs (dumps/missions.txt)	Job[50]
+005db6d0	data	g_JobListA	34 u32 mission ids offered by job list A (JobList_Build 0)	u32[34]
+005db760	data	g_JobListB	16 u32 mission ids offered by job list B (JobList_Build 1)	u32[16]
+0059a750	data	g_MissionReq	per mission id: {u16 chapter mask, u8 min MissionRank_Get, u8 min % jobs cleared}	MissionReq[147]
+0059995c	data	g_MissionFlagRanges	u32 per mission id: its first story flag; flags [n, next) belong to it and are cleared when it ends	u32[148]
+005dbd40	data	g_AutoMissions	26 u8 mission ids that start by themselves when an area loads (Mission_AutoStart)	u8[26]
+0059a9a0	data	g_AutoMissionChecks	26 condition functions (area) -> 0 to start, one per g_AutoMissions entry	void *[26]
+005dbd60	data	g_TalkMissions	2 u32 mission ids (0x58, 0x85) that can start when talking to someone	u32[2]
+00599bb0	data	g_MissionEventHandlers	10 handlers for posted event codes: 0 new mission (bit 1), 1 field tick (bit 8), 4 area loaded (bit 4), 5 bit 0x10, 6 battle over (bit 0x20), 7 message ended (bit 0x40), 9 cleanup	void *[10]
+0076ed60	data	g_MissionMgr	mission manager: +0 running count, +4 slot count (2), +8 flags, +0xC/+0x10 current mission ids, two 0x110-byte slots at +0x1C	MissionMgr
+0076f0f0	data	g_JobResults	13 bytes, 2 bits per job: 0 never, 2 done, 3 failed (saved)	u8[13]
+0076f0e0	data	g_JobCleared	13 bytes, 2 bits per job: 2 = ever cleared (saved); Jobs_PercentCleared	u8[13]
+00776100	data	g_BgMissionScript	script buffer of missions 100 and 101 (slot 1)

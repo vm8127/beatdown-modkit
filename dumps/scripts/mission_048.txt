@@ -1,0 +1,51 @@
+; SCRIPT.XAF entry 1048: mission 48
+; script id 48, 5 pages, 5 strings, 260 bytes of code
+  00000  EVENT                    id=48
+  00004  EVENT                    id=48
+@0:
+  00008  PAGESET                  page=@0
+  0000C  EXF_LOG_MESSAGE          
+  00014  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00024  SVFLAG_OFF               flag=flag 0x73c
+  00028  EXF_SET_NPC              npc=115
+  00030  PAGE_JUMP                page=@1 ;jump
+  00034  /PAGESET                 next=- ;jump
+@1:
+  00038  PAGESET                  page=@1
+  0003C  EXF_LOG_MESSAGE          +4=1
+  00044  EXF_SET_TYPE             mask=8, page=@2, arg=1 ;jump
+  00054  SVFLAG_BRON              flag=flag 0x9d6, page=@3 ;jump
+  0005C  PAGE_JUMP                page=@2 ;jump
+  00060  EVENT_END                
+  00064  /PAGESET                 next=- ;jump
+@2:
+  00068  PAGESET                  page=@2
+  0006C  EXF_LOG_MESSAGE          +4=2
+  00074  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00084  EXF_EVENT_END            
+  0008C  EVENT_END                
+  00090  /PAGESET                 next=- ;jump
+@3:
+  00094  PAGESET                  page=@3
+  00098  EXF_LOG_MESSAGE          +4=3
+  000A0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  000B0  SVFLAG_ON                flag=flag 0x73d
+  000B4  EXF_MESSAGE              message=929, speaker=person 165, speaker_reg=r0 ;waits
+  000C4  PAGE_JUMP                page=@4 ;jump
+  000C8  EVENT_END                
+  000CC  /PAGESET                 next=- ;jump
+@4:
+  000D0  PAGESET                  page=@4
+  000D4  EXF_LOG_MESSAGE          +4=4
+  000DC  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  000EC  SVFLAG_OFF               flag=flag 0x73b
+  000F0  EXF_EVENT_END            
+  000F8  EVENT_END                
+  000FC  /PAGESET                 next=- ;jump
+  00100  /EVENT                   
+; strings
+;   0: '0'
+;   1: '1'
+;   2: '2'
+;   3: '3'
+;   4: '4'

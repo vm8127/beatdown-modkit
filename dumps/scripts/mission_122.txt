@@ -1,0 +1,292 @@
+; SCRIPT.XAF entry 1122: mission 122
+; script id 122, 28 pages, 28 strings, 1940 bytes of code
+  00000  EVENT                    id=122
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_LOG_MESSAGE          
+  00010  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00020  SVFLAG_ON                flag=flag 0xe4a
+  00024  SVFLAG_OFF               flag=flag 0xe4b
+  00028  SVFLAG_OFF               flag=flag 0xe4c
+  0002C  SVFLAG_OFF               flag=flag 0xe4d
+  00030  SVFLAG_OFF               flag=flag 0xe4e
+  00034  SVFLAG_OFF               flag=flag 0xe4f
+  00038  SVFLAG_OFF               flag=flag 0xe50
+  0003C  EXF_SET_NPC              npc=45
+  00044  EXF_KILL_NPC             slot=0, value=1
+  00050  SETREG_UB                dst=r0, value=0
+  00058  SETREG_UB                dst=r1, value=0
+  00060  SETREG_UB                dst=r2, value=0
+  00068  SETREG_UB                dst=r0, value=0
+  00070  SETREG_UB                dst=r0, value=0
+  00078  SETREG_UB                dst=r0, value=0
+  00080  SETREG_UB                dst=r0, value=0
+  00088  SETREG_UB                dst=r0, value=0
+  00090  SETREG_UB                dst=r0, value=0
+  00098  SETREG_UB                dst=r0, value=0
+  000A0  SETREG_UB                dst=r0, value=0
+  000A8  PAGE_JUMP                page=@1 ;jump
+  000AC  /PAGESET                 next=- ;jump
+@1:
+  000B0  PAGESET                  page=@1
+  000B4  EXF_LOG_MESSAGE          +4=1
+  000BC  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  000CC  EXF_SET_CALLER           who_dst=r9, kind_dst=r1
+  000D4  EXF_RANDOM               dst=r2, min=20, max=500
+  000E0  PAGE_JUMP                page=@2 ;jump
+  000E4  EVENT_END                
+  000E8  /PAGESET                 next=- ;jump
+@2:
+  000EC  PAGESET                  page=@2
+  000F0  EXF_LOG_MESSAGE          +4=2
+  000F8  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00108  EXF_TRANS_REG            reg=r2, global=1, load=0
+  00114  EXF_CHECK_SEX            who=player, dst=r8, who_reg=r0
+  00124  JUMP_BEQUI               page=@3, value=0, reg=r8 ;jump
+  00130  JUMP_BEQUI               page=@4, value=1, reg=r8 ;jump
+  0013C  EVENT_END                
+  00140  /PAGESET                 next=- ;jump
+@3:
+  00144  PAGESET                  page=@3
+  00148  EXF_LOG_MESSAGE          +4=3
+  00150  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00160  EXF_CALL_TELPHONE        caller=player, message=588, arg_reg=r9 ;waits
+  00170  PAGE_JUMP                page=@5 ;jump
+  00174  EVENT_END                
+  00178  /PAGESET                 next=- ;jump
+@4:
+  0017C  PAGESET                  page=@4
+  00180  EXF_LOG_MESSAGE          +4=4
+  00188  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00198  EXF_CALL_TELPHONE        caller=player, message=589, arg_reg=r9 ;waits
+  001A8  PAGE_JUMP                page=@5 ;jump
+  001AC  EVENT_END                
+  001B0  /PAGESET                 next=- ;jump
+@5:
+  001B4  PAGESET                  page=@5
+  001B8  EXF_LOG_MESSAGE          +4=5
+  001C0  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  001D0  SVFLAG_BRON              flag=flag 0xe4d, page=@27 ;jump
+  001D8  EXF_SET_COUNTDOWN        mode=1, seconds=10
+  001E4  SVFLAG_BRON              flag=flag 0xe4c, page=@6 ;jump
+  001EC  EVENT_END                
+  001F0  /PAGESET                 next=- ;jump
+@6:
+  001F4  PAGESET                  page=@6
+  001F8  EXF_LOG_MESSAGE          +4=6
+  00200  EXF_SET_TYPE             mask=8, page=@10, arg=6 ;jump
+  00210  EXF_GET_COUNTDOWN        dst=r0
+  00218  JUMP_BEQUI               page=@16, value=0, reg=r0 ;jump
+  00224  PAGE_JUMP                page=@7 ;jump
+  00228  /PAGESET                 next=- ;jump
+@7:
+  0022C  PAGESET                  page=@7
+  00230  EXF_LOG_MESSAGE          +4=7
+  00238  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00248  EXF_CHECK_MONEY2         who=0, dst=r4, amount=0, arg_reg=r2
+  0025C  JUMP_BEQUI               page=@8, value=0, reg=r4 ;jump
+  00268  JUMP_BEQUI               page=@9, value=0, reg=r4 ;jump
+  00274  JUMP_BEQUI               page=@9, value=1, reg=r4 ;jump
+  00280  /PAGESET                 next=- ;jump
+@8:
+  00284  PAGESET                  page=@8
+  00288  EXF_LOG_MESSAGE          +4=8
+  00290  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  002A0  SVFLAG_ON                flag=flag 0xe4f
+  002A4  PAGE_JUMP                page=@10 ;jump
+  002A8  /PAGESET                 next=- ;jump
+@9:
+  002AC  PAGESET                  page=@9
+  002B0  EXF_LOG_MESSAGE          +4=9
+  002B8  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  002C8  SVFLAG_OFF               flag=flag 0xe4f
+  002CC  PAGE_JUMP                page=@10 ;jump
+  002D0  /PAGESET                 next=- ;jump
+@10:
+  002D4  PAGESET                  page=@10
+  002D8  EXF_LOG_MESSAGE          +4=10
+  002E0  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  002F0  SVFLAG_BRON              flag=flag 0xe50, page=@11 ;jump
+  002F8  EVENT_END                
+  002FC  /PAGESET                 next=- ;jump
+@11:
+  00300  PAGESET                  page=@11
+  00304  EXF_LOG_MESSAGE          +4=11
+  0030C  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  0031C  EXF_ADD_REGS             dst=r2, value=0, reverse_sub=1
+  0032C  EXF_CNTL_MES             mode=0
+  00334  EXF_ADD_MONEY            amount=0, show=1, arg_reg=r2 ;waits
+  00344  EXF_WAIT_ST              +4=30 ;waits
+  0034C  EXF_CNTL_MES             mode=1
+  00354  JUMP_BEQUI               page=@12, value=0, reg=r4 ;jump
+  00360  JUMP_BEQUI               page=@14, value=1, reg=r4 ;jump
+  0036C  EVENT_END                
+  00370  /PAGESET                 next=- ;jump
+@12:
+  00374  PAGESET                  page=@12
+  00378  EXF_LOG_MESSAGE          +4=12
+  00380  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00390  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  0039C  SVFLAG_ON                flag=flag 0xe4b
+  003A0  EXF_CALL_TELPHONE        caller=person 2, message=588, arg_reg=r0 ;waits
+  003B0  EXF_SET_EMOTION          who=player, a=1, b=100, who_reg=r0
+  003C4  EXF_PAGE_JUMP_EXIT       page=@13
+  003C8  EVENT_END                
+  003CC  /PAGESET                 next=- ;jump
+@13:
+  003D0  PAGESET                  page=@13
+  003D4  EXF_LOG_MESSAGE          +4=13
+  003DC  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  003EC  EXF_EVENT_END            
+  003F4  EVENT_END                
+  003F8  /PAGESET                 next=- ;jump
+@14:
+  003FC  PAGESET                  page=@14
+  00400  EXF_LOG_MESSAGE          +4=14
+  00408  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00418  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  00424  SVFLAG_ON                flag=flag 0xe4b
+  00428  EXF_CALL_TELPHONE        caller=person 2, message=589, arg_reg=r0 ;waits
+  00438  EXF_SET_EMOTION          who=player, a=1, b=100, who_reg=r0
+  0044C  EXF_PAGE_JUMP_EXIT       page=@15
+  00450  EVENT_END                
+  00454  /PAGESET                 next=- ;jump
+@15:
+  00458  PAGESET                  page=@15
+  0045C  EXF_LOG_MESSAGE          +4=15
+  00464  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00474  EXF_EVENT_END            
+  0047C  EVENT_END                
+  00480  /PAGESET                 next=- ;jump
+@16:
+  00484  PAGESET                  page=@16
+  00488  EXF_LOG_MESSAGE          +4=16
+  00490  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  004A0  JUMP_BEQUI               page=@17, value=0, reg=r4 ;jump
+  004AC  JUMP_BEQUI               page=@22, value=1, reg=r4 ;jump
+  004B8  /PAGESET                 next=- ;jump
+@17:
+  004BC  PAGESET                  page=@17
+  004C0  EXF_LOG_MESSAGE          +4=17
+  004C8  EXF_SET_TYPE             mask=8, page=@21, arg=17 ;jump
+  004D8  EXF_KILL_NPC             slot=0, value=6
+  004E4  EXF_CHECK_MONEY2         who=0, dst=r4, amount=0, arg_reg=r2
+  004F8  JUMP_BEQUI               page=@18, value=0, reg=r4 ;jump
+  00504  JUMP_BEQUI               page=@19, value=0, reg=r4 ;jump
+  00510  JUMP_BEQUI               page=@19, value=1, reg=r4 ;jump
+  0051C  /PAGESET                 next=- ;jump
+@18:
+  00520  PAGESET                  page=@18
+  00524  EXF_LOG_MESSAGE          +4=18
+  0052C  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  0053C  SVFLAG_ON                flag=flag 0xe4f
+  00540  PAGE_JUMP                page=@20 ;jump
+  00544  /PAGESET                 next=- ;jump
+@19:
+  00548  PAGESET                  page=@19
+  0054C  EXF_LOG_MESSAGE          +4=19
+  00554  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00564  SVFLAG_OFF               flag=flag 0xe4f
+  00568  PAGE_JUMP                page=@20 ;jump
+  0056C  /PAGESET                 next=- ;jump
+@20:
+  00570  PAGESET                  page=@20
+  00574  EXF_LOG_MESSAGE          +4=20
+  0057C  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  0058C  SVFLAG_BRON              flag=flag 0xe50, page=@11 ;jump
+  00594  PAGE_JUMP                page=@21 ;jump
+  00598  EVENT_END                
+  0059C  /PAGESET                 next=- ;jump
+@21:
+  005A0  PAGESET                  page=@21
+  005A4  EXF_LOG_MESSAGE          +4=21
+  005AC  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  005BC  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  005C8  SVFLAG_ON                flag=flag 0xe4e
+  005CC  EXF_CALL_TELPHONE        caller=person 2, message=588, arg_reg=r0 ;waits
+  005DC  EXF_SET_EMOTION          who=player, a=1, b=-100, who_reg=r0
+  005F0  EXF_EVENT_END            
+  005F8  EVENT_END                
+  005FC  /PAGESET                 next=- ;jump
+@22:
+  00600  PAGESET                  page=@22
+  00604  EXF_LOG_MESSAGE          +4=22
+  0060C  EXF_SET_TYPE             mask=8, page=@26, arg=22 ;jump
+  0061C  EXF_KILL_NPC             slot=0, value=6
+  00628  EXF_CHECK_MONEY2         who=0, dst=r4, amount=0, arg_reg=r2
+  0063C  JUMP_BEQUI               page=@23, value=0, reg=r4 ;jump
+  00648  JUMP_BEQUI               page=@24, value=0, reg=r4 ;jump
+  00654  JUMP_BEQUI               page=@24, value=1, reg=r4 ;jump
+  00660  /PAGESET                 next=- ;jump
+@23:
+  00664  PAGESET                  page=@23
+  00668  EXF_LOG_MESSAGE          +4=23
+  00670  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00680  SVFLAG_ON                flag=flag 0xe4f
+  00684  PAGE_JUMP                page=@25 ;jump
+  00688  /PAGESET                 next=- ;jump
+@24:
+  0068C  PAGESET                  page=@24
+  00690  EXF_LOG_MESSAGE          +4=24
+  00698  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  006A8  SVFLAG_OFF               flag=flag 0xe4f
+  006AC  PAGE_JUMP                page=@25 ;jump
+  006B0  /PAGESET                 next=- ;jump
+@25:
+  006B4  PAGESET                  page=@25
+  006B8  EXF_LOG_MESSAGE          +4=25
+  006C0  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  006D0  SVFLAG_BRON              flag=flag 0xe50, page=@11 ;jump
+  006D8  PAGE_JUMP                page=@26 ;jump
+  006DC  EVENT_END                
+  006E0  /PAGESET                 next=- ;jump
+@26:
+  006E4  PAGESET                  page=@26
+  006E8  EXF_LOG_MESSAGE          +4=26
+  006F0  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00700  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  0070C  SVFLAG_ON                flag=flag 0xe4e
+  00710  EXF_CALL_TELPHONE        caller=person 2, message=589, arg_reg=r0 ;waits
+  00720  EXF_SET_EMOTION          who=player, a=1, b=-100, who_reg=r0
+  00734  EXF_EVENT_END            
+  0073C  EVENT_END                
+  00740  /PAGESET                 next=- ;jump
+@27:
+  00744  PAGESET                  page=@27
+  00748  EXF_LOG_MESSAGE          +4=27
+  00750  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00760  EXF_SET_COUNTDOWN        mode=0, seconds=0
+  0076C  EXF_SET_EMOTION          who=player, a=1, b=-100, who_reg=r0
+  00780  EXF_EVENT_END            
+  00788  EVENT_END                
+  0078C  /PAGESET                 next=- ;jump
+  00790  /EVENT                   
+; strings
+;   0: 'P0'
+;   1: 'P1'
+;   2: 'P2'
+;   3: 'P3'
+;   4: 'P4'
+;   5: 'P5'
+;   6: 'P6'
+;   7: 'P7'
+;   8: 'P8'
+;   9: 'P9'
+;   10: 'P10'
+;   11: 'P11'
+;   12: 'P12'
+;   13: 'P13'
+;   14: 'P14'
+;   15: 'P15'
+;   16: 'P16'
+;   17: 'P17'
+;   18: 'P18'
+;   19: 'P19'
+;   20: 'P20'
+;   21: 'P21'
+;   22: 'P22'
+;   23: 'P23'
+;   24: 'P24'
+;   25: 'P25'
+;   26: 'P26'
+;   27: 'P27'

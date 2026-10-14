@@ -1,0 +1,70 @@
+; SCRIPT.XAF entry 1066: mission 66
+; script id 66, 6 pages, 6 strings, 452 bytes of code
+  00000  EVENT                    id=66
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00018  EXF_LOG_MESSAGE          
+  00020  EXF_RECOVER_NPC          who=person 332, who_reg=r0, arg=0
+  00030  EXF_SET_NPC              npc=124
+  00038  EXF_SET_MARK             a=37, b=332
+  00044  EXF_SET_NPC_MARK         a=332, b=0, clear=1
+  00054  EXF_HIDE_NPC             who=person 332, show=1, slot=0, arg=0
+  00068  PAGE_JUMP                page=@1 ;jump
+  0006C  /PAGESET                 next=- ;jump
+@1:
+  00070  PAGESET                  page=@1
+  00074  EXF_SET_TYPE             mask=8, page=@2, arg=1 ;jump
+  00084  EXF_LOG_MESSAGE          +4=1
+  0008C  SVFLAG_OFF               flag=flag 0xa8c
+  00090  EXF_ITEM_CHECK           item=2, dst=r1, arg_reg=r0
+  000A0  JUMP_BEQUI               page=@2, value=0, reg=r1 ;jump
+  000AC  SVFLAG_ON                flag=flag 0xa8c
+  000B0  EXF_PAGE_JUMP_EXIT       page=@2
+  000B4  EVENT_END                
+  000B8  /PAGESET                 next=- ;jump
+@2:
+  000BC  PAGESET                  page=@2
+  000C0  EXF_LOG_MESSAGE          +4=2
+  000C8  SVFLAG_BRON              flag=flag 0xa8d, page=@3 ;jump
+  000D0  EXF_PAGE_JUMP_EXIT       page=@1
+  000D4  EVENT_END                
+  000D8  /PAGESET                 next=- ;jump
+@3:
+  000DC  PAGESET                  page=@3
+  000E0  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  000F0  EXF_LOG_MESSAGE          +4=3
+  000F8  EXF_ITEM_DEL             item=2, count=1, arg_reg=r0
+  00108  EXF_CNTL_MES             mode=0
+  00110  EXF_RESULT               failed=0
+  00118  EXF_DISP_RESULT          failed=0 ;waits
+  00120  EXF_ADD_MONEY            amount=1000, show=1, arg_reg=r0 ;waits
+  00130  EXF_WAIT_ST               ;waits
+  00138  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  00148  PAGE_JUMP                page=@4 ;jump
+  0014C  EVENT_END                
+  00150  /PAGESET                 next=- ;jump
+@4:
+  00154  PAGESET                  page=@4
+  00158  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00168  EXF_LOG_MESSAGE          +4=4
+  00170  EXF_CNTL_MES             mode=1
+  00178  EXF_MESSAGE              message=949, speaker=person 594, speaker_reg=r0 ;waits
+  00188  PAGE_JUMP                page=@5 ;jump
+  0018C  EVENT_END                
+  00190  /PAGESET                 next=- ;jump
+@5:
+  00194  PAGESET                  page=@5
+  00198  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  001A8  EXF_LOG_MESSAGE          +4=5
+  001B0  EXF_EVENT_END            
+  001B8  EVENT_END                
+  001BC  /PAGESET                 next=- ;jump
+  001C0  /EVENT                   
+; strings
+;   0: 'START'
+;   1: 'CHK1'
+;   2: 'CHK2'
+;   3: 'CLEAR'
+;   4: 'JUMPED'
+;   5: 'END'

@@ -1,0 +1,136 @@
+; SCRIPT.XAF entry 1003: mission 3
+; script id 3, 12 pages, 7 strings, 1104 bytes of code
+  00000  EVENT                    id=3
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_SET_TYPE             mask=1, page=@0, arg=0 ;jump
+  00018  EXF_RECOVER_NPC          who=person 202, who_reg=r0, arg=0
+  00028  EXF_SET_NPC              npc=55
+  00030  EXF_HIDE_NPC             who=person 202, show=1, slot=0, arg=0
+  00044  EXF_EVSTAGE              value=7, on=1
+  00050  EXF_SET_MARK             a=7, b=202
+  0005C  EXF_SET_NPC_MARK         a=202, b=0, clear=1
+  0006C  PAGE_JUMP                page=@1 ;jump
+  00070  /PAGESET                 next=- ;jump
+@1:
+  00074  PAGESET                  page=@1
+  00078  EXF_LOG_MESSAGE          
+  00080  EXF_SET_TYPE             mask=8, page=@0, arg=0 ;jump
+  00090  SVFLAG_BRON              flag=flag 0x817, page=@2 ;jump
+  00098  EVENT_END                
+  0009C  /PAGESET                 next=- ;jump
+@2:
+  000A0  PAGESET                  page=@2
+  000A4  EXF_LOG_MESSAGE          +4=1
+  000AC  EXF_SET_POS              who=person 202, x=160, y=10, z=24, who_reg=r0
+  000C4  EXF_NPC_ROT              who=person 202, angle=1127022592, who_reg=r0, arg=1
+  000D8  EXF_SET_POS              who=player, x=167, y=10, z=8, who_reg=r0
+  000F0  EXF_NPC_ROT              who=player, angle=-1046478848, who_reg=r0, arg=1
+  00104  EXF_SET_POS              who=party1, x=165, y=10, z=-1, who_reg=r0
+  0011C  EXF_NPC_ROT              who=party1, angle=1096810496, who_reg=r0, arg=1
+  00130  EXF_SET_POS              who=party2, x=177, y=10, z=2, who_reg=r0
+  00148  EXF_NPC_ROT              who=party2, angle=-1042284544, who_reg=r0, arg=1
+  0015C  EXF_CAM_POS_START        x=211, y=23, z=51
+  0016C  EXF_CAM_POS_END          x=191, y=12, z=-22, frames=900, no_ease=0
+  00184  EXF_CAM_TRGPOS_START     x=158, y=12, z=22
+  00194  EXF_CAM_TRGPOS_END       x=160, y=12, z=24, frames=900, no_ease=0
+  001AC  EXF_CAM_MODE             mode=1
+  001B4  PAGE_JUMP                page=@3 ;jump
+  001B8  EVENT_END                
+  001BC  /PAGESET                 next=- ;jump
+@3:
+  001C0  PAGESET                  page=@3
+  001C4  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  001D4  EXF_LOG_MESSAGE          +4=2
+  001DC  PAGE_JUMP                page=@4 ;jump
+  001E0  EVENT_END                
+  001E4  /PAGESET                 next=- ;jump
+@4:
+  001E8  PAGESET                  page=@4
+  001EC  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  001FC  SVFLAG_OFF               flag=flag 0x7da
+  00200  EXF_CHECK_ST_BATTLE_END  dst=r0
+  0020C  JUMP_BEQUI               page=@5, value=10, reg=r0 ;jump
+  00218  JUMP_BEQUI               page=@5, value=9, reg=r0 ;jump
+  00224  JUMP_BEQUI               page=@6, value=8, reg=r0 ;jump
+  00230  JUMP_BEQUI               page=@5, value=7, reg=r0 ;jump
+  0023C  JUMP_BEQUI               page=@5, value=5, reg=r0 ;jump
+  00248  JUMP_BEQUI               page=@7, value=6, reg=r0 ;jump
+  00254  JUMP_BEQUI               page=@7, value=4, reg=r0 ;jump
+  00260  JUMP_BEQUI               page=@11, value=3, reg=r0 ;jump
+  0026C  JUMP_BEQUI               page=@11, value=2, reg=r0 ;jump
+  00278  JUMP_BEQUI               page=@5, value=1, reg=r0 ;jump
+  00284  JUMP_BEQUI               page=@5, value=0, reg=r0 ;jump
+  00290  JUMP_BEQI                page=@11, value=11, reg=r0 ;jump
+  0029C  EVENT_END                
+  002A0  /PAGESET                 next=- ;jump
+@5:
+  002A4  PAGESET                  page=@5
+  002A8  EXF_CNTL_MES             mode=0
+  002B0  EXF_RESULT               failed=1
+  002B8  EXF_DISP_RESULT          failed=1 ;waits
+  002C0  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  002D0  PAGE_JUMP                page=@9 ;jump
+  002D4  EVENT_END                
+  002D8  /PAGESET                 next=- ;jump
+@6:
+  002DC  PAGESET                  page=@6
+  002E0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  002F0  EXF_SET_OUTLOW           a=0, b=0, c=0, d=1
+  00304  EXF_CNTL_MES             mode=0
+  0030C  EXF_RESULT               failed=0
+  00314  EXF_DISP_RESULT          failed=0 ;waits
+  0031C  EXF_ADD_MONEY            amount=2000, show=1, arg_reg=r0 ;waits
+  0032C  EXF_WAIT_ST               ;waits
+  00334  EXF_MOVE_STAGE           area=21, arg_reg=r0, no_reg=0
+  00344  PAGE_JUMP                page=@8 ;jump
+  00348  EVENT_END                
+  0034C  /PAGESET                 next=- ;jump
+@7:
+  00350  PAGESET                  page=@7
+  00354  EXF_RESULT               failed=1
+  0035C  EXF_EVENT_END            
+  00364  EVENT_END                
+  00368  /PAGESET                 next=- ;jump
+@8:
+  0036C  PAGESET                  page=@8
+  00370  EXF_LOG_MESSAGE          +4=3
+  00378  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  00388  EXF_CNTL_MES             mode=1
+  00390  EXF_MESSAGE              message=949, speaker=person 594, speaker_reg=r0 ;waits
+  003A0  PAGE_JUMP                page=@10 ;jump
+  003A4  EVENT_END                
+  003A8  /PAGESET                 next=- ;jump
+@9:
+  003AC  PAGESET                  page=@9
+  003B0  EXF_LOG_MESSAGE          +4=4
+  003B8  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  003C8  EXF_CNTL_MES             mode=1
+  003D0  EXF_MESSAGE              message=950, speaker=person 594, speaker_reg=r0 ;waits
+  003E0  PAGE_JUMP                page=@10 ;jump
+  003E4  EVENT_END                
+  003E8  /PAGESET                 next=- ;jump
+@10:
+  003EC  PAGESET                  page=@10
+  003F0  EXF_LOG_MESSAGE          +4=5
+  003F8  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  00408  EXF_EVENT_END            
+  00410  EVENT_END                
+  00414  /PAGESET                 next=- ;jump
+@11:
+  00418  PAGESET                  page=@11
+  0041C  EXF_LOG_MESSAGE          +4=6
+  00424  EXF_SET_OUTLOW           a=0, b=0, c=65535, d=0
+  00438  EXF_SET_SUBBTL           on=1
+  00440  EXF_PAGE_JUMP_EXIT       page=@4
+  00444  EVENT_END                
+  00448  /PAGESET                 next=- ;jump
+  0044C  /EVENT                   
+; strings
+;   0: 'Go'
+;   1: 'CAM1'
+;   2: 'Cam2'
+;   3: '8'
+;   4: '9'
+;   5: '10'
+;   6: '11'

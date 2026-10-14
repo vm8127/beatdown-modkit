@@ -225,13 +225,13 @@ The game file is built by `SaveData_Pack` `0x0013A950` and read back by `SaveDat
 |---|---|---|
 | `0x00000` | `0x34EE0` | `g_Persons` 0-199 (so money, levels, HP and outfits are saved per person) |
 | `0x34EE0` | 2256 | `0x60CA90` |
-| `0x357B0` | 56 | `0x60BE10` |
+| `0x357B0` | 56 | `0x60BE10` (first word: `g_StoryChapter`) |
 | `0x357E8` | 8 | `g_Party` |
 | `0x357F0` | 2052 | `g_Inventory` |
 | `0x35FF4` | 156 | `0x60BE50` |
 | `0x36090` | 256 | `0x60C990` (`g_StoryVars`, 128 script variables) |
 | `0x36190` | 1024 | `g_EventFlags` |
-| `0x36590` | 13 + 13 | `0x76F0F0`, `0x76F0E0` |
+| `0x36590` | 13 + 13 | `g_JobResults` `0x76F0F0`, `g_JobCleared` `0x76F0E0` (docs/SCRIPTS.md) |
 | `0x365AC` | 1024 | `0x60B6E0` |
 | `0x369AC` | 200 | `0x60BAE0` |
 
@@ -244,7 +244,7 @@ Less mapped so far; pointers for the next pass:
 - **Save/load screens**: memory card state machine `MemCard_Step` `0x1D8CA0` (jump table `0x5CB2F0`), `Save_BuildGameFile` `0x1DB720`, `Load_ApplyGameFile` `0x1DD1F0`.
 - **Title, VS mode and debug menus**: `Title_Main` `0x33D7A0` (items `0x589680`, handlers `0x5D7890`), `VsMode_Main` `0x340C60` (earlier mislabeled SaveLoadScreen; calls `VsMode_CharacterSelect` `0x3404B0` and `VsMode_StageSelect` `0x3409C0`), the cut `DebugMenu_Main` `0x340220`, and the debug switch table `g_DebugSwitches` `0x599000`. See docs/CUTCONTENT.md.
 - **Shops**: the per-shop logic isn't found yet. Leads: the `SHOP_AD` entries near `0x423690`, a debug shop picker `Debug_ShopSelect` `0x3340D0` ("[SELECT SHOP]", "LEVEL : %d"), and a heap named "ShopGlobal" set up at `0x32FEE0`.
-- **Scripts**: `g_ScriptOpcodes` `0x00411ACC` names all 118 EXF script commands with argument counts (EXF_ADD_MONEY = 0x24, EXF_CHECK_MONEY = 0x2C, EXF_SET_SKILL = 0x39, EXF_ITEM_ADD = 0x17, EXF_ADD_DRESS = 0x62, ...). The interpreter that runs SCRIPT.XAF entries 0-999 isn't located yet; `Script_LoadEventList` `0x3A4F40` loads the event lists (entries 1000+).
+- **Scripts, missions, jobs, events and dialogue**: mapped in docs/SCRIPTS.md. SCRIPT.XAF 1000 + n is mission n's script, run by the event VM (`ScriptVM_Run` `0x39BDD0`, handlers `g_ScriptOpHandlers` `0x5DACF0`, all named `ScrOp_*`); 0-999 are dialogue scripts played by `Dialogue_Step` `0x133B00`. Both use the 204 commands of `g_ScriptOpcodes` `0x411AC0` (it was listed at `0x411ACC` with the wrong layout before). The mission manager is `g_MissionMgr` `0x76ED60`; the 50 side jobs are `g_Jobs` `0x5DB470`. `tools/scriptkit.py` disassembles scripts and lists missions.
 - **Text**: `Text_Get` `0x387980` (688 callers). CDATA.XAF entries 385-432 are 8 text banks x 6 languages: 385-390 UI and menus (ids `0x2328`-), 391-396 items, 397-402 move lists, 403-408 mission names, 409-414 partner lines, 415-420 town rumours and hints ("There's a record store in town that doesn't sell records at all."), 421-426 system messages (save prompts), 427-432 credits.
 - **GRAPH.XAF names**: `g_GraphNames` `0x005AB0D0` gives a name to each of the 602 GRAPH.XAF entries (BA_PARTS01, ...), looked up by `Graph_FindName` `0x138D20`.
 
@@ -266,7 +266,7 @@ Untested starting points. RAM values are rewritten by the game, so a pnach cheat
 
 - **Action event records and the second stream**: `g_ActionEvents` records start with a handler address (`0x30BF10` and `0x30BFA0` both call `Fighter_SetAction` on the fighter's `+0x4348`). The motion script is decoded (docs/ANIMATION.md, `codemap.py actions`); the second stream at `+0x3FD8` (starting `0x35, 1, ...`) and the event records probably hold the frame data.
 - **Hit record fields** other than damage (`+0` kind, `+4` maybe stun or knockback, `+10`, `+12`, `+14` flags).
-- **Script interpreter** for SCRIPT.XAF 0-999, so EXF commands can be traced to their handlers.
+- **Scripts**: found (docs/SCRIPTS.md); its "Open questions" lists what is left.
 - **Shops** (see above) and level-up / EXP code (strings "LEVEL: ", "EXP: " near `0x5B83F8`).
 - **Item index to name** mapping, and the item table's remaining fields.
 

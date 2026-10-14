@@ -1,0 +1,89 @@
+; SCRIPT.XAF entry 1105: mission 105
+; script id 105, 11 pages, 0 strings, 680 bytes of code
+  00000  EVENT                    id=105
+@0:
+  00004  PAGESET                  page=@0
+  00008  EXF_RECOVER_NPC          who=person 581, who_reg=r0, arg=0
+  00018  EXF_SET_NPC              npc=53
+  00020  EXF_KILL_NPC             slot=0, value=20
+  0002C  EXF_HIDE_NPC             who=person 581, show=1, slot=0, arg=0
+  00040  /PAGESET                 next=@1 ;jump
+@1:
+  00044  PAGESET                  page=@1
+  00048  EXF_HIDE_NPC             who=person 581, show=1, slot=0, arg=0
+  0005C  SVFLAG_OFF               flag=flag 0xd71
+  00060  /PAGESET                 next=@2 ;jump
+@2:
+  00064  PAGESET                  page=@2
+  00068  EXF_SET_TYPE             mask=8, page=@4, arg=2 ;jump
+  00078  SVFLAG_BRON              flag=flag 0xd71, page=@5 ;jump
+  00080  PAGE_JUMP                page=@3 ;jump
+  00084  EVENT_END                
+  00088  /PAGESET                 next=- ;jump
+@3:
+  0008C  PAGESET                  page=@3
+  00090  EXF_SET_TYPE             mask=32, page=@4, arg=0 ;jump
+  000A0  SVFLAG_OFF               flag=flag 0xd71
+  000A4  PAGE_JUMP                page=@4 ;jump
+  000A8  EVENT_END                
+  000AC  /PAGESET                 next=- ;jump
+@4:
+  000B0  PAGESET                  page=@4
+  000B4  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  000C4  EXF_CHECK_STAGE          sub_area=0, dst=r5
+  000D0  JUMP_BNEUI               page=@9, value=1, reg=r5 ;jump
+  000DC  EVENT_END                
+  000E0  /PAGESET                 next=- ;jump
+@5:
+  000E4  PAGESET                  page=@5
+  000E8  EXF_MESTURN              on=1
+  000F0  EXF_MESSAGE              message=912, speaker=person 581, speaker_reg=r0 ;waits
+  00100  EXF_CAM_POS_START        x=-408, y=20, z=-26
+  00110  EXF_CAM_POS_END          x=-445.5, y=15, z=-30.1, frames=90, no_ease=0
+  00128  EXF_CAM_TRGPOS_START     x=-463.5, y=10, z=-21
+  00138  EXF_CAM_TRGPOS_END       x=-463, y=12, z=-22, frames=90, no_ease=0
+  00150  EXF_CAM_MODE             mode=1
+  00158  EXF_NPC_ROT              who=person 581, angle=1127088128, who_reg=r0, arg=0
+  0016C  EXF_WAIT                 frames=18 ;waits
+  00174  EXF_NPC_RUN_POS          who=person 581, x=-462, y=10, z=-21, arg=1, who_reg=?
+  0018C  EXF_SET_MOTION           who=person 581, motion=855, mode=1, who_reg=r0
+  001A0  /PAGESET                 next=@6 ;jump
+@6:
+  001A4  PAGESET                  page=@6
+  001A8  EXF_SET_TYPE             mask=64, page=@0, arg=0 ;jump
+  001B8  EXF_CHECK_TALK_NPC       who=person 581, dst=r1
+  001C4  JUMP_BEQUI               page=@7, value=1, reg=r1 ;jump
+  001D0  /PAGESET                 next=- ;jump
+@7:
+  001D4  PAGESET                  page=@7
+  001D8  EXF_SET_BATTLE           battle=581
+  001E0  PAGE_JUMP                page=@8 ;jump
+  001E4  EVENT_END                
+  001E8  /PAGESET                 next=- ;jump
+@8:
+  001EC  PAGESET                  page=@8
+  001F0  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00200  EXF_CHECK_ST_BATTLE_END  dst=r0
+  0020C  JUMP_BEQUI               page=@9, value=6, reg=r0 ;jump
+  00218  JUMP_BEQUI               page=@10, value=1, reg=r0 ;jump
+  00224  JUMP_BEQUI               page=@10, value=0, reg=r0 ;jump
+  00230  EVENT_END                
+  00234  /PAGESET                 next=- ;jump
+@9:
+  00238  PAGESET                  page=@9
+  0023C  EXF_SET_TYPE             mask=4, page=@0, arg=0 ;jump
+  0024C  SVFLAG_OFF               flag=flag 0xd71
+  00250  EXF_EVENT_END            
+  00258  EVENT_END                
+  0025C  /PAGESET                 next=- ;jump
+@10:
+  00260  PAGESET                  page=@10
+  00264  EXF_SET_TYPE             mask=32, page=@0, arg=0 ;jump
+  00274  SVFLAG_OFF               flag=flag 0xd71
+  00278  EXF_WAIT_BATTLE_END       ;waits
+  0027C  EXF_ADD_MONEY            amount=500, show=1, arg_reg=r0 ;waits
+  0028C  EXF_WAIT_ST               ;waits
+  00294  EXF_EVENT_END            
+  0029C  EVENT_END                
+  002A0  /PAGESET                 next=- ;jump
+  002A4  /EVENT                   
