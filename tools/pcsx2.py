@@ -8,11 +8,13 @@ trace-map commands work anywhere. Python 3 standard library only.
 
   python tools/pcsx2.py setup                       # create or refresh the sandbox (copies BIOS, memory card, states)
   python tools/pcsx2.py cheats "Section A" "B"      # copy mods/*.pnach into the sandbox and turn on these sections
+  python tools/pcsx2.py cheats --c tools/debug/teleport.c   # ... plus C cheats built on the fly (sandbox only)
   python tools/pcsx2.py start [--state 1]           # boot the game (and load save state slot 1)
   python tools/pcsx2.py stop
   python tools/pcsx2.py status                      # PINE: running / paused / shut down, and the game id
   python tools/pcsx2.py r32 0x006D3F8C [count]      # read words (also r8, r16); w32 / w16 / w8 ADDR VALUE write
   python tools/pcsx2.py dump 0x006CFB70 0x4730 out.bin
+  python tools/pcsx2.py flag 0x5F6 0x1F41 [--set | --clear]   # story flags (g_EventFlags), read or change
   python tools/pcsx2.py keys "cross down*3 start:500 wait:1000 l2+r2"
   python tools/pcsx2.py shot out.png [scale]        # screenshot of the game window (scale 2 = half size)
   python tools/pcsx2.py save 1 | load 1             # save state slots (sandbox copies, never the user's)
@@ -184,6 +186,11 @@ def cmd_cheats(a):
     text = open(os.path.join(ROOT, "mods", PNACH_NAME), encoding="utf-8").read()
     trace = os.path.join(SANDBOX, "trace.pnach")
     sections = list(a.sections)
+    for c_file in a.c or []:     # C cheats built on the fly (tools/debug/*.c, or a mod being tested)
+        import cmod
+        section, sect_text, _, _ = cmod.build(os.path.join(ROOT, "ISO", "SLUS_211.50"), c_file)
+        text = text.rstrip("\n") + "\n\n" + sect_text
+        sections.append(section)
     if a.trace:
         if not os.path.exists(trace):
             sys.exit("no trace cheat yet: run `trace build` first")
@@ -481,6 +488,20 @@ def cmd_dump(a):
     print(f"{a.size} bytes from {a.addr:#010x} -> {a.out}")
 
 
+EVENT_FLAGS = 0x0060A680   # g_EventFlags: flag n is bit (n & 7) of byte n >> 3
+
+
+def cmd_flag(a):
+    p = Pine()
+    for n in a.flags:
+        addr, bit = EVENT_FLAGS + (n >> 3), 1 << (n & 7)
+        v = p.read(addr, 1)
+        if a.set or a.clear:
+            v = v | bit if a.set else v & ~bit
+            p.write(addr, v, 1)
+        print(f"flag {n:#06x} ({n}) = {1 if v & bit else 0}")
+
+
 def cmd_status(a):
     p = Pine()
     st = {0: "running", 1: "paused", 2: "shut down"}.get(p.status(), "?")
@@ -682,6 +703,8 @@ def main():
     x = sub.add_parser("cheats")
     x.add_argument("sections", nargs="*")
     x.add_argument("--trace", action="store_true", help="also turn on the trace cheat from `trace build`")
+    x.add_argument("--c", action="append", metavar="FILE.c", help="build a C cheat with tools/cmod.py and turn it on "
+                   "(sandbox only; e.g. tools/debug/teleport.c); repeatable")
     x.set_defaults(fn=cmd_cheats)
     x = sub.add_parser("start")
     x.add_argument("--state", type=int, help="save state slot to load")
@@ -689,6 +712,11 @@ def main():
     x.set_defaults(fn=cmd_start)
     sub.add_parser("stop").set_defaults(fn=cmd_stop)
     sub.add_parser("status").set_defaults(fn=cmd_status)
+    x = sub.add_parser("flag")
+    x.add_argument("flags", type=num, nargs="+")
+    x.add_argument("--set", action="store_true")
+    x.add_argument("--clear", action="store_true")
+    x.set_defaults(fn=cmd_flag)
     for c in ("r8", "r16", "r32"):
         x = sub.add_parser(c)
         x.add_argument("addr", type=num)

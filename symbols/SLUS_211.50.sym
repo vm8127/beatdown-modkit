@@ -70,6 +70,7 @@
 002B00F0 Battle_GiveExp
 002B2660 Battle_AddBonusExp
 002C8F40 Jobs_ResetAll
+002D9890 Area_ChangeTo
 002DC1E0 Anim_ResetAll
 002DC280 Anim_SetSlot
 002DC2E0 Anim_IsLoaded

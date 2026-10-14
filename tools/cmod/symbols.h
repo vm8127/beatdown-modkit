@@ -40,6 +40,7 @@ void Fighter_AssignPerson(int slot, int person_id);  /* 0x002a89d0 */
 void Person_RecalcMaxHP(int person_id);  /* 0x002afd60 */
 void Battle_AddBonusExp(int n);  /* 0x002b2660 */
 void Jobs_ResetAll(void);  /* 0x002c8f40 */
+void Area_ChangeTo(int from, int to);  /* 0x002d9890 */
 int Anim_IsLoaded(int slot);  /* 0x002dc2e0 */
 void *Anim_GetSlot(int slot);  /* 0x002dc300 */
 int Anim_UnloadGroup(int group);  /* 0x002dc790 */

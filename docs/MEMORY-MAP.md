@@ -18,13 +18,14 @@ The game never uses EE RAM below its own program (it loads at `0x00100000`) abov
 |---|---|---|
 | `0x000A0000`-`0x000DFFFF` | 256 KB | **Mod area**: code of C mods too big for the cave below (`tools/cmod.py`, `@org`). Each mod claims a range in the table below |
 | `0x000E0000`-`0x000EFFFF` | 64 KB | **Mod data area**: C mods' writable globals (`@bss`). Never written by a cheat, so it keeps its values; zero at boot; saved in save states |
-| `0x000F0000`-`0x000FFFFF` | 64 KB | Debug scratch for live testing over PINE (logging caves). Never used by a cheat |
+| `0x000F0000`-`0x000FFFFF` | 64 KB | Debug scratch for live testing over PINE (logging caves, the teleport request word at `0x000F0000`). Never used by a shipped cheat |
 | `0x01F00000`-`0x01FBFFFF` | 768 KB | Debug only: `tools/pcsx2.py trace` stubs and table. Above the heap's highest point seen, but the heap could in principle grow into it, so no shipped mod uses it |
 
 Claimed ranges in the mod areas:
 
 | Range | Used by |
 |---|---|
+| `0x000DF000`-`0x000DFFFF` | sandbox-only debug cheats in `tools/debug/` (`teleport.c` at `0x000DF000`); never installed in the real pnach |
 | `0x000A0000`-`0x000A00FF` | "C mod test: the player takes no damage" (`mods/c/test_no_damage.c`, 96 bytes used of 0x100) |
 | `0x000E0000`-`0x000E000F` | its globals (8 bytes used of 0x10) |
 

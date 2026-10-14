@@ -365,7 +365,7 @@ In the table above, "tested by Daniel" means played in his own game; "tested by 
 
 ### Testing in a sandbox PCSX2
 
-`tools/pcsx2.py` runs a copy of the portable PCSX2 in `__external_tools/pcsx2-sandbox` with PINE (memory access), cheats, a keyboard pad 1 and a plugged-in pad 2, so tests never touch the real settings, memory cards or save states (it copies the BIOS, the memory card and the game's save states once). Keys are posted to the sandbox window, so they work in the background and never reach another program.
+`tools/pcsx2.py` (first used live 2026-10-14: start, PINE reads and writes, keys, screenshots, save state load, the teleport cheat all work) runs a copy of the portable PCSX2 in `__external_tools/pcsx2-sandbox` with PINE (memory access), cheats, a keyboard pad 1 and a plugged-in pad 2, so tests never touch the real settings, memory cards or save states (it copies the BIOS, the memory card and the game's save states once). Keys are posted to the sandbox window, so they work in the background and never reach another program.
 
 ```
 python tools/pcsx2.py setup
@@ -379,6 +379,8 @@ python tools/pcsx2.py stop
 
 - `show STRUCT ADDR` prints a struct from `symbols/structs.tsv` from live memory, or from a save state with `--state FILE.p2s` (no emulator needed). `r32`/`w32` (and 8/16), `dump`, `save`/`load` cover the rest.
 - `freeram` lists the zero regions in save states and checks the mod areas (docs/MEMORY-MAP.md); run it on a new save state from a part of the game not seen before.
+- `flag N... [--set|--clear]` reads or changes story flags. `cheats --c FILE.c` builds a C cheat with `tools/cmod.py` and turns it on in the sandbox only; `tools/debug/teleport.c` is one: write area id + 1 to `0x000F0000` (`pcsx2.py w32 0x000F0000 18` = PLATFORM) and the player is sent there once any fight is over (ids in docs/UNLOCKS.md). Tested 2026-10-14.
+- Save states from old PCSX2 versions (Daniel's 2023 slot 2) don't load in PCSX2 2.x; their RAM can still be read offline with `show --state` / `ram`.
 - **Function trace**, to find the code behind something on screen: `trace build` puts a stub on every game function (from `decomp/index.tsv`) as the sandbox-only cheat "Trace: function coverage"; `cheats --trace ...`, restart, then `trace clear`, do the thing, `trace read`: every function that ran, with its last caller. Clear and read once while idle first to see what runs every frame.
 
 **Widescreen patch:** PCSX2's bundled "Widescreen 16:9" patch (ElHecht, pnach NTSC-U by Arapapa; Game Properties, Patches) is safe to use with every cheat here. It writes only three words, `0x375388`, `0x375394` and `0x37539C` (horizontal FOV code placed in unused zero words), plus `gsaspectratio=16:9`. None of our cheats write anywhere near those (our nearest writes are `0x31B3E4` and `0x3B75D0`; the code caves are at `0x3E0130`-`0x3E017F` and `0x216538`-`0x218FEF`; full list in docs/MEMORY-MAP.md). Checked 2026-10-13 against PCSX2/pcsx2_patches `SLUS-21150_C9F6EF9A.pnach`; not yet tested together in-game.

@@ -1,10 +1,10 @@
 # Unlocks: side jobs and recruiting the other heroes
 
-What the game checks before it offers a side job, and before you can meet and recruit another of the five heroes in story mode. Read from the code on 2026-10-14 (functions named in `symbols/symbols.tsv`); **none of it has been tested in-game yet**. docs/SCRIPTS.md explains the mission system these build on.
+What the game checks before it offers a side job, and before you can meet and recruit another of the five heroes in story mode. Read from the code on 2026-10-14 (functions named in `symbols/symbols.tsv`). **Tested so far: Gina's encounter** ([Test: meeting Gina](#test-meeting-gina-2026-10-14)); the jobs and the other heroes are untested. docs/SCRIPTS.md explains the mission system these build on.
 
 ## Terms used below
 
-- **Story stage**: `g_StoryChapter` `0x0060BE10`, a counter from 1 to 11 that story events advance (several times per chapter, so it is not the "Chapter N" number on screen). Read it in the sandbox with `python tools/pcsx2.py r32 0x0060BE10`. Daniel's save states: stage 8 (Aaron, at DOWNTOWN STREET) and stage 6 (Lola, at LAS SOMBRAS CANTINA).
+- **Story stage**: `g_StoryChapter` `0x0060BE10`, a counter from 1 to 11 that story events advance (several times per chapter, so it is not the "Chapter N" number on screen). Read it in the sandbox with `python tools/pcsx2.py r32 0x0060BE10`. Daniel's save states: stage 8 (Aaron, at DOWNTOWN STREET, during Chapter 4: Miles says "It looks like a big drug deal is going down at the docks", the chapter 4 objective) and stage 6 (Lola, at LAS SOMBRAS CANTINA; that 2023 state no longer loads in PCSX2 2.x). So **stage 8 is Chapter 4**.
 - **Criminal Level ranks**: the three scores of the CRIMINAL screen (docs/MECHANICS.md), 0-255 each: Leadership `0x0060D346`, Cash Flow `0x0060D348`, Charisma `0x0060D34A`. `Criminal_Rank` `0x003937C0` turns a score into a rank: 0-20 = 0, 21-60 = 1, **61-100 = 2**, 101-140 = 3, 141-190 = 4, 191-240 = 5, 241-255 = 6. The hero checks ask for **rank 2 or more, a score of at least 61**.
 - **Locations**: `Location_Current` `0x002E7A50` and `Area_Current` `0x002FD630` return an id whose name is text 18000 + id (CDATA.XAF entry 386). All 54 are listed in [Location ids](#location-ids).
 - **Game clears**: `g_ClearCount` `0x0060BADC`, how many times the game has been finished; the ending (`Ending_Task` `0x002AE7A0`) adds 1. Saved.
@@ -103,9 +103,21 @@ In story mode the four heroes you aren't playing can be met and recruited. They 
 | **Raven** (107) | GAS STATION (4) | 8, 9, 10 (never stage 7) | Charisma | a **changed look**; not wearing appearance item 2553; nobody assigned to the Gas Station; you aren't playing Raven; when playing Jason G, flag `0x1F52` must be set first; first meeting only (flag `8000` = `0x1F40`) |
 | **Aaron** (68) | HOTEL LOBBY (31) | 10 | Charisma **and** Cash Flow | you aren't playing Aaron; first meeting only (flag `0x1F42`). Separately, in stage 10, once story flag `0x776` is set, flag `0x5F2` marks him as findable at the Hotel Lobby until he is your ally |
 
+### Test: meeting Gina (2026-10-14)
+
+Tested by Claude in the sandbox PCSX2 (`tools/pcsx2.py`), watched by Daniel, from Daniel's save state 1 (Aaron, stage 8, Leadership 65, Cash Flow 171, Charisma 47):
+
+1. Charisma set to 100 by memory (`pcsx2.py w16 0x0060D34A 100`), so both Charisma and Leadership were 61 or more.
+2. Teleported to PLATFORM with the debug cheat `tools/debug/teleport.c` (`pcsx2.py w32 0x000F0000 18`). A street fight that had started first was finished; then the area change happened.
+3. On arriving, Gina's encounter started at once: flags `0x5F6` and `0x1F41` set, encounter record `0x006C55C0` = `0x19` with event `0x34` at `0x006C55C6`, as read from the code.
+4. It is a **cutscene**: Gina lies beaten up, Aaron asks "Are you OK?". During it her person `+0x3A8` became 3 (ally): **no fight and no negotiation**.
+5. It ends with a menu: "Add Gina to the party" / "Keep on call".
+
+Not tested: that she does *not* appear with Charisma below 61, and the other four heroes.
+
 Within a stage the heroes are tried in this order and at most one encounter starts per area change: stage 7 Jason G; stage 8 Gina, Raven, Jason G; stage 9 Raven, Jason G; stage 10 Aaron, Raven, Jason G. Lola is checked on her own in stages 5-9.
 
-**A changed look** (a disguise): `Appearance_UpdateFlags` `0x001BAC80` reads what you wear and look like (`g_Appearance` `0x0060BE50`: up to 38 parts, code = category x 100 + n; category names are text 14500 + category). Raven and Jason G need either:
+**A changed look** (a disguise): `Appearance_UpdateFlags` `0x001BAC80` reads what you wear and look like (`g_Appearance` `0x0060BE50`: up to 38 parts, code = category x 100 + n; category names are text 14500 + category). In Daniel's stage-8 save Aaron wears hat 1101 and flag `0x3FE` was set, which matches category 11 = HATS. Raven and Jason G need either:
 
 - **brows other than your hero's own** (category 4; the heroes' own are 409 Lola, 408 Gina, 416 Aaron, 417 Raven, 418 Jason G); sets flag `0x3FF`; or
 - **an item of category 10 and one of category 11 at the same time** (flags `0x3FD` and `0x3FE`). The game's category names say SOCKS and HATS; that pairing is odd enough to need a test.
@@ -159,7 +171,7 @@ Text 31070-31090 (CDATA.XAF 386) are the on-screen objectives, three per chapter
 
 ## Open questions
 
-- What each hero's encounter asks for (the event that `Hero_StartEncounter` sets up: event ids `0x2E` Lola, `0x2F` Jason G, `0x31` Raven, `0x34` Gina, `0x35` Aaron at `0x006C55C6`).
-- How story stages 1-11 line up with chapters 1-7.
+- What the other heroes' encounters ask for (Gina's is a cutscene that recruits her outright; event ids at `0x006C55C6`: `0x2E` Lola, `0x2F` Jason G, `0x31` Raven, `0x34` Gina, `0x35` Aaron).
+- How story stages 1-11 line up with chapters 1-7 (known: stage 8 = Chapter 4).
 - Whether categories 10 and 11 really are socks and hats; what appearance item 2553 is.
 - Who fills the "assigned to a location" list, and the counter at `0x006003A4` (Jason G).

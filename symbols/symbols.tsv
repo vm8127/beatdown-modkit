@@ -504,3 +504,4 @@
 002c8f40	func	Jobs_ResetAll	clears g_JobResults and g_JobCleared; NEW GAME on the title screen	void (void)
 003a4450	func	Jobs_ResetRun	clears g_JobResults (not g_JobCleared) and flags 0x7EF-0x7F3; the new game after the ending (0x003D5860)	void (void)
 003d5860	func	Ending_NewGame	after the ending: starts the next playthrough, keeping money and g_JobCleared (Jobs_ResetRun)
+002d9890	func	Area_ChangeTo	(from area, to area) sends the player to another area with its default spawn point (EXF_MOVE_STAGE); special spawn points for a few areas	void (int from, int to)
