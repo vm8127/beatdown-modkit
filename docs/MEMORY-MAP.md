@@ -25,7 +25,7 @@ Claimed ranges in the mod areas:
 
 | Range | Used by |
 |---|---|
-| `0x000A0000`-`0x000A00FF` | "C mod test: the player takes half damage" (`mods/c/test_half_damage.c`, 104 bytes used of 0x100) |
+| `0x000A0000`-`0x000A00FF` | "C mod test: the player takes no damage" (`mods/c/test_no_damage.c`, 96 bytes used of 0x100) |
 | `0x000E0000`-`0x000E000F` | its globals (8 bytes used of 0x10) |
 
 ## Code caves
@@ -63,7 +63,7 @@ Because mix-moveset always writes the same addresses and its move list table has
 | Aaron uses the cut TESTER moveset | `0x0050D8B4`, `0x0050D8BC` | class row |
 | Aaron keeps his moves but grapples like Jason G | `0x0050D8B4`, `0x0050D8BC`; `0x0050D100`-`0x0050D14F`; `0x00515C5C`; `0x001C5BA0`, `0x001C5BF0`, `0x001C5C30`, `0x001C5C70` (8 bytes each); `0x00217000`-`0x00218EFF` (parts) | class row; Aaron's whole group list; `g_StyleCommands[0x13]`; the four MOVE LIST functions' first two instructions; mix area |
 | Aaron uses Ignacy's moveset and Chester's model (C version) | `0x0050D8B4`, `0x0050D8BC`; `0x0013B54C`, `0x0013B55C`; `0x00216738`-`0x00216767` | class row; both `jal Preset_Get` in fighter init, now `jal Mod_PresetGet`; the C code |
-| C mod test: the player takes half damage (hook, mod area, globals) | `0x000A0000`-`0x000A0067`; `0x002FB880`-`0x002FB887` | the C code; `Fighter_ApplyDamage`'s first two instructions (`@hook`). Its globals at `0x000E0000` are not written by the cheat |
+| C mod test: the player takes no damage (hook, mod area, globals) | `0x000A0000`-`0x000A005F`; `0x002FB880`-`0x002FB887` | the C code; `Fighter_ApplyDamage`'s first two instructions (`@hook`). Its globals at `0x000E0000` are not written by the cheat |
 | Negotiation menu on knockout (test v2) | `0x002DE478`-`0x002DE48B`; `0x002DEF70`-`0x002DEF77`; `0x003E0168`-`0x003E017F`; `0x00218F00`-`0x00218F43`; `0x005990FC` | after-KO talk hook; CANCEL hook; two caves; negotiation menu descriptor (Triangle → CANCEL) |
 | Cut content: DEBUG on the title screen | `0x0058969C`, `0x005897D0` | title menu item action and label |
 | Cut content: all six languages in the debug LANGUAGE menu | `0x003B75D0`, `0x003B75F0` | two clamp instructions |
