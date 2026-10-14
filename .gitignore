@@ -18,3 +18,8 @@ SLUS_211.50
 # Python
 __pycache__/
 *.pyc
+
+# Third-party tools (Ghidra, JDK, PyGhidra venv, PS2 compiler), see README.md
+/__external_tools/
+# The user's disc image
+/disc/

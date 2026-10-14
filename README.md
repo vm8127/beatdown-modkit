@@ -239,23 +239,34 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 - `python tools/bdkit.py addr 0x50D8B4` does both conversions.
 - PCSX2 pnach line for a 32-bit write: `patch=1,EE,2XXXXXXX,extended,VALUE`, where `XXXXXXX` is the address without its top digit. A `[Section name]` header makes it a cheat you can toggle under Game Properties, Cheats.
 
+## External tools (`__external_tools/`)
+
+Third-party programs the workflow needs live in `__external_tools/` at the top of this folder. Git ignores it, so a fresh clone has to fill it once (Windows). `bdkit.py` and `codemap.py` need none of this, only Python 3.
+
+| Folder | What | Needed for | Get it |
+|---|---|---|---|
+| `ghidra_12.1.4_PUBLIC/` | Ghidra 12.1.4 | rebuilding `decomp/` | [Ghidra releases](https://github.com/NationalSecurityAgency/ghidra/releases), unzip here |
+| `ghidra_12.1.4_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/` | PS2 CPU support for Ghidra (adds the `r5900:LE:32:default` language, so MMI and VU0 instructions decode) | rebuilding `decomp/` | [ghidra-emotionengine-reloaded](https://github.com/chaoticgd/ghidra-emotionengine-reloaded/releases), the build for this exact Ghidra version; unzip into `Ghidra\Extensions` |
+| `jdk-21.0.12.1+1/` | Java 21 (Ghidra 12 needs it) | Ghidra | [Temurin JDK 21](https://adoptium.net), unzip here. Then in `ghidra_12.1.4_PUBLIC\support\launch.properties` set `JAVA_HOME_OVERRIDE=` to this folder's **full** path with doubled backslashes, e.g. `C:\\Users\\V\\source\\_personal\\claude\\ReBeatdown\\__external_tools\\jdk-21.0.12.1+1` |
+| `pyghidra-venv/` | Python venv with PyGhidra, so Ghidra runs our Python scripts | rebuilding `decomp/` | `py -3.13 -m venv __external_tools\pyghidra-venv`, then `__external_tools\pyghidra-venv\Scripts\python -m pip install --no-index -f __external_tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\pypkg\dist pyghidra` (the wheels ship with Ghidra) |
+| `ps2dev/` | PS2 toolchain: `ee\bin\mips64r5900el-ps2-elf-gcc` (GCC 15.2) and binutils for the game's CPU | compiling mods written in C | [ps2dev releases](https://github.com/ps2dev/ps2dev/releases) v2.0.0, `ps2dev-windows-latest.tar.gz` (272 MB); unpack so `ps2dev\ee\bin` exists. The Windows build needs MinGW DLLs next to the `.exe` files (see below) |
+| `_dl/` | the downloaded archives, kept for reinstalling | nothing | |
+
+If this folder moves, recreate `pyghidra-venv` (a venv stores its own path) and fix `JAVA_HOME_OVERRIDE`. Everything else moves freely.
+
+`disc/` (also ignored) holds the user's original disc image, `Beat Down - Fists of Vengeance (USA).iso`, used only to re-extract `ISO/` or to boot a scratch PCSX2 for testing.
+
 ## Ghidra (readable pseudocode)
 
-Ghidra turns the game's MIPS code into C-like pseudocode. It stays outside this folder; only the project (`ghidra/`) and the export (`decomp/`) live here, and git ignores both.
-
-Setup (Windows, done once; everything goes in `C:\Tools`):
-1. [Ghidra 12.1.4](https://github.com/NationalSecurityAgency/ghidra/releases) unzipped to `C:\Tools\ghidra_12.1.4_PUBLIC`.
-2. A JDK 21 ([Temurin](https://adoptium.net)) unzipped to `C:\Tools\jdk-21.0.12.1+1`, and `JAVA_HOME_OVERRIDE=C:\\Tools\\jdk-21.0.12.1+1` added to `support\launch.properties`. Ghidra 12 needs Java 21.
-3. Ghidra has no PS2 CPU built in, so add the [ghidra-emotionengine-reloaded](https://github.com/chaoticgd/ghidra-emotionengine-reloaded/releases) build for your exact Ghidra version: unzip it into `Ghidra\Extensions`. It adds the `r5900:LE:32:default` language (the MMI and VU0 instructions decode properly).
-4. PyGhidra, so Python scripts run: `py -3.13 -m venv C:\Tools\pyghidra-venv`, then `C:\Tools\pyghidra-venv\Scripts\python -m pip install --no-index -f C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\pypkg\dist pyghidra` (the wheels ship with Ghidra).
+Ghidra turns the game's MIPS code into C-like pseudocode. Ghidra itself lives in `__external_tools/` (next section); the project (`ghidra/`) and the export (`decomp/`) live here. Git ignores all three.
 
 Import, name, analyze and export in one headless run, from this folder:
 
 ```
-C:\Tools\pyghidra-venv\Scripts\python C:\Tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py C:\Tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ApplyPS2Signatures.py -postScript ExportDecompiled.py decomp
+__external_tools\pyghidra-venv\Scripts\python __external_tools\ghidra_12.1.4_PUBLIC\Ghidra\Features\PyGhidra\support\pyghidra_launcher.py __external_tools\ghidra_12.1.4_PUBLIC -H ghidra BeatDown -import ISO\SLUS_211.50 -overwrite -processor r5900:LE:32:default -scriptPath "symbols;tools\ghidra" -preScript ImportBeatdownSymbols.py -postScript ApplyPS2Signatures.py -postScript ExportDecompiled.py decomp
 ```
 
-`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv`) names our known functions and tables before analysis, so the pseudocode uses those names. `ApplyPS2Signatures.py` then names the Sony library functions (next section). `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `C:\Tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
+`ImportBeatdownSymbols.py` (generated from `symbols/symbols.tsv`) names our known functions and tables before analysis, so the pseudocode uses those names. `ApplyPS2Signatures.py` then names the Sony library functions (next section). `decomp/` then holds `all.c` (every function in address order), `funcs/<address>_<name>.c` (one file per function) and `index.tsv` (address, name, size, file, ok or failed). After adding symbols, regenerate the script with `codemap.py symbols` and rerun the command above. To browse interactively, open the `ghidra/BeatDown` project with `__external_tools\ghidra_12.1.4_PUBLIC\support\pyghidraRun.bat` (or `ghidraRun.bat`).
 
 ### Sony library signatures
 
