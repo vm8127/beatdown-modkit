@@ -173,6 +173,8 @@ So the **model/outfit** comes from the template's preset (`+4`), and the **moves
 
 Money (**confirmed**): `Person_AddMoney` `0x0013CDC0` (id, delta) and `Person_SetMoney` `0x0013CC70` (id, value) clamp to 0-99,999,999; when the player gains money, the gain is also added to `g_TotalMoneyEarned` `0x0060D19C`. The player's money is `0x0060D3A0`. Enemies carry the template's money (`+0x18`), presumably as the reward.
 
+**Free character slots**: templates and persons **51 and 52** are blank placeholders (preset 0, 1 HP, level 1, class row 1) that no mission script and no `Person_Get` constant in the code refers to (checked 2026-10-15). Persons 0-199 are saved and one per template, so these two are the natural slots for new characters (a recruitable person must be 0-199). Persons 200-209 are temporary street enemies (ids from templates 200+, looked up through `+0x3E`).
+
 Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind (2 and 5 are tested), `+0x16` s16, `+0x30` s32, `+0x46` u16. `dumps/persons.txt` lists every template's preset, class row, level, HP, guard, rank and money.
 
 ## Fighter struct
