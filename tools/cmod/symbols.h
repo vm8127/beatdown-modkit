@@ -65,6 +65,22 @@ s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
 const char *MoveList_NameText(int unused, int style, int line);  /* 0x001c5bf0 */
 const char *MoveList_InputText(int unused, int style, int line);  /* 0x001c5c30 */
 int MoveList_Color(int style, int line);  /* 0x001c5c70 */
+void *MemCard_SystemBuffer(int file);  /* 0x001dd550 */
+u8 *MemCard_SlotHeader(int file, int slot);  /* 0x001dd5d0 */
+void *MemCard_GameBuffer(int file);  /* 0x001dd680 */
+void MemCard_ResetFiles(void);  /* 0x001dd720 */
+void MemCard_SetDirName(const char *name);  /* 0x001dd7a0 */
+int MemCard_RegisterFile(int index, const char *name, int size, int type);  /* 0x001dd7b0 */
+int MemCard_RegisterDataFile(int index, const char *name, int slots, int sys_size, int header_size, int game_size);  /* 0x001dd850 */
+void MemCard_SetChecksum(u16 *buf, int size);  /* 0x001de320 */
+int MemCard_TestChecksum(u16 *buf, int size);  /* 0x001de440 */
+void MemCard_LoadSystem(void);  /* 0x001de800 */
+void MemCard_SaveSlot(void);  /* 0x001ded10 */
+void MemCard_LoadSlot(void);  /* 0x001dfc50 */
+int MemCard_ReadFile(int port, int file, void *buf, int offset, int size);  /* 0x001e0ad0 */
+int MemCard_WriteFile(int port, int file, void *buf, int offset, int size);  /* 0x001e0f40 */
+int MemCard_CreateFile(int port, int file);  /* 0x001e1550 */
+int MemCard_CreateDataFile(int port, int file);  /* 0x001e18e0 */
 int Tex_Release(void *tex);  /* 0x0026eac0 */
 int Xaf_QueueLoad(int archive, int entry, int mode);  /* 0x0029bc40 */
 void Xaf_Service(void);  /* 0x0029c190 */
@@ -424,6 +440,7 @@ extern Person g_Persons[210];  /* 0x0060d360 */
 extern s32 g_PlayerMoney;  /* 0x0060d3a0 */
 extern s32 g_NpcSpawnTextures[10];  /* 0x00645b20 */
 extern s16 g_BList[111];  /* 0x006614a0 */
+extern u8 g_McFiles[320];  /* 0x0069c2b0 */
 extern AreaPerson g_AreaPeople[7];  /* 0x006cb920 */
 extern Fighter g_Fighters[13];  /* 0x006cfb70 */
 extern s16 g_Player_HP;  /* 0x006d3f8c */

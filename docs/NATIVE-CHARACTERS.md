@@ -94,12 +94,23 @@ Native portraits need: a hook on both mappings that looks the id up in a table, 
 
 ### 11. Saving
 
-- Game file: `g_Persons[0..199]` and the u8[200] tables above are saved as plain copies (docs/CODEMAP.md, "Saves"); the file is a fixed 0x36A74 bytes registered by `MemCard_SetupFiles` `0x001DA020`.
-- System file (584 bytes) holds the blacklist bits (600 ids).
-- New characters' records (0x43C each) and their table bytes need **their own storage**. Options, best first:
-  1. A **third file** in the save directory (`BASLUS-21150XXX`), written and read alongside the game file. Clean and unlimited, but needs the RD3 memory card code understood (`SaveData_Pack` `0x0013A950`, `SaveData_Unpack` `0x0013AAB0`, `MemCard_SetupFiles`).
-  2. **Slack in the existing game file**: records 51 and 52 are unused once Eggusz moves out (2 x 1084 bytes). A record without its outfit slots (which come from the template) is ~300 bytes, so about 7 characters fit. No format change and old saves keep working, but it is a hard ceiling.
-  3. Extended RAM only (lost on reload): not acceptable for recruits.
+Researched 2026-10-15 (Claude, read from the code; not tested). Details of the card format are in docs/CODEMAP.md, "Saves".
+
+**How the game saves.** The RD3 library keeps a table of 5 files (`g_McFiles` `0x0069C2B0`, 0x40 bytes each; the register functions refuse index 5+): file 0 is one big data file `BASLUS-21150XXX/BASLUS-21150XXX`, files 1-4 are the icons and `icon.sys`. The data file is fixed-size and holds everything: the system block (0x248), then 6 slot headers (0x80 each), then 6 game blocks (0x36A74 each), every block followed by a 4-byte trailer with a 16-bit checksum (`MemCard_SetChecksum` `0x001DE320`, checked by `MemCard_TestChecksum` `0x001DE440` on load). A slot is read and written in place with seek + read/write (`MemCard_ReadFile` `0x001E0AD0`, `MemCard_WriteFile` `0x001E0F40`).
+
+**Can it take a third file?** Not through the library: the table is full (5 of 5) and its state lives right after it. Two ways remain:
+
+| Option | How | Pros | Cons |
+|---|---|---|---|
+| **A. Space the game already has** (recommended first) | `@hook SaveData_Pack`: after the original, write the new characters' data over **persons 51 and 52's records** in the save image (2 x 1084 = 2168 bytes, unused once Eggusz moves to an id 602+). `@hook SaveData_Unpack`: read it back, then rebuild 51/52 from their templates. Blacklist bits of new characters go in the system file's reserved **`dummy[228]`** (`g_SystemData +0x164`-`+0x247`, named by the game's own debug print in `Boot_LoadModules` `0x001D1810`, "dummy[228] = %d"; no code reads or writes it): 1824 bits. | No card code at all; covered by the game's checksum; copies, deletes and backs up with the save; saves made before the mod load fine (no magic word = new characters start from their templates); no extra card space | Fixed room: a record without its outfit slots (which come from the template) is 292 bytes plus ~4 table bytes, so **7 characters**; with a simple zero-run compression probably about 20 |
+| B. Own file in the save directory | Our own small state machine with `sceMcOpen` / `sceMcSeek` / `sceMcWrite` / `sceMcClose` + `sceMcSync` (the library's pattern), run after the library reports a finished save (`MemCard_SaveSlot` `0x001DED10` reaching state 200) and before the menu continues; path e.g. `BASLUS-21150XXX/BDMODCHR`, 6 slots | No size limit | Needs the save/load menus' flow (when the card is idle, error handling, card full); extra card space (32 full records x 6 slots = about 210 KB); not checksummed unless we add it |
+
+Recommendation: **A now, B only if we ever need more than ~20 characters.** The blob format starts with a magic word and a version so B can take over later without breaking saves.
+
+Things A must handle:
+- VS CUSTOM reads player 2's save straight from a buffer (`g_VsP2Persons`): a P2 new character must be read from the blob in that buffer, and P2's persons 51/52 cleaned up the same way.
+- A save made with the mod and loaded without it: persons 51/52 hold the blob. Vanilla never lists them (no blacklist number) and VS CUSTOM overwrites 51 with the player record, so this is probably harmless (not tested).
+- The slot header (0x80 bytes, used up to `+0x1F` by `Save_BuildGameFile`) has 96 more unused bytes, if a version field is ever needed outside the game block.
 
 ### 12. Already done (Eggusz work)
 
@@ -109,7 +120,7 @@ B.LIST and VS CUSTOM lists (no 110 limit), name via `Text_Get` hook, `Preset_Get
 
 1. **New id range 602+** with an extension table for records (`g_PersonsExt`, in the mod `@bss` area or Extended RAM) and a moved, bigger `g_PersonDefs`.
 2. **One C module** (`mods/c/native_chars.c`) that replaces the ~45 functions above with versions that know the extension, the same way `new_characters.c` replaced the `BList_*` functions. Grouped: lookups (sections 1, 5), per-person tables (3), loops (4), names and text bank (6), portraits (8), placement (9).
-3. **Save storage** (section 11, option 1 if the card code allows it, else option 2).
+3. **Save storage** (section 11, option A: the unused records 51/52 in each game slot and `dummy[228]` in the system file).
 4. **Character data** as a table the module reads (`NewChar` records: template, preset, name, placement, portrait, dialogue), generated from `chars/*.json` by a `bdkit.py` command and put in the pnach (or later read from a file, see the loader discussion in PLAN-new-characters.md).
 5. Move Eggusz to id 602 as the first native character and delete his special cases.
 
@@ -120,7 +131,7 @@ Order of work: 1 + 2 (lookups, tables, loops) and test that an id-602 Eggusz spa
 1. Are person ids ever stored in a byte (u8) anywhere? Ids 602+ would be cut. Known u8 lists (`g_PhoneOrderAllies`, `g_AutoMissions`) hold specific story people, not new ones; a full search is still needed.
 2. Are text ids 11603-11999 used by the game? (Dump bank 0's ids.)
 3. Which texture holds the portrait atlas, how big is a cell, and is anything free?
-4. Can the RD3 memory card code take a third file in the save directory, and does it checksum files?
+4. ~~Can the memory card code take a third file?~~ Answered in section 11: not through the library (its file table is full); use the unused records 51/52 and `dummy[228]`, or our own card code later.
 5. Which code reads `g_PersonAbsent` past 200 (it is u8[600], so street enemy templates use it too) and whether new ids should have entries there.
 6. `0x002B4A90` calls `Person_Get(0..599)`: ids 210-599 aren't in the temporary records, so `Person_Get` returns record 210, one past the table (`0x00644C38`), and writes `+0x432` there. Harmless today; an extension must not put anything at `0x00644C38`.
 

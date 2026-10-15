@@ -395,10 +395,12 @@ struct SystemData {
     u8 difficulty;  /* +0x4 indexes g_EnemyDamageByDifficulty */
     u8 _0005[0xb];
     u8 language;  /* +0x10 0 JP, 1 EN, 2 FR, 3 DE, 4 ES, 5 IT */
-    u8 _0011[0x237];
+    u8 _0011[0x153];
+    u8 dummy[0xe4];  /* +0x164 reserved: the game's debug print calls it dummy[228] and no code reads or writes it; new characters' blacklist bits go here (docs/NATIVE-CHARACTERS.md) */
 };
 _Static_assert(__builtin_offsetof(SystemData, difficulty) == 0x4, "SystemData.difficulty");
 _Static_assert(__builtin_offsetof(SystemData, language) == 0x10, "SystemData.language");
+_Static_assert(__builtin_offsetof(SystemData, dummy) == 0x164, "SystemData.dummy");
 _Static_assert(sizeof(SystemData) == 0x248, "sizeof SystemData");
 
 /* g_ScriptOpcodes entry: an EXF_* script command */

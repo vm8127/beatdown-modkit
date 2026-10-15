@@ -264,7 +264,19 @@ The game file is built by `SaveData_Pack` `0x0013A950` and read back by `SaveDat
 | `0x365AC` | 1024 | `0x60B6E0` |
 | `0x369AC` | 200 | `0x60BAE0` |
 
-The save is a plain copy of RAM, so a save editor only needs these offsets (whether the card file adds a checksum around it wasn't checked).
+The save is a plain copy of RAM, so a save editor only needs these offsets and the checksum below.
+
+**Card file layout** (read from the code 2026-10-15, not tested). The library has a 5-entry file table (`g_McFiles` `0x0069C2B0`; `MemCard_RegisterFile` `0x001DD7B0` refuses index 5+). `MemCard_SetupFiles` fills all five: file 0 is the data file `BASLUS-21150XXX/BASLUS-21150XXX` (`MemCard_RegisterDataFile` `0x001DD850`), files 1-4 are `icondata.ico`, `cpyicon.ico`, `delicon.ico` and `icon.sys`. The data file is fixed-size (1,344,468 bytes):
+
+| Offset | Size | What |
+|---|---|---|
+| `0x0` | 0x248 + 4 | system block (`g_SystemData`) |
+| `0x24C` + 0x84 x slot | 0x80 + 4 | slot header, 6 slots: `+0` date and time, `+8` 0x97, `+9` level, `+0xA`, `+0xC` mission rank, `+0xE`, `+0x10` hero, `+0x12` ally count, `+0x14` play time, `+0x18` money, `+0x1C`; `+0x20`-`+0x7F` unused (`Save_BuildGameFile` `0x001DB720`) |
+| `0x564` + 0x36A78 x slot | 0x36A74 + 4 | game block (`SaveData_Pack`), 6 slots |
+
+Every block ends in a 4-byte trailer whose second half is a 16-bit ones'-complement checksum of the block (`MemCard_SetChecksum` `0x001DE320`; `MemCard_TestChecksum` `0x001DE440` checks it when a slot is loaded). Saving (`MemCard_SaveSlot` `0x001DED10`) writes the system block, the slot's game block and its header in place with `MemCard_WriteFile` `0x001E0F40` (open, seek, write, close); loading uses `MemCard_LoadSlot` `0x001DFC50` / `MemCard_ReadFile` `0x001E0AD0`. A save editor must recompute the checksum.
+
+`g_SystemData +0x164`-`+0x247` is reserved padding: the debug print in `Boot_LoadModules` shows it as "dummy[228]" and no code touches it. New characters can keep data there (docs/NATIVE-CHARACTERS.md, section 11).
 
 ## Menus, shops, scripts, text
 

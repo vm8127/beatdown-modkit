@@ -115,3 +115,7 @@ Daniel asked whether new characters could work like the game's own instead of th
 
 Not started: the native module itself. Proposed order in NATIVE-CHARACTERS.md ("Proposed design").
 
+### 2026-10-15, saving new characters (Claude, read from the code)
+
+Question: can the memory card code take a third file for the new characters? **Not through the game's library**: its file table has 5 entries and all 5 are used (the data file and four icon files), and the save is one fixed-size data file (system block, 6 slot headers, 6 game blocks, each checksummed). Found instead: room the game already saves but never uses: **persons 51 and 52's records** in every game block (2168 bytes, free once Eggusz moves to an id 602+) and the system file's reserved **`dummy[228]`** (`g_SystemData +0x164`, 1824 bits, for blacklist bits). Hooks on `SaveData_Pack` / `SaveData_Unpack` can keep 7 full characters there (about 20 compressed), checksummed and copied with the save, and old saves keep loading. Our own card file (sceMc calls after the game's save) stays possible if that's ever too small. Details: docs/NATIVE-CHARACTERS.md section 11; card layout in docs/CODEMAP.md "Saves".
+
