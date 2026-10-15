@@ -5,6 +5,7 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | Path | Contents |
 |---|---|
 | [MEMORY.md](MEMORY.md) | Session memory: where we are, decisions, what's next. **Read first, update before stopping.** |
+| [TODO.md](TODO.md) | Queued work: what to start when a running task finishes |
 | [PLAN.md](PLAN.md) | The brief: goal, rules, what research to reuse, milestones, progress log |
 | `godot/` | The Godot project (open `godot/project.godot`) |
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test; model viewer; stage test |
