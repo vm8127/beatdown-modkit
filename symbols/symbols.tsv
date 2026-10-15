@@ -535,3 +535,40 @@
 0029c810	func	Tex_Collect	(queue slot) -> the loaded texture once that slot's load finished (registered in the cache, reference count 1), else 0	void *(int slot)
 0026eac0	func	Tex_Release	(texture) reference count - 1; frees it at 0	int (void *tex)
 0029e500	func	Pack_Load	(phase, archive, entry, request) phase 0 resets, then call with 1 until it returns 1: loads a pack entry (textures, meshes, animations) into request's handle lists; each texture chunk takes its cache key from request->+4 list in order and reuses an already loaded texture with that key instead of the chunk's own pixels	int (int phase, int archive, int entry, void *request)
+00187ec0	func	BList_Main	pause menu B.LIST screen state machine (state 4 re-sorts with BList_Build, opens the detail panel BList_DetailPanel)
+001883e0	func	BList_Open	opens B.LIST: BList_Build(saved sort g_BListSavedSort), cursor from 0x0060CAB4 (row) / 0x0060CAB6 (top)
+0018a3f0	func	BList_Input	B.LIST input: cursor and scroll (g_BListRow, g_BListTop, max top g_BListMaxTop), sort change, redraw
+0018bc30	func	BList_DrawRows	draws the visible B.LIST rows (text handles 0x006615B0)
+0018cb50	func	BList_HideRows	hides the B.LIST row texts
+0018d020	func	BList_EntryName	(index) -> name of list entry index (or "???", text 30321, if its name isn't known) in 0x0065C660	char *(s16 index)
+0018d1f0	func	BList_EntryIsAlly	(index) -> Person.ally_flags bit 0 of list entry index	int (s16 index)
+0018d250	func	BList_Build	(sort) fills g_BList from templates 1-200 by PersonDef.blacklist_no, then sorts: 0 group, 1 skills, 2 name, other = level only; sets g_BListCount = 110. Replaced by mods/c/new_characters.c (any count)	void (s16 sort)
+0018e920	func	BList_SetSortTitle	(sort) builds the "SORT: ..." header (texts 0xCBDC-0xCBE1)	void (s16 sort)
+0018ea90	func	BList_Percent	blacklist completion 0-100: templates with blacklist_no 1-110 whose person has ally_flags bit 1, / 110 (ending, 0x002AF790; 0x003D5860)	s16 (void)
+0018ebc0	func	BList_Clear	clears g_BList, entry 110 = -1 (VS mode). Replaced by mods/c/new_characters.c	void (void)
+0018ec00	func	BList_GetList	(which) -> g_BList (0) or a copy of it at 0x006613C0 (1, 0xE0 bytes) for VS mode. Replaced by mods/c/new_characters.c	s16 *(s16 which)
+0018ec80	func	BList_SetList	(ids, count) copies count ids into g_BList and ends it with -1 (VS mode 0x00370620)	void (s16 *ids, s16 count)
+0018ede0	func	BList_IndexOf	(which, person) -> index of person in BList_GetList(which), stops at -1 or 110. Replaced by mods/c/new_characters.c	s16 (s16 which, s16 person)
+001a8550	func	BList_DetailPanel	(x, y, person, 0, blacklist_no, count) the B.LIST detail panel ("No. n" of count)
+001c3dd0	func	Person_IsState3	(person) -> byte 0x0060D1AD[person] == 3; B.LIST lists these allies first in the group sort	int (s16 person)
+0033a670	func	Text_ToAscii	(text, out) converts the game's full-width UTF-8 to ASCII (B.LIST name sort)	void (const char *text, char *out)
+00186a30	func	Str_CompareBytes	(a, b) -> 0 if a < b at the first difference, 1 if a > b, -1 if equal (B.LIST name sort)	int (const char *a, const char *b)
+006614a0	data	g_BList	B.LIST list: 110 s16 person ids + -1 at 0x0066157C. Moved to 0x000E1C00 (201 entries) by mods/c/new_characters.c	s16[111]
+005feeb8	data	g_BListCount	number of B.LIST entries (110; BList_Build sets it; the detail panel and scroll bar read it)	s16
+005feeb4	data	g_BListMaxTop	largest first visible index, g_BListCount - 11	s16
+005feedc	data	g_BListRow	cursor row on screen (gp -0x5D14)	s16
+005feee0	data	g_BListTop	first visible list index (gp -0x5D10)	s16
+005feecc	data	g_BListSort	current sort (BList_Build's argument)	s16
+006005f4	data	g_VsSelect	pointer to VS mode's select state (0x00783070): +0 / +4 each side's list (BList_GetList), +0x20 / +0x2C each side's 3 picked fighter ids (s32, -1 = none; VS CUSTOM turns a side's own story hero into 0x33 / 0x34), +0x58 s16 list length, +0x5A s16[2] per side 1 + allies counted	u8 *
+006000d0	data	g_VsSaveHero	VS CUSTOM: u16 per side, the hero person of that side's story save (P1 set by VsMode_Main after SaveData_Unpack)	u16[2]
+006000d4	data	g_VsCustom	1 in VS CUSTOM (fighters come from the story saves' blacklist), 0 in VS NORMAL (16 fixed ids)	s32
+005febc8	data	g_VsP2Persons	VS CUSTOM: pointer to player 2's save's 210 person records	Person *
+0013c9f0	func	Person_GetP2	(person) like Person_Get but in player 2's save (g_VsP2Persons)	Person *(s16 person)
+0013bf20	func	Person_HealForFight	(person) clears status, HP = max, then 0x0013B3F0	void (s16 person)
+00370620	func	VsMode_SelectScreen	VS select screen state machine (called every frame in VsMode_Main states 3-10): fills the list with BList_Clear, BList_Build(3), BList_SetList(g_VsNormalIds or g_VsCustomIds), BList_GetList
+00371160	func	VsCustom_SetupLists	VS CUSTOM: BList_SetList(g_VsCustomIds), one list per side, each side's save hero moved to the front, allies counted (loops to 110). Replaced by mods/c/new_characters.c	void (void)
+00344470	func	VsMode_MirrorId	(id, side) VS NORMAL: P2 picking a hero P1 also has (0x44, 0x6C, 0x16, 0x35, 0x6B) gets the alternate person 0x99-0x9D; else returns id	int (int id, int side)
+00344550	func	VsMode_MakeFighters	copies each side's picks into the temporary persons g_VsTempPersons (VS NORMAL: Person_Init from the template; VS CUSTOM: 0x33 = P1's player record, 0x34 = P2's, others the save's record), fills g_Party and P2's party. VS CUSTOM: VsMode_Main copies P1\'s player record into person 51 after SaveData_Unpack, so a P1 pick of 51 gets the player	void (void)
+0076a970	data	g_VsCustomIds	VS CUSTOM's list: every template 1-199 with a blacklist number, in template order (built by VsMode_SelectScreen)	s16[200]
+005da080	data	g_VsNormalIds	VS NORMAL's 16 fighters (heroes and bosses)	s16[16]
+00589be8	data	g_VsTempPersons	the 6 temporary persons VS fighters are copied into (134, 136, 137, 142, 145, 146)	s16[6]

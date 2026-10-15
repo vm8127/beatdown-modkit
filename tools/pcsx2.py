@@ -43,6 +43,7 @@ import argparse
 import configparser
 import json
 import os
+import re
 import shutil
 import socket
 import struct
@@ -192,6 +193,8 @@ def cmd_cheats(a):
     for c_file in a.c or []:     # C cheats built on the fly (tools/debug/*.c, or a mod being tested)
         import cmod
         section, sect_text, _, _ = cmod.build(os.path.join(ROOT, "ISO", "SLUS_211.50"), c_file)
+        # An installed section of the same name would win (PCSX2 uses the first one): drop it.
+        text = re.sub(r"(?ms)^\[" + re.escape(section) + r"\]\n.*?(?=^\[|\Z)", "", text)
         text = text.rstrip("\n") + "\n\n" + sect_text
         sections.append(section)
     if a.trace:

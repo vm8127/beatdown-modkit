@@ -27,8 +27,9 @@ Claimed ranges in the mod areas:
 |---|---|
 | `0x000DF000`-`0x000DFFFF` | sandbox-only debug cheats in `tools/debug/` (`teleport.c` at `0x000DF000`); never installed in the real pnach |
 | `0x000A0000`-`0x000A00FF` | "C mod test: the player takes no damage" (`mods/c/test_no_damage.c`, 96 bytes used of 0x100) |
-| `0x000A1000`-`0x000A1FFF` | "New characters" (`mods/c/new_characters.c`, 2,940 bytes used of 0x1000) |
-| `0x000E1000`-`0x000E1FFF` | its globals: built presets and the texture preload state (1,236 bytes used) |
+| `0x000A1000`-`0x000A2FFF` | "New characters" (`mods/c/new_characters.c`, 7,044 bytes used of 0x2000) |
+| `0x000E1000`-`0x000E1FFF` | its globals: built presets, the texture preload state, B.LIST sort buffers (1,840 bytes used of 0xC00 at `0x000E1000`); the moved B.LIST `0x000E1C00`-`0x000E1D91` and its copy `0x000E1E00`-`0x000E1F91` (fixed addresses, the patched code points there) |
+| `0x000E2000`-`0x000E28FF` | its saved copies of the new characters' person records (0x43C each, room for 2; fixed address, used in VS CUSTOM) |
 | `0x000E0000`-`0x000E000F` | its globals (8 bytes used of 0x10) |
 
 ## Extended RAM: 95 MB more in PCSX2 (optional)
@@ -89,7 +90,7 @@ Because mix-moveset always writes the same addresses and its move list table has
 | Aaron uses the cut TESTER moveset | `0x0050D8B4`, `0x0050D8BC` | class row |
 | Aaron keeps his moves but grapples like Jason G | `0x0050D8B4`, `0x0050D8BC`; `0x0050D100`-`0x0050D14F`; `0x00515C5C`; `0x001C5BA0`, `0x001C5BF0`, `0x001C5C30`, `0x001C5C70` (8 bytes each); `0x00217000`-`0x00218EFF` (parts) | class row; Aaron's whole group list; `g_StyleCommands[0x13]`; the four MOVE LIST functions' first two instructions; mix area |
 | Aaron uses Ignacy's moveset and Chester's model (C version) | `0x0050D8B4`, `0x0050D8BC`; `0x0013B54C`, `0x0013B55C`; `0x00216738`-`0x00216767` | class row; both `jal Preset_Get` in fighter init, now `jal Mod_PresetGet`; the C code |
-| New characters: Eggusz (person 51) in the subway, chapter 2 | `0x000A1000`-`0x000A1B7B`; `0x0013B490`, `0x00178700`, `0x002A8720`, `0x002E67C0`, `0x00387980` (8 bytes each); `0x00589AE8` | the C code; `@hook`s on Person_Init, NpcSpawn_Step, Area_BuildPeople, Text_Get, and a `@jump` replacing Preset_Get; `g_VsRoster` entries 84-85 (51, -999). At run time it also writes `g_PersonDefs[51]` and `g_StreetTextures[87]` |
+| New characters: Eggusz (person 51) in the subway, chapter 2 | `0x000A1000`-`0x000A2B83`; `0x0013AAB0`, `0x00344550`, `0x0013B490`, `0x00178700`, `0x002A8720`, `0x002E67C0`, `0x002F52C0`, `0x00387980`, `0x0018D250`, `0x0018EBC0`, `0x0018EC00`, `0x0018EDE0`, `0x00371160` (8 bytes each); 56 single words in `0x00188074`-`0x0018ED9C`; `0x00341DB0`-`0x00341DB7`, `0x00341DF0`; `0x003445DC`-`0x003445E3`, `0x00344790`-`0x00344797`, `0x0034479C`, `0x003447B0`, `0x003447B8` | the C code; `@hook`s on Person_Init, NpcSpawn_Step, Area_BuildPeople, Text_Get, Fighter_UsesPresetModel, SaveData_Unpack, VsMode_MakeFighters; `@jump`s replacing Preset_Get, BList_Build, BList_Clear, BList_GetList, BList_IndexOf, VsCustom_SetupLists; the `lui`/`addiu` pairs in the other BList functions that address `g_BList` (moved to `0x000E1C00`); VS CUSTOM's hero marks 0x33/0x34 made 0x10033/0x10034 (VsMode_Main's mark loop, VsMode_MakeFighters' tests). (Until 2026-10-15 it also wrote `g_VsRoster` entries 84-85; dropped, only the old CHARACTER SELECT reads that table.) At run time it also writes `g_PersonDefs[51]` and `g_StreetTextures[87]` |
 | C mod test: the player takes no damage (hook, mod area, globals) | `0x000A0000`-`0x000A005F`; `0x002FB880`-`0x002FB887` | the C code; `Fighter_ApplyDamage`'s first two instructions (`@hook`). Its globals at `0x000E0000` are not written by the cheat |
 | Negotiation menu on knockout (test v2) | `0x002DE478`-`0x002DE48B`; `0x002DEF70`-`0x002DEF77`; `0x003E0168`-`0x003E017F`; `0x00218F00`-`0x00218F43`; `0x005990FC` | after-KO talk hook; CANCEL hook; two caves; negotiation menu descriptor (Triangle → CANCEL) |
 | Cut content: DEBUG on the title screen | `0x0058969C`, `0x005897D0` | title menu item action and label |

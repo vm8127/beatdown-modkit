@@ -68,7 +68,7 @@ _Static_assert(sizeof(Preset) == 0x498, "sizeof Preset");
 
 /* person template, g_PersonDefs (602 records); Person_Init copies it into a person */
 struct PersonDef {
-    s16 unk00;  /* +0x0 1 for some street NPCs (templates 8, 0x101...); not read by Person_Init */
+    s16 blist_group;  /* +0x0 B.LIST group for the group sort (BList_Build reads the low byte: 1, 3, 4, 6, 7, 8 each a group, others last); 1 for some street NPCs (templates 8, 0x101...); not read by Person_Init */
     s16 unk02;  /* +0x2 not read by Person_Init (53: 99, 77: 51, 83: 5) */
     s16 preset;  /* +0x4 outfit preset: the model */
     u16 class_row;  /* +0x6 row in g_ClassTable: body, style, animation groups */
@@ -91,9 +91,9 @@ struct PersonDef {
     u32 skills;  /* +0x30 copied to Person.skills (+0x388) by Person_Init */
     u8 start_entries[0x10];  /* +0x34 two entries applied at spawn, probably weapons (copied to person +0x390) */
     s16 blacklist_no;  /* +0x44 place 1-110 in the pause menu's B.LIST (0x0018D250 fills its 110 entries from templates 1-200 by this number; all 110 are used); 0 = not listed */
-    u16 unk46;  /* +0x46 copied to person +0x430 (Person_Init) */
+    u16 blist_info;  /* +0x46 copied to Person.blist_info (+0x430) by Person_Init */
 };
-_Static_assert(__builtin_offsetof(PersonDef, unk00) == 0x0, "PersonDef.unk00");
+_Static_assert(__builtin_offsetof(PersonDef, blist_group) == 0x0, "PersonDef.blist_group");
 _Static_assert(__builtin_offsetof(PersonDef, unk02) == 0x2, "PersonDef.unk02");
 _Static_assert(__builtin_offsetof(PersonDef, preset) == 0x4, "PersonDef.preset");
 _Static_assert(__builtin_offsetof(PersonDef, class_row) == 0x6, "PersonDef.class_row");
@@ -112,7 +112,7 @@ _Static_assert(__builtin_offsetof(PersonDef, weapon_break_mod) == 0x28, "PersonD
 _Static_assert(__builtin_offsetof(PersonDef, skills) == 0x30, "PersonDef.skills");
 _Static_assert(__builtin_offsetof(PersonDef, start_entries) == 0x34, "PersonDef.start_entries");
 _Static_assert(__builtin_offsetof(PersonDef, blacklist_no) == 0x44, "PersonDef.blacklist_no");
-_Static_assert(__builtin_offsetof(PersonDef, unk46) == 0x46, "PersonDef.unk46");
+_Static_assert(__builtin_offsetof(PersonDef, blist_info) == 0x46, "PersonDef.blist_info");
 _Static_assert(sizeof(PersonDef) == 0x48, "sizeof PersonDef");
 
 /* person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get */
@@ -150,7 +150,9 @@ struct Person {
     s16 emotion;  /* +0x3aa EXF_SET_EMOTION */
     u8 _03AC[0x8];
     s16 bonus_max_hp2;  /* +0x3b4 added by Person_RecalcMaxHP */
-    u8 _03B6[0x86];
+    u8 _03B6[0x7a];
+    u16 blist_info;  /* +0x430 what B.LIST shows about the person (from PersonDef +0x46; most code sets 0xFFFF, e.g. after a fight): 0x8 skills (skill sort), 0x20 group (group sort), 0x200 level (level order), 0x1000 name (else "???"). Bit meanings read from BList_Build/BList_EntryName, not tested */
+    u8 _0432[0xa];
 };
 _Static_assert(__builtin_offsetof(Person, flags) == 0x0, "Person.flags");
 _Static_assert(__builtin_offsetof(Person, sex) == 0x4, "Person.sex");
@@ -174,12 +176,15 @@ _Static_assert(__builtin_offsetof(Person, pride_max) == 0x3a6, "Person.pride_max
 _Static_assert(__builtin_offsetof(Person, ally_flags) == 0x3a8, "Person.ally_flags");
 _Static_assert(__builtin_offsetof(Person, emotion) == 0x3aa, "Person.emotion");
 _Static_assert(__builtin_offsetof(Person, bonus_max_hp2) == 0x3b4, "Person.bonus_max_hp2");
+_Static_assert(__builtin_offsetof(Person, blist_info) == 0x430, "Person.blist_info");
 _Static_assert(sizeof(Person) == 0x43c, "sizeof Person");
 
 /* fighter in a fight, g_Fighters (0 = player, 2-12 = NPC slots) */
 struct Fighter {
     u32 flags;  /* +0x0 bit 0 active; bit 1 motion playing, bit 2 action running, bit 3 ready for the next motion */
-    u8 _0004[0x14];
+    s32 person;  /* +0x4 person id; when 0x0060C960 bit 1 is set, the record's Person.id instead (Fighter_AssignPerson). Fighter_UsesPresetModel reads it */
+    s32 person_slot;  /* +0x8 the person id Fighter_AssignPerson was given */
+    u8 _000C[0xc];
     void *unk18;  /* +0x18 CODEMAP said "in use"; holds a heap pointer (0x01694A20) in a fight */
     u8 _001C[0x290];
     f32 pos[0x3];  /* +0x2ac position x, y, z */
@@ -246,6 +251,8 @@ struct Fighter {
     u8 _4720[0x10];
 };
 _Static_assert(__builtin_offsetof(Fighter, flags) == 0x0, "Fighter.flags");
+_Static_assert(__builtin_offsetof(Fighter, person) == 0x4, "Fighter.person");
+_Static_assert(__builtin_offsetof(Fighter, person_slot) == 0x8, "Fighter.person_slot");
 _Static_assert(__builtin_offsetof(Fighter, unk18) == 0x18, "Fighter.unk18");
 _Static_assert(__builtin_offsetof(Fighter, pos) == 0x2ac, "Fighter.pos");
 _Static_assert(__builtin_offsetof(Fighter, motion) == 0x3fa4, "Fighter.motion");

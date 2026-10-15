@@ -15,8 +15,10 @@ int Area_SpawnPeople(int phase, AreaPerson *list);  /* 0x00139e50 */
 void SaveData_Pack(void *buf);  /* 0x0013a950 */
 void SaveData_Unpack(void *buf);  /* 0x0013aab0 */
 void Person_Init(int slot, int person_def, int temp);  /* 0x0013b490 */
+void Person_HealForFight(s16 person);  /* 0x0013bf20 */
 int Team_GetMember(int side, int i);  /* 0x0013c5c0 */
 Person *Person_Get(int person_id);  /* 0x0013c960 */
+Person *Person_GetP2(s16 person);  /* 0x0013c9f0 */
 const char *Fighter_DisplayName(int person_id);  /* 0x0013ca80 */
 void Person_SetMoney(int person_id, int value);  /* 0x0013cc70 */
 void Person_AddMoney(int person_id, int delta);  /* 0x0013cdc0 */
@@ -30,6 +32,17 @@ int StoryVar_Add(int index, int delta);  /* 0x00172bd0 */
 int StoryVar_Sub(int index);  /* 0x00172e10 */
 int Fighter_FindNpcSlot(int person_id);  /* 0x00176130 */
 int NpcSpawn_Step(int phase, s16 *request);  /* 0x00178700 */
+int Str_CompareBytes(const char *a, const char *b);  /* 0x00186a30 */
+char *BList_EntryName(s16 index);  /* 0x0018d020 */
+int BList_EntryIsAlly(s16 index);  /* 0x0018d1f0 */
+void BList_Build(s16 sort);  /* 0x0018d250 */
+void BList_SetSortTitle(s16 sort);  /* 0x0018e920 */
+s16 BList_Percent(void);  /* 0x0018ea90 */
+void BList_Clear(void);  /* 0x0018ebc0 */
+s16 *BList_GetList(s16 which);  /* 0x0018ec00 */
+void BList_SetList(s16 *ids, s16 count);  /* 0x0018ec80 */
+s16 BList_IndexOf(s16 which, s16 person);  /* 0x0018ede0 */
+int Person_IsState3(s16 person);  /* 0x001c3dd0 */
 s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
 const char *MoveList_NameText(int unused, int style, int line);  /* 0x001c5bf0 */
 const char *MoveList_InputText(int unused, int style, int line);  /* 0x001c5c30 */
@@ -96,7 +109,11 @@ void HpBar_Build(int side);  /* 0x0031b210 */
 void Fighter_SetAction(Fighter *fighter, int action);  /* 0x0031f120 */
 int Action_Next(Fighter *fighter, int action);  /* 0x0031f650 */
 void Action_Step(Fighter *fighter);  /* 0x0031fae0 */
+void Text_ToAscii(const char *text, char *out);  /* 0x0033a670 */
+int VsMode_MirrorId(int id, int side);  /* 0x00344470 */
+void VsMode_MakeFighters(void);  /* 0x00344550 */
 void *Appearance_FindItem(int code);  /* 0x00349b40 */
+void VsCustom_SetupLists(void);  /* 0x00371160 */
 const char *Text_Get(int text_id, int zero);  /* 0x00387980 */
 int Criminal_Rank(int which);  /* 0x003937c0 */
 int Hero_StartEncounter(int hero);  /* 0x003964f0 */
@@ -336,12 +353,14 @@ extern Command *g_StyleCommands[37];  /* 0x00515c10 */
 extern HitRecord *g_ActionHits[2004];  /* 0x00580a40 */
 extern ActionScript g_ActionScripts[2001];  /* 0x005848e0 */
 extern TitleMenuElement g_TitleMenuElements[8];  /* 0x00589760 */
+extern s16 g_VsTempPersons[6];  /* 0x00589be8 */
 extern u32 g_MissionFlagRanges[148];  /* 0x0059995c */
 extern void *g_MissionEventHandlers[10];  /* 0x00599bb0 */
 extern MissionReq g_MissionReq[147];  /* 0x0059a750 */
 extern void *g_AutoMissionChecks[26];  /* 0x0059a9a0 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
+extern s16 g_VsNormalIds[16];  /* 0x005da080 */
 extern ScriptOpHandler g_ScriptOpHandlers[204];  /* 0x005dacf0 */
 extern u8 g_PhoneOrderAllies[16];  /* 0x005db360 */
 extern Job g_Jobs[50];  /* 0x005db470 */
@@ -350,12 +369,21 @@ extern u32 g_JobListB[16];  /* 0x005db760 */
 extern u8 g_AutoMissions[26];  /* 0x005dbd40 */
 extern u32 g_TalkMissions[2];  /* 0x005dbd60 */
 extern u8 *g_PeoplePlacement;  /* 0x005febb8 */
+extern Person *g_VsP2Persons;  /* 0x005febc8 */
 extern s16 g_Party[4];  /* 0x005febd0 */
 extern s32 g_NpcSpawnState;  /* 0x005feddc */
 extern s32 g_NpcSpawnModel;  /* 0x005fede0 */
+extern s16 g_BListMaxTop;  /* 0x005feeb4 */
+extern s16 g_BListCount;  /* 0x005feeb8 */
+extern s16 g_BListSort;  /* 0x005feecc */
+extern s16 g_BListRow;  /* 0x005feedc */
+extern s16 g_BListTop;  /* 0x005feee0 */
 extern Battle *g_Battle;  /* 0x005ffc6c */
 extern s32 g_AreaPeopleCount;  /* 0x005ffcf0 */
 extern Preset *g_PresetData;  /* 0x005ffdd8 */
+extern u16 g_VsSaveHero[2];  /* 0x006000d0 */
+extern s32 g_VsCustom;  /* 0x006000d4 */
+extern u8 *g_VsSelect;  /* 0x006005f4 */
 extern u8 g_EventFlags[1024];  /* 0x0060a680 */
 extern s32 g_ClearCount;  /* 0x0060badc */
 extern s32 g_StoryChapter;  /* 0x0060be10 */
@@ -366,11 +394,13 @@ extern s32 g_TotalMoneyEarned;  /* 0x0060d19c */
 extern Person g_Persons[210];  /* 0x0060d360 */
 extern s32 g_PlayerMoney;  /* 0x0060d3a0 */
 extern s32 g_NpcSpawnTextures[10];  /* 0x00645b20 */
+extern s16 g_BList[111];  /* 0x006614a0 */
 extern AreaPerson g_AreaPeople[7];  /* 0x006cb920 */
 extern Fighter g_Fighters[13];  /* 0x006cfb70 */
 extern s16 g_Player_HP;  /* 0x006d3f8c */
 extern s16 g_Player_MaxHP;  /* 0x006d3f8e */
 extern s32 g_AppearanceItems;  /* 0x0075b330 */
+extern s16 g_VsCustomIds[200];  /* 0x0076a970 */
 extern MissionMgr g_MissionMgr;  /* 0x0076ed60 */
 extern u8 g_JobCleared[13];  /* 0x0076f0e0 */
 extern u8 g_JobResults[13];  /* 0x0076f0f0 */

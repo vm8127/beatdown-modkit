@@ -13,6 +13,8 @@ Python 3 standard library only. Needs bdkit.py in the same folder.
   python tools/codemap.py anim-check ISO/SLUS_211.50 AARON 0x11     # ... if AARON (own groups) used style 0x11
   python tools/codemap.py pnach-map mods/SLUS-21150_C9F6EF9A.pnach   # addresses each cheat writes, and overlaps
   python tools/codemap.py persons   ISO/SLUS_211.50 > dumps/persons.txt
+  python tools/codemap.py addr-refs ISO/SLUS_211.50 6614A0 661580     # code that builds an address in a range
+  python tools/codemap.py addr-refs ISO/SLUS_211.50 6614A0 661580 --move E1C00  # ... as @word lines moving it
   python tools/codemap.py infer-types decomp/all.c symbols/inferred_types.tsv  # struct pointer params for Ghidra
 
 Symbols live in symbols/symbols.tsv (tab separated: addr, kind, name, comment, optional C type) and
@@ -578,6 +580,64 @@ def cmd_pnach_map(a):
         print("  none")
 
 
+# I-type opcodes whose immediate is the low half of an address: addiu, loads, stores (incl. lq/sq, lwc1/swc1).
+LO_OPS = {0x09: "addiu", 0x20: "lb", 0x21: "lh", 0x23: "lw", 0x24: "lbu", 0x25: "lhu", 0x27: "lwu", 0x37: "ld",
+          0x1E: "lq", 0x28: "sb", 0x29: "sh", 0x2B: "sw", 0x3F: "sd", 0x1F: "sq", 0x31: "lwc1", 0x39: "swc1"}
+
+
+def writes_reg(w, r):
+    """True if instruction w (other than a lui) may change register r."""
+    op = w >> 26
+    if op == 0:
+        return ((w >> 11) & 31) == r
+    if op in (0x02, 0x04, 0x05, 0x06, 0x07, 0x14, 0x15, 0x16, 0x17, 0x01) or op in (0x28, 0x29, 0x2B, 0x3F, 0x1F,
+                                                                                   0x39, 0x2C, 0x2D, 0x2E, 0x3D):
+        return False
+    if op == 0x03:
+        return r == 31
+    return ((w >> 16) & 31) == r
+
+
+def cmd_addr_refs(a):
+    """Every lui + low-half pair in the code that builds an address in [lo, hi)."""
+    e = bdkit.Elf(a.elf)
+    lo, hi = int(a.lo, 16), int(a.hi, 16)
+    funcs = [(s[0], s[2]) for s in load_symbols() if s[1] == "func"]
+    starts = [f[0] for f in funcs]
+    import bisect
+    end = min(len(e.d), e.v2o(0x00400000))
+    n = 0
+    for o in range(0x80, end, 4):
+        w = struct.unpack_from("<I", e.d, o)[0]
+        if (w >> 26) not in LO_OPS:
+            continue
+        rs = (w >> 21) & 31
+        if rs in (0, 28, 29):   # zero, gp, sp
+            continue
+        imm = w & 0xFFFF
+        imm -= 0x10000 if imm & 0x8000 else 0
+        for b in range(o - 4, max(0x80, o - 4 * 64) - 4, -4):
+            w2 = struct.unpack_from("<I", e.d, b)[0]
+            if (w2 >> 26) == 0x0F and ((w2 >> 16) & 31) == rs:
+                v = ((w2 & 0xFFFF) << 16) + imm
+                if lo <= v < hi:
+                    addr, laddr = o + 0xFFF80, b + 0xFFF80
+                    i = bisect.bisect_right(starts, addr) - 1
+                    fn = f"{funcs[i][1]}+0x{addr - funcs[i][0]:X}" if i >= 0 else "?"
+                    if a.move:
+                        new = int(a.move, 16) + (v - lo)
+                        nhi, nlo = ((new + 0x8000) >> 16) & 0xFFFF, new & 0xFFFF
+                        print(f"// @word 0x{laddr:08X} 0x{(w2 & 0xFFFF0000) | nhi:08X}   {fn} (lui)")
+                        print(f"// @word 0x{addr:08X} 0x{(w & 0xFFFF0000) | nlo:08X}   {fn}")
+                    else:
+                        print(f"0x{addr:08X}  {LO_OPS[w >> 26]:<5} 0x{v:08X}  lui at 0x{laddr:08X}  {fn}")
+                    n += 1
+                break
+            if writes_reg(w2, rs):
+                break
+    print(f"# {n} references", file=sys.stderr)
+
+
 def cmd_persons(a):
     e = bdkit.Elf(a.elf)
     tn = e.type_names()
@@ -610,6 +670,9 @@ def main():
     x = s.add_parser("anim-check"); x.add_argument("elf"); x.add_argument("cls", nargs="?"); x.add_argument("style", nargs="?")
     x.set_defaults(fn=cmd_anim_check)
     x = s.add_parser("pnach-map"); x.add_argument("pnach"); x.set_defaults(fn=cmd_pnach_map)
+    x = s.add_parser("addr-refs"); x.add_argument("elf"); x.add_argument("lo"); x.add_argument("hi")
+    x.add_argument("--move", help="print cmod @word lines that point the references at this address instead")
+    x.set_defaults(fn=cmd_addr_refs)
     a = ap.parse_args()
     a.fn(a)
 

@@ -25,7 +25,7 @@ Preset	0x318	PresetParams	params
 PersonDef	size	0x48		person template, g_PersonDefs (602 records); Person_Init copies it into a person
 PersonDef	0x04	s16	preset	outfit preset: the model
 PersonDef	0x06	u16	class_row	row in g_ClassTable: body, style, animation groups
-PersonDef	0x00	s16	unk00	1 for some street NPCs (templates 8, 0x101...); not read by Person_Init
+PersonDef	0x00	s16	blist_group	B.LIST group for the group sort (BList_Build reads the low byte: 1, 3, 4, 6, 7, 8 each a group, others last); 1 for some street NPCs (templates 8, 0x101...); not read by Person_Init
 PersonDef	0x02	s16	unk02	not read by Person_Init (53: 99, 77: 51, 83: 5)
 PersonDef	0x08	u8	unk08	copied to person +0x46
 PersonDef	0x0B	s8	unk0B	copied to person +7 (Person_Init)
@@ -42,7 +42,7 @@ PersonDef	0x28	s32	weapon_break_mod	added to the weapon loss chance (heroes -20 
 PersonDef	0x30	u32	skills	copied to Person.skills (+0x388) by Person_Init
 PersonDef	0x34	u8[16]	start_entries	two entries applied at spawn, probably weapons (copied to person +0x390)
 PersonDef	0x44	s16	blacklist_no	place 1-110 in the pause menu's B.LIST (0x0018D250 fills its 110 entries from templates 1-200 by this number; all 110 are used); 0 = not listed
-PersonDef	0x46	u16	unk46	copied to person +0x430 (Person_Init)
+PersonDef	0x46	u16	blist_info	copied to Person.blist_info (+0x430) by Person_Init
 
 Person	size	0x43C		person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get
 Person	0x000	u32	flags
@@ -67,9 +67,12 @@ Person	0x3A6	s16	pride_max	Pride Gauge max
 Person	0x3A8	u8	ally_flags	bit 0 = ally (party or recruited), bit 1 set by EXF_JOIN_FRIEND
 Person	0x3AA	s16	emotion	EXF_SET_EMOTION
 Person	0x3B4	s16	bonus_max_hp2	added by Person_RecalcMaxHP
+Person	0x430	u16	blist_info	what B.LIST shows about the person (from PersonDef +0x46; most code sets 0xFFFF, e.g. after a fight): 0x8 skills (skill sort), 0x20 group (group sort), 0x200 level (level order), 0x1000 name (else "???"). Bit meanings read from BList_Build/BList_EntryName, not tested
 
 Fighter	size	0x4730		fighter in a fight, g_Fighters (0 = player, 2-12 = NPC slots)
 Fighter	0x0000	u32	flags	bit 0 active; bit 1 motion playing, bit 2 action running, bit 3 ready for the next motion
+Fighter	0x0004	s32	person	person id; when 0x0060C960 bit 1 is set, the record's Person.id instead (Fighter_AssignPerson). Fighter_UsesPresetModel reads it
+Fighter	0x0008	s32	person_slot	the person id Fighter_AssignPerson was given
 Fighter	0x0018	void*	unk18	CODEMAP said "in use"; holds a heap pointer (0x01694A20) in a fight
 Fighter	0x02AC	f32[3]	pos	position x, y, z
 Fighter	0x3FA4	s16	motion	current animation slot (anim id + 1; the overlay's MOT + 1)
