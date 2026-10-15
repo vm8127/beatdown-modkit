@@ -241,6 +241,7 @@ def cmd_dialogue(a):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")  # the texts hold button glyphs (□ △ ×) a Windows console code page can't print
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

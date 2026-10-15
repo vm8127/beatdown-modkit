@@ -33,6 +33,7 @@ def glyphs(s):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")  # the texts hold button glyphs (□ △ ×) a Windows console code page can't print
     if len(sys.argv) != 3:
         sys.exit(__doc__)
     iso = sys.argv[1]
