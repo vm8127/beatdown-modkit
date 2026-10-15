@@ -17,6 +17,9 @@ Read this first, then `CLAUDE.md` and `README.md`. This file starts a new projec
 
 ## Rules
 
+- **Use anything this repo has researched**: every doc, dump, tool, symbol, struct and the decomp. Extend the existing tools (`bdkit.py`, `codemap.py`, `scriptkit.py`, `pcsx2.py`) rather than starting over.
+- **Outside tools and skills are welcome** (Godot addons, Blender and its plugins, glTF libraries, PS2 format tools, mocap tools, community RE tools, Claude skills...). **Ask Daniel before installing or downloading anything**, saying what it is and where it comes from. Third-party tools go in `__external_tools/` (README.md, "External tools").
+- **Document everything you find out about the game, here, in the same commit.** Every format, address, function, struct field, mechanic or table you decode for the remake goes into this repo's docs exactly as in the modding work (`CLAUDE.md`, "Working rules"): formats in README.md or `docs/FORMATS.md`, names in `symbols/symbols.tsv` with types, fields in `symbols/structs.tsv`, functions in `docs/CODEMAP.md`, rules in `docs/MECHANICS.md`, animation facts in `docs/ANIMATION.md`, open questions in each doc. Say how sure each fact is. The remake and the mods share this knowledge, so nothing learned may stay only in the Godot project or in a chat.
 - **Extracting assets from the disc is fine and expected.** Use the original models, textures, animations, stages, text and data tables as much as you like.
 - **But the repos hold only the tool, never its output.** Build one reproducible extraction tool, `tools/remake_assets.py` in this repo:
   - `python tools/remake_assets.py ISO <godot project>/assets_ripped` rebuilds **every** game asset the remake uses from Daniel's `ISO/`, and nothing else is needed. A fresh clone plus his disc plus this one command gives a working project.
