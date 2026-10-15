@@ -9,6 +9,7 @@ Deterministic: the same disc gives the same files. Standard library only. Never 
 Converters (one module each, run in this order; --only picks some):
   models   character models, rigged -> models/*.glb (conv_models.py)
   anims    fighter animations on the body skeleton -> anims/*.glb (conv_anims.py)
+  stages   areas: render world + props, collision, doors/spots -> stages/area_NN* (conv_stages.py)
 """
 import argparse
 import hashlib
@@ -18,12 +19,13 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-sys.path.insert(0, os.path.join(HERE, "..", "..", "tools"))   # bdkit.py, rwkit.py
+sys.path.insert(0, os.path.join(HERE, "..", "..", "tools"))   # bdkit.py, rwkit.py, stagekit.py, ps2tex.py
 
 import conv_anims  # noqa: E402
 import conv_models  # noqa: E402
+import conv_stages  # noqa: E402
 
-CONVERTERS = {"models": conv_models.convert, "anims": conv_anims.convert}
+CONVERTERS = {"models": conv_models.convert, "anims": conv_anims.convert, "stages": conv_stages.convert}
 
 # README.md, "Before you start": the files the converters read, with their sizes and MD5s
 DISC = {

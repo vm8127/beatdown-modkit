@@ -73,7 +73,8 @@ class Gltf:
         self.tex_index[key] = len(self.j["textures"]) - 1
         return self.tex_index[key]
 
-    def material(self, name, texture=None, color=(1, 1, 1, 1), alpha_mask=False):
+    def material(self, name, texture=None, color=(1, 1, 1, 1), alpha_mask=False, alpha_blend=False, unlit=False):
+        """unlit: KHR_materials_unlit (baked lighting, e.g. a stage's prelit vertex colours)."""
         m = {"name": name, "pbrMetallicRoughness": {"baseColorFactor": list(color), "metallicFactor": 0.0,
                                                    "roughnessFactor": 1.0}}
         if texture is not None:
@@ -82,15 +83,26 @@ class Gltf:
             m["alphaMode"] = "MASK"
             m["alphaCutoff"] = 0.5
             m["doubleSided"] = True
+        elif alpha_blend:
+            m["alphaMode"] = "BLEND"
+            m["doubleSided"] = True
+        if unlit:
+            m["extensions"] = {"KHR_materials_unlit": {}}
+            self.j.setdefault("extensionsUsed", [])
+            if "KHR_materials_unlit" not in self.j["extensionsUsed"]:
+                self.j["extensionsUsed"].append("KHR_materials_unlit")
         self.j["materials"].append(m)
         return len(self.j["materials"]) - 1
 
     def mesh(self, name, primitives):
-        """primitives: [(positions, normals, uvs, indices, material[, joints, weights])]; normals/uvs may be None;
-        joints/weights: 4 per vertex (skinned meshes)."""
+        """primitives: [(positions, normals, uvs, indices, material[, joints, weights[, colors]])]; normals/uvs may be
+        None; joints/weights: 4 per vertex (skinned meshes); colors: RGBA floats per vertex (COLOR_0, linear)."""
         prims = []
-        for pos, nrm, uv, idx, mat, *skin in primitives:
+        for pos, nrm, uv, idx, mat, *extra in primitives:
+            skin, colors = extra[:2], (extra[2] if len(extra) > 2 else None)
             attrs = {"POSITION": self.vec(pos, 3)}
+            if colors:
+                attrs["COLOR_0"] = self.vec(colors, 4)
             if skin and skin[0]:
                 attrs["JOINTS_0"] = self.joints(skin[0])
                 attrs["WEIGHTS_0"] = self.vec(skin[1], 4)
