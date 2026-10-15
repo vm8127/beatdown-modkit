@@ -11,7 +11,7 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test; model viewer; stage test |
 | `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/` |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
-| `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models) and `gltf_writer.py` |
+| `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models, `conv_moves.py`: fighting styles) and `gltf_writer.py`; `test_moves.py` checks the generated moves |
 
 Game formats and mechanics learned for the remake are documented in the main docs (`README.md`, `docs/`), not here.
 
@@ -49,7 +49,7 @@ __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://d
 
 ## Smoke test
 
-Runs a scripted jab, jab, straight on Dummy 1 and checks it's a 3-hit combo for 50 damage (exit code 0 = pass). `--headless` skips the window; drop it and add `--shot=<file.png>` for a screenshot.
+Runs a scripted combo on Dummy 1 (exit code 0 = pass). With the assets extracted it's Aaron's Triple Snake Fang, →P P P (actions 1807, 1808, 1809): each chain must start on the previous move's cancel frame, all 3 hits must combo, and the damage must match the MECHANICS formula (60 + 70 + 150 = 280). Without them, the placeholder jab, jab, straight for 50 damage. `--headless` skips the window; drop it and add `--shot=<file.png>` for a screenshot.
 
 ```bash
 __external_tools/godot/Godot_v4.7.2-stable_win64_console.exe --headless --path remake/godot -- --smoke
@@ -64,6 +64,7 @@ The first run on a fresh clone needs `--import` once (`... --headless --path rem
 - **Fixed frames.** All game logic runs in `_physics_process` at 60 frames per second and counts frames, never seconds, like the PS2 game. `Dev.tick` (autoload `dev/dev.gd`) says whether this frame advances; that's how pause, single-frame step and slow motion work without touching the logic.
 - **State machine.** `Fighter` is in exactly one state (idle, move, attack, guard, hitstun, blockstun, knockdown, getup) with a frame counter. Each state has its own tick function.
 - **Moves are resources** (`game/moves/*.tres`, class `MoveData`; the style `placeholder_style.tres`, class `MoveSet`): startup, active and recovery frames, damage, hitstop, hitstun, knockback, and a cancel window with the next move per button. Click one in the FileSystem dock to edit it in the Inspector. M4 generates them from the real tables.
-- **Input buffer.** `PlayerBrain` keeps presses for 10 frames, so pressing slightly before a combo window still counts.
+- **Real moves (M4a).** `remake/tools/conv_moves.py` (run by `remake_assets.py`, or alone: `python remake/tools/conv_moves.py ISO remake/godot/assets_ripped`) writes Aaron's style to `assets_ripped/moves/aaron.tres`: a `MoveSet` whose `commands` are the game's whole input sequences (`["P", "P", "↓P"]` -> Comet Blow), each `MoveData` with its hit windows (`MoveHit`: frames, attack parts, damage, hit level, reaction), cancel point, release frame, root motion and the clip ids for the animated fighter. Every fighter loads it when present (`Fighter.ripped_style`), else the placeholder style. Input codes are relative to the opponent (→ toward, ← away, ↑ / ↓ the stick to your left / right, motions →→, ↓→, →↓→); from neutral one code starts a move, and a press made during a move chains at that move's cancel point if history + press is a whole command, as in the game (docs/ANIMATION.md, "Input matching"). Damage uses the game's formula with placeholder stats. `python remake/tools/test_moves.py ISO remake/godot/assets_ripped` checks the .tres against `codemap.py framedata` in headless Godot.
+- **Input buffer.** `PlayerBrain` keeps presses for 10 frames, so a press slightly before the fighter is free still counts.
 - **Hits.** On active frames the attacker queries a sphere against hurtbox areas (exact on that frame), hits each target once per move, and both fighters freeze for the hitstop. Hitstun longer than the attacker's recovery makes a true combo; the overlay counts them.
 - **Brains.** The fighter asks its brain child for a direction, guard and presses. The player and the dummies use the same `Fighter` code; only the brain differs.

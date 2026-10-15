@@ -125,6 +125,10 @@ int Lzss_Decode(u8 *src, u8 *dst, int size);  /* 0x0029e3c0 */
 int Pack_Load(int phase, int archive, int entry, void *request);  /* 0x0029e500 */
 int AnimPack_OpenItem(u32 *pack, u32 index, void *desc);  /* 0x0029ec00 */
 int Pad_ReadCommand(int fighter_index, int a2);  /* 0x002a42e0 */
+f32 Pad_DirAngle(u32 bits);  /* 0x002a6210 */
+void Cmd_HistoryClear(int *history);  /* 0x002a6320 */
+void Cmd_HistoryReset(int *history, int code);  /* 0x002a6330 */
+u16 Cmd_HistoryAppend(int *history, int code);  /* 0x002a6360 */
 int Cmd_CheckCondition(Fighter *fighter, u8 *condition);  /* 0x002a63a0 */
 s16 Cmd_MatchSequence(Fighter *fighter, int *history, Command *list);  /* 0x002a6720 */
 s16 Cmd_MatchSingle(Fighter *fighter, int code, Command *list, int *out);  /* 0x002a68b0 */
@@ -472,6 +476,7 @@ extern MissionReq g_MissionReq[147];  /* 0x0059a750 */
 extern void *g_AutoMissionChecks[26];  /* 0x0059a9a0 */
 extern u32[8276] g_TexNames[2];  /* 0x0059ae30 */
 extern s16 g_VsPortraitCells[258];  /* 0x005b81f0 */
+extern u32 g_InputFallback[136];  /* 0x005cd9b0 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
 extern s16 g_VsNormalIds[16];  /* 0x005da080 */

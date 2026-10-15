@@ -138,6 +138,24 @@ State values, from the debug overlay's names: 1 NORMAL, 2 ATTACK, 4 HOLD, 8 PROV
 
 Example: Aaron's Triple Snake Fang (250 base) at Attack level 0, on a full-HP enemy, no counter: 250. At Attack level 5: 500. As a counter hit at level 5: 750. With a combo count of 3 at level 5: 500 x 0.5 = 250.
 
+**Hit records, field by field** (read from `Combat_ResolveHit` and `Combat_TakeHit` `0x0030DFD0`, 2026-10-15, for the remake; not tested in-game). `g_ActionHits[action]` is best read as an 8-byte header followed by 16-byte records that overlap the next slot of the old 16-byte view (`codemap.py hits` prints that view):
+
+| Bytes | What |
+|---|---|
+| header +0 `u32` | attack kind bits (2 for every strike checked; bit 0x400 is tested by the command handler) |
+| header +4 `u16` | **cost**: added to the TIRED meter when the action starts (`Fighter_StartAction` `0x00307E40`); +6 `u8` a grab-target mask (tested against the defender's `+0x4393` while holding) |
+| record +0 `u16` | base damage (the `+8` above) |
+| record +2 `u8` / `u8` | Pride damage base (`Fighter_PrideDamage`) / a strength 1-4 (byte +11; not traced) |
+| record +4 `u16` | reaction detail: bits 0x10 / 0x20 / 8 / 4 pick the stagger variant for high hits and the direction of the low ones |
+| record +6 `u16` | **hit level**: 2 high, 4 mid, 8 low. A defender with status bit 2 dodges high hits, status bit 4 dodges low hits (`flags & 8`) |
+| record +8 `u32` | **reaction** (the `kind` of the next 16-byte slot): 0x20 knocks down (also on a KO), 0x10, 0x100, 0x200, 0x400, 0x800, 0x1000 pick the big reactions (reaction kinds 8, 0xE, 0xD, 0xF, 0x14, 0x15; they also make the victim drop a held weapon), 0x40 special reactions by level (0x3E3-0x3E6), anything else (1, 8) a normal stagger chosen by the level and the detail bits |
+
+Hit records are indexed by the timeline's op 0x30 (`+0x4570`), so a multi-hit move like Aaron's Moonlight Combo (1820) uses record 0 (100, reaction 0x100) then record 1 (250, reaction 0x200). Aaron's own examples: Blade Cut 100 high, reaction 8 (stagger); Low Kick (↓K) 100 low; Triple Snake Fang 250 mid, reaction 0x10 (big); Heel Strike's second hit 700, reaction 0x20 (down).
+
+**Aaron's counter**: in `Combat_ResolveHit`, a defender with style 0x13 whose current action is 0x24B-0x24D (Weaving / Sway Back, `→G ←G ↑G`) and who passes `Cmd_CheckCondition(0x005CFBA0)` turns a **mid** hit (level 4) into his counter (remapped action 0x1EA): the move list's "Breezethrough (COUNTER MID-LEVEL MOVE)". Style 0x10 has the same rule for actions 0x24C, 0x24D and 0x664.
+
+The remake (`remake/godot/game/fighter/fighter.gd`, `damage_from`) uses this formula with placeholder stats (attack rank 1, 100 %, defense 1.0, 3000 HP) and treats "damage state" as hitstun or airborne after a knockdown, with the combo count = hits taken so far in the combo (0 for the first). Hitstun, hitstop and knockback aren't in these records (they come from the reaction animations): the remake derives placeholders from the strength byte.
+
 ## Pride Gauge and negotiation
 
 **Read**, except where marked. What CODEMAP calls "guard" is the Pride Gauge from the tutorial text ("Diminish your foe's Pride Gauge to prepare for negotiation").

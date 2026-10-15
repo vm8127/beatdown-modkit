@@ -153,8 +153,14 @@
 0029E500 Pack_Load
 0029EC00 AnimPack_OpenItem
 0029ED70 Xaf_LoadAnimPack
+002A30F0 Pad_MatchPatterns
 002A42E0 Pad_ReadCommand
+002A4DB0 Fighter_HandleCommand
 002A5B80 Fighter_PickWeaponMove
+002A6210 Pad_DirAngle
+002A6320 Cmd_HistoryClear
+002A6330 Cmd_HistoryReset
+002A6360 Cmd_HistoryAppend
 002A63A0 Cmd_CheckCondition
 002A6720 Cmd_MatchSequence
 002A68B0 Cmd_MatchSingle
@@ -568,6 +574,7 @@
 004EC950 g_ArchiveTexNames
 004F2400 g_ItemTable
 004FB4C0 g_AnimGroups
+004FC580 g_InputPatterns
 00503514 g_EditorItems
 00509700 g_AreaSpawnPoints
 00509930 g_FixedBattlePos
@@ -609,6 +616,7 @@
 005B3360 g_ScriptCallFuncs
 005B81F0 g_VsPortraitCells
 005CAB40 g_MoveListTable
+005CD9B0 g_InputFallback
 005D04D0 g_AttackRankMul
 005D04F0 g_EnemyDamageByDifficulty
 005D0650 g_HitSituation

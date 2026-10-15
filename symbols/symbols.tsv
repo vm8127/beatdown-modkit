@@ -34,6 +34,14 @@
 001c5c70	func	MoveList_Color	(style, line) -> 1 for the second text colour	int (int style, int line)
 002a63a0	func	Cmd_CheckCondition	(fighter, command condition) -> 1 if the fighter's stat levels meet it	int (Fighter *fighter, u8 *condition)
 002a68b0	func	Cmd_MatchSingle	(fighter, input code, style cmd list, out) -> action ID or 0	s16 (Fighter *fighter, int code, Command *list, int *out)
+002a6320	func	Cmd_HistoryClear	(history) empties a command history (count +0x100 = 0, first code -1)	void (int *history)
+002a6330	func	Cmd_HistoryReset	(history, code) history = [code]; the command handler calls it when a move starts from neutral (the pressed code, not the fallback that matched)	void (int *history, int code)
+002a6360	func	Cmd_HistoryAppend	(history, code) appends a code (Action_TryCombo, before Cmd_MatchSequence); returns the new count	u16 (int *history, int code)
+002a4db0	func	Fighter_HandleCommand	the command handler: from neutral matches one input code against the style (Cmd_MatchSingle with g_InputFallback), weapon and context lists, starts the action and resets the history (docs/ANIMATION.md, "Input matching")
+002a30f0	func	Pad_MatchPatterns	turns the recent pad history into an input code with the pattern table g_InputPatterns (motions like →→, ↓→); not traced
+002a6210	func	Pad_DirAngle	(pad bits) -> stick angle in degrees: Up 0, Right 90, Down 180, Left -90, diagonals ±45 / ±135	f32 (u32 bits)
+004fc580	data	g_InputPatterns	input patterns for Pad_MatchPatterns: 64-byte entries {time limit ms, condition masks, step masks...}; not decoded
+005cd9b0	data	g_InputFallback	u32 per input code: the code Cmd_MatchSingle tries next when no one-input command matches (→→P 0x05 -> →P 0x0A -> P 0x0E; →K 0x18 -> K 0x1C), -1 none	u32[136]
 002a85b0	func	Person_CheckOutfit	checks outfit slots against tables 0x5016D0/0x501860
 002a8720	func	Preset_Get	(preset, part) part 1 = outfit slots (+0), 2 = body params (+792); CDATA.XAF entry 0	void *(int preset, int part)
 002a89d0	func	Fighter_AssignPerson	(slot, personId) sets class row, copies the 22 outfit slots, picks body	void (int slot, int person_id)
