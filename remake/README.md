@@ -7,7 +7,7 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | [MEMORY.md](MEMORY.md) | Session memory: where we are, decisions, what's next. **Read first, update before stopping.** |
 | [PLAN.md](PLAN.md) | The brief: goal, rules, what research to reuse, milestones, progress log |
 | `godot/` | The Godot project (open `godot/project.godot`) |
-| `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test |
+| `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test; model viewer; stage test |
 | `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/` |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
 | `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models) and `gltf_writer.py` |
@@ -36,6 +36,14 @@ Shows every model in `assets_ripped/models/` (run the asset tool first). Left/Ri
 
 ```bash
 __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://dev/model_viewer.tscn
+```
+
+## Stage test
+
+Walk around the ABANDONED SUBWAY STATION (area 5) converted from the disc (`assets_ripped/stages/`, run the asset tool first): the M0 fighter with the third-person camera, the area's own wall and floor collision (trimesh), its two lights on the fighter. `-- --area=N` picks another converted area, `--shot=<file.png> --view=player|overview|stairs` saves a screenshot and quits, `--walk` walks into each wall and a stairwell door and checks the player stays inside (exit code 0 = pass).
+
+```bash
+__external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://dev/stage_test.tscn
 ```
 
 ## Smoke test

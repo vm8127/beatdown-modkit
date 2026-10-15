@@ -155,6 +155,18 @@ From `AreaDef` (symbols/structs.tsv):
 - 57-127 (71 entries, about 36 KB each, first words 0x1F-0x21): **not stage data**. `0x00154BB0(slot, ?, n)` loads entry 57 + n for each of the two fighters at a fight start, n = the person's `+0x46` (from `PersonDef +8`, 0-70); parsed by `0x00154AF0` (header counts, then 148-byte and 272-byte records). Meaning open (per-character data for fights).
 - 122-180: texture dictionaries (20 KB to 700 KB), users not found (open). They include 512x256 32-bit sheets named `STG_nn_MCAR` / `NCAR` / `SCAR` (nn = 03..53, close to the area ids) that decode as **car textures** (entry 130: a yellow taxi; `tools/ps2tex.py`, seen), so probably the traffic cars per area (guess).
 
+## Converted for the remake (M6, 2026-10-15)
+
+`remake/tools/conv_stages.py` (run by `remake_assets.py`) turns area 5 into glTF + JSON in metres, and `res://dev/stage_test.tscn` loads it. What that showed (**rendered** = seen in Godot screenshots, checked by Claude; **walked** = the scripted `--walk` test):
+
+- **Textures**: the area's dictionary (section 0) holds every texture the world and the props use (rendered; nothing from the shared FSTAGE 56). Decoder: `tools/ps2tex.py` (docs/FORMATS.md, "PS2-native textures").
+- **Coordinates**: RenderWare's right-handed y-up space is glTF's: positions copied as they are (x 0.1), signs and texts read the right way round, and the world triangles' winding faces the camera with back-face culling on (rendered).
+- **Lighting**: the world and props are prelit (vertex colours, median about 84 of 255) and look right **unlit** with colour = prelit x 2 x material colour (the PS2's 0x80 = 1.0 convention; scale picked by eye, guess). Materials have colour 255 or 179 (rendered).
+- **Glows**: the props `ER03SPARK01-07` and `ER03COVEF` (light covers) are opaque textures on black that only look right with **additive** blending. Nothing in the clump says so (no MatFX or other material plugin; seen), so the game sets it in code, probably from the prop descriptor (`g_AreaObjects +0x08`; open). The converter flags textures that are more than half black as additive (guess that happens to pick exactly those 8).
+- **Props**: PB places props 1-11 (18 placements: the shutters 9 eight times along the end walls, lights 2-8 near the ceiling at y 3.9 m, the static set pieces 1-5 at the origin). Props 12-15 (the three `SB01DRUM` oil drums and an untextured quad) are not in PB: probably the interactive props placed by `g_AreaObjects` (15 descriptors; open). The PB quaternions (0, ±0.71, 0, 0.71) turn the end-wall shutters to face the platform (rendered).
+- **Collision** (walked, fighter capsule radius about 0.35 m): the walls mesh stops the player at the back wall (z 0.63 m for a wall at 0.3), the front edge (12.51 for 12.8) and the ends (x 15.13 for 15.5; -9.83 near the front, where the left end is not straight); the floor holds the player at y 0. **The doors are the roller shutters at platform level**: each stairwell's door panel (z -0.96 m) closes it at the bottom, and the player stops at z -0.60 in front of the shutter; the stairs behind it are scenery, and walking into the door zone is what leaves the area (guess from the layout; door use not implemented yet).
+- The camera collision mesh is kept separate (only the camera's spring arm collides with it).
+
 ## Open questions
 
 - What the wall kinds (`AreaDef +0xE8`) and floor kinds (`+0xC4`) do; who reads `+0xC4`.
@@ -163,4 +175,6 @@ From `AreaDef` (symbols/structs.tsv):
 - FSTAGE.XAF 57-127 and 122-180.
 - `AreaDef +0x0E`, `+0x10`, `+0x18`, `+0x1C` (bytes 8, 8, 8), `+0x20` (0.8), `+0xA0` (20.0), `+0x100`, `+0x101`.
 - Where `g_PeoplePlacement` (RAM `0x01431EB0` in Daniel's chapter-2 save) is loaded from.
-- Test in the sandbox: the area ids (teleport to 5 and 46), and a fighter against the subway's walls.
+- Test in the sandbox: the area ids (teleport to 5 and 46), and a fighter against the subway's walls (done in the remake's stage test, not in the game).
+- Where the game turns on additive blending for glow props (sparks, light covers), and how bright prelit colours are on the PS2 (x 2 assumed).
+- Props 12-15 of the subway (drums): placed by `g_AreaObjects`? When, and can they be broken or picked up?
