@@ -6,12 +6,11 @@ extends Node3D
 ## Keys: Left/Right turn, Up/Down zoom, Space pauses the turntable.
 ## Tab / Shift+Tab next / previous clip, P play/pause, Comma / Period step one game frame (1/60 s) back / forward.
 ## `-- --shot=<file.png>` saves a screenshot after a few frames and quits; `--dist=` and `--height=` place the camera;
-## `--clip=<name>` and `--frame=<n>` (60 Hz) pose the models paused on that frame; `--yaw=<deg>` turns them.
+## `--clip=<name>` ("a34" = anim 34) and `--frame=<n>` (60 Hz) pose the models paused on that frame; `--yaw=<deg>` turns them.
 
 const MODEL_DIR := "res://assets_ripped/models"
 const ANIM_DIR := "res://assets_ripped/anims"
 const SPACING := 2.0
-const LOOPING := ["stance", "walk"]   # the in-game looping motions (docs/ANIMATION.md)
 const FRAME := 1.0 / 60.0
 
 var _turn := true
@@ -99,19 +98,33 @@ func _load_anims() -> Dictionary:
 	var files := Array(dir.get_files()).filter(func(f): return f.ends_with(".glb"))
 	files.sort()
 	for f in files:
+		var looping := _looping(ANIM_DIR + "/" + f.get_basename() + ".json")
 		var n := (load(ANIM_DIR + "/" + f) as PackedScene).instantiate()
 		var ap := n.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		if ap:
 			var lib := AnimationLibrary.new()
 			for a in ap.get_animation_list():
 				var anim := ap.get_animation(a).duplicate() as Animation
-				anim.loop_mode = Animation.LOOP_LINEAR if a in LOOPING else Animation.LOOP_NONE
+				anim.loop_mode = Animation.LOOP_LINEAR if a in looping else Animation.LOOP_NONE
 				lib.add_animation(a, anim)
 				if libs.is_empty():
 					_clips.append(a)
 			libs[f.get_basename()] = lib
 		n.free()
 	return libs
+
+
+## Clip names that loop in the game (conv_anims.py's JSON: stance, walk, run, lying).
+func _looping(json_path: String) -> Array:
+	var out := []
+	var f := FileAccess.open(json_path, FileAccess.READ)
+	if f:
+		var meta = JSON.parse_string(f.get_as_text())
+		if meta is Dictionary:
+			for c in meta.get("clips", {}):
+				if meta["clips"][c].get("loop", false):
+					out.append(c)
+	return out
 
 
 ## A player on a rigged model (it has a Skeleton3D) with every animation library; tracks are "Skeleton3D:bone".
