@@ -1,0 +1,7 @@
+# Extracted from the disc: rebuild with remake/tools/remake_assets.py, never commit
+godot/assets_ripped/
+# Godot import cache and C# build output
+godot/.godot/
+godot/.mono/
+godot/bin/
+godot/obj/

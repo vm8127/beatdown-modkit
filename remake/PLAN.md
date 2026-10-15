@@ -1,6 +1,6 @@
 # Beat Down remake in Godot: brief for a new session
 
-Read this first, then `CLAUDE.md` and `README.md`. This file starts a new project next to the modding work: a **remake of Beat Down: Fists of Vengeance in Godot 4**, built on everything this repo has already reverse engineered.
+Read `remake/MEMORY.md` first (where we are, what's next), then this, then `CLAUDE.md` and `README.md`. This file starts a new project next to the modding work: a **remake of Beat Down: Fists of Vengeance in Godot 4**, built on everything this repo has already reverse engineered.
 
 ## Goal and who it's for
 
@@ -22,14 +22,14 @@ Read this first, then `CLAUDE.md` and `README.md`. This file starts a new projec
 - **Outside tools and skills are welcome** (Godot addons, Blender and its plugins, glTF libraries, PS2 format tools, mocap tools, community RE tools, Claude skills...). **Ask Daniel before installing or downloading anything**, saying what it is and where it comes from. Third-party tools go in `__external_tools/` (README.md, "External tools").
 - **Document everything you find out about the game, here, in the same commit.** Every format, address, function, struct field, mechanic or table you decode for the remake goes into this repo's docs exactly as in the modding work (`CLAUDE.md`, "Working rules"): formats in README.md or `docs/FORMATS.md`, names in `symbols/symbols.tsv` with types, fields in `symbols/structs.tsv`, functions in `docs/CODEMAP.md`, rules in `docs/MECHANICS.md`, animation facts in `docs/ANIMATION.md`, open questions in each doc. Say how sure each fact is. The remake and the mods share this knowledge, so nothing learned may stay only in the Godot project or in a chat.
 - **Extracting assets from the disc is fine and expected.** Use the original models, textures, animations, stages, text and data tables as much as you like.
-- **But the repos hold only the tool, never its output.** Build one reproducible extraction tool, `tools/remake_assets.py` in this repo:
-  - `python tools/remake_assets.py ISO <godot project>/assets_ripped` rebuilds **every** game asset the remake uses from Daniel's `ISO/`, and nothing else is needed. A fresh clone plus his disc plus this one command gives a working project.
+- **But the repos hold only the tool, never its output.** Build one reproducible extraction tool, `remake/tools/remake_assets.py`:
+  - `python remake/tools/remake_assets.py ISO remake/godot/assets_ripped` rebuilds **every** game asset the remake uses from Daniel's `ISO/`, and nothing else is needed. A fresh clone plus his disc plus this one command gives a working project.
   - Deterministic and re-runnable: same disc, same output; it overwrites its own output folder; it checks the disc's MD5s (README.md) first and stops on a mismatch.
   - Every new asset type the remake needs is added to this tool, never copied by hand or exported once from Blender. Each converter (mesh, skeleton, animation, stage, text, tables) is a subcommand or module it calls.
   - `assets_ripped/` (and Godot's `.godot/` import cache) are in the Godot project's `.gitignore`. Its README says to run the tool first.
 - **Never commit game data or anything converted from it**, in either repo: no glTF, PNG, animation or table dumps generated from the disc. Same rules as `CLAUDE.md` for `ISO/`, `decomp/` and the ELF. Data the remake needs from the ELF (move lists, stats, templates) is extracted by the tool too, not pasted into the Godot code.
 - Ripped assets from other games (e.g. Yakuza moves) are okay **only as private, uncommitted placeholders**. Prefer original or freely licensed assets for anything that might be shared.
-- The Godot project is its **own folder and git repo**. Suggested: `C:\Users\V\source\_personal\claude\BeatdownGodot`. Confirm with Daniel before creating it. Converters and format docs stay in **this** repo (`tools/`, `docs/`), so all the RE knowledge stays in one place.
+- **Everything remake-specific lives in `remake/`** in this repo (Daniel, 2026-10-15; replaces the earlier idea of a separate repo): this plan, `remake/MEMORY.md` (session memory), the Godot project `remake/godot/`, and `remake/tools/` (the extraction tool and the glTF/Godot writers). Game knowledge stays where it always was: format decoders the mods could use too go in `tools/` (new `bdkit.py` commands or modules), and what they teach goes in `docs/`.
 - Document every format you decode here (README.md's format sections, or a new `docs/FORMATS.md`), with symbols in `symbols/symbols.tsv` and `docs/CODEMAP.md`, like any other RE work.
 
 ## What we already have (use it)
@@ -64,6 +64,15 @@ Facts settled while planning this (2026-10-15):
 4. **Stage geometry and collision.**
 5. Frame data: cancel windows and active frames (see above).
 
+## Incremental development and the developer scene
+
+Daniel's idea (2026-10-15): grow the game in small playable steps, and keep a **developer scene** (`remake/godot/dev/`) to try things without building real levels or the story.
+
+- One flat test arena from M0 on: floor, a few walls and ramps, a spawn point, good lighting, a free camera toggle.
+- A dev menu / console overlay: spawn any character or street person from the extracted tables, pick their style, set stats (level, HP, Pride), give a weapon, teleport, slow motion and frame step, toggle hitbox and hurtbox drawing, show the current action and animation (like the PS2 developer overlay, docs/CUTCONTENT.md), reload assets.
+- Viewers that grow with the milestones: model viewer (M1), skeleton and pose viewer (M2), animation browser by anim id (M3), move tester that fires any action of a style (M4).
+- Each milestone first lands in the dev scene and is played there; real areas (M6) and the story (M8) only use what already works there. The game stays runnable after every step.
+
 ## Milestones
 
 Each one ends with something playable or viewable. Do them roughly in this order; M0 can run in parallel with M1–M3.
@@ -71,7 +80,7 @@ Each one ends with something playable or viewable. Do them roughly in this order
 | # | Milestone | Done when | Teaches |
 |---|---|---|---|
 | M0 | Godot basics: capsule brawler | A capsule walks with a third-person camera, punches a dummy (hitbox on for a few frames), hitstop and knockback | Game loop, scene tree, input, physics, state machines |
-| M1 | `tools/remake_assets.py` with its first converters: mesh + textures → glTF | Running the tool on a fresh clone puts one street person and one fighter in `assets_ripped/`, and they render textured in Godot | Asset pipelines |
+| M1 | `remake/tools/remake_assets.py` with its first converters: mesh + textures → glTF | Running the tool on a fresh clone puts one street person and one fighter in `assets_ripped/`, and they render textured in Godot | Asset pipelines |
 | M2 | Skeleton and weights | Aaron loads rigged and can be posed | Skinning |
 | M3 | Animation decoder | Aaron plays his stance, walk and his real Blade Cut | Animation playback, retargeting |
 | M4 | Fighter from the tables | Aaron's whole style works: command list → actions → clips with blend 8 → back to stance; damage from hit records and the MECHANICS formula | Move trees, input buffering, cancels |
@@ -89,4 +98,5 @@ Each one ends with something playable or viewable. Do them roughly in this order
 
 ## Progress log
 
-- 2026-10-15: Plan written. Nothing started.
+- 2026-10-15: Plan written.
+- 2026-10-15: Moved to `remake/PLAN.md`; `remake/` holds everything remake-specific, `remake/MEMORY.md` is the session memory (Daniel asked for both). First-session questions asked.
