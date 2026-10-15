@@ -10,6 +10,8 @@ trace-map commands work anywhere. Python 3 standard library only.
   python tools/pcsx2.py cheats "Section A" "B"      # copy mods/*.pnach into the sandbox and turn on these sections
   python tools/pcsx2.py cheats --c tools/debug/teleport.c   # ... plus C cheats built on the fly (sandbox only)
   python tools/pcsx2.py start [--state 1]           # boot the game (and load save state slot 1)
+  python tools/pcsx2.py ram128 on|off               # PCSX2's 128 MB "Extended RAM (Dev Console)" for this game only;
+                                                    # 32 MB save states don't load while it is on (docs/MEMORY-MAP.md)
   python tools/pcsx2.py stop
   python tools/pcsx2.py status                      # PINE: running / paused / shut down, and the game id
   python tools/pcsx2.py r32 0x006D3F8C [count]      # read words (also r8, r16); w32 / w16 / w8 ADDR VALUE write
@@ -207,6 +209,14 @@ def cmd_cheats(a):
     ini_set(gs, {("EmuCore", "EnableCheats"): "true"})
     ini_section(gs, "Cheats", [f"Enable = {s}" for s in sections])
     print(f"{len(sections)} cheat section(s) on in the sandbox" + ("" if not sections else ":\n  " + "\n  ".join(sections)))
+
+
+def cmd_ram128(a):
+    need_sandbox()
+    gs = os.path.join(SANDBOX, "gamesettings", GAME_INI)
+    os.makedirs(os.path.dirname(gs), exist_ok=True)
+    ini_set(gs, {("EmuCore/CPU", "ExtraMemory"): "true" if a.state == "on" else "false"})
+    print(f"128 MB RAM {a.state} for {GAME_INI} in the sandbox; restart the game ({'only 128 MB save states load' if a.state == 'on' else '32 MB save states load again'})")
 
 
 def need_sandbox():
@@ -711,6 +721,9 @@ def main():
     x.add_argument("--iso")
     x.set_defaults(fn=cmd_start)
     sub.add_parser("stop").set_defaults(fn=cmd_stop)
+    x = sub.add_parser("ram128")
+    x.add_argument("state", choices=("on", "off"))
+    x.set_defaults(fn=cmd_ram128)
     sub.add_parser("status").set_defaults(fn=cmd_status)
     x = sub.add_parser("flag")
     x.add_argument("flags", type=num, nargs="+")

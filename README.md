@@ -239,6 +239,7 @@ The full map of functions, tables and structs is in `docs/CODEMAP.md`; this is t
 | `0x002F9930` | Preset number to name/fighter ID (Aaron's presets 78 and 153 give 68 = text 11069 "Aaron") |
 | `0x003E0130` | 20 unused zero words before the VU microcode. `swap-model` uses `0x003E0130`-`0x003E0164`; the negotiation-on-knockout mod uses `0x003E0168`-`0x003E017C`. Full. |
 | `0x00216538` | 10,936-byte DMA/GS library function that nothing calls or points to: roster hooks `0x00216538`-`0x00216737`, mix-moveset `0x00217000`-`0x00218EFF`, negotiation-on-knockout `0x00218F00`-`0x00218F43`. C mods (`tools/cmod.py`) `0x00216738`-`0x00216FFF`. Free: `0x00218F44`-`0x00218FEF`. See docs/MEMORY-MAP.md. |
+| `0x02000000` | With PCSX2's Extended RAM on (128 MB, per game): about 95 MB free up to `0x07EFFFFF`, for mod data. Tested in the sandbox 2026-10-15. See docs/MEMORY-MAP.md. |
 | `0x000A0000` | Free RAM below the program: the **mod area** `0x000A0000`-`0x000DFFFF` (C mod code), the **mod data area** `0x000E0000`-`0x000EFFFF` (C mod globals) and debug scratch `0x000F0000`-`0x000FFFFF`. Zero in every save state checked and never addressed by the game. See docs/MEMORY-MAP.md. |
 
 ## Addresses, offsets and patching
@@ -380,6 +381,7 @@ python tools/pcsx2.py stop
 - `show STRUCT ADDR` prints a struct from `symbols/structs.tsv` from live memory, or from a save state with `--state FILE.p2s` (no emulator needed). `r32`/`w32` (and 8/16), `dump`, `save`/`load` cover the rest.
 - `freeram` lists the zero regions in save states and checks the mod areas (docs/MEMORY-MAP.md); run it on a new save state from a part of the game not seen before.
 - `flag N... [--set|--clear]` reads or changes story flags. `cheats --c FILE.c` builds a C cheat with `tools/cmod.py` and turns it on in the sandbox only; `tools/debug/teleport.c` is one: write area id + 1 to `0x000F0000` (`pcsx2.py w32 0x000F0000 18` = PLATFORM) and the player is sent there once any fight is over (ids in docs/UNLOCKS.md). Tested 2026-10-14.
+- `ram128 on|off`: PCSX2's 128 MB Extended RAM for this game only (docs/MEMORY-MAP.md, "Extended RAM"); 32 MB save states don't load while it's on. `tools/debug/ram128_probe.c` checks from the game's side that the RAM is there.
 - Save states from old PCSX2 versions (Daniel's 2023 slot 2) don't load in PCSX2 2.x; their RAM can still be read offline with `show --state` / `ram`.
 - **Function trace**, to find the code behind something on screen: `trace build` puts a stub on every game function (from `decomp/index.tsv`) as the sandbox-only cheat "Trace: function coverage"; `cheats --trace ...`, restart, then `trace clear`, do the thing, `trace read`: every function that ran, with its last caller. Clear and read once while idle first to see what runs every frame.
 

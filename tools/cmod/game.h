@@ -29,6 +29,19 @@ typedef float f32;
 #define PRESET_PART_SLOTS 1   /* -> outfit slots (+0) */
 #define PRESET_PART_PARAMS 2  /* -> body params (+0x318) */
 
+/* Extended RAM: PCSX2's "Enable Extended RAM (Dev Console)" (per game: [EmuCore/CPU] ExtraMemory = true in
+ * gamesettings/SLUS-21150_C9F6EF9A.ini) gives the PS2 128 MB, and the game leaves 0x02000000-0x07EFFFFF unused
+ * (docs/MEMORY-MAP.md). Without it, PCSX2 drops writes there and reads 0, so a mod that keeps data there must
+ * check first and fall back (or do nothing). Code itself should stay in the normal mod area. */
+#define EXT_RAM_START 0x02000000
+#define EXT_RAM_END 0x07F00000
+#define EXT_RAM_PROBE ((volatile u32 *)0x07EFFFFC)   /* last word of the area, reserved for this check */
+static inline int ExtRam_Present(void)
+{
+    *EXT_RAM_PROBE = 0x45585452;   /* "EXTR" */
+    return *EXT_RAM_PROBE == 0x45585452;
+}
+
 /* Fighter slots in g_Fighters */
 #define FIGHTER_PLAYER 0
 #define FIGHTER_NPC_FIRST 2

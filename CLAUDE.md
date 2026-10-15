@@ -55,6 +55,7 @@ Common recipes:
 - Model: `python tools/bdkit.py swap-model ISO/SLUS_211.50 A B`. See README.md, "Fighter records: the model switch".
 - Several mods write the same row (all the Aaron cheats do), so only one of those may be on at a time; say so in the section name. Only one `mix-moveset` cheat can be on at a time (fixed code space).
 - Any change to a fighting style must also make the in-game MOVE LIST show the right moves (the user's rule). Whole-style swaps get that for free; `mix-moveset` hooks the MOVE LIST; anything new must do the same.
+- Big data (tables, scripts, text, models) can go in PCSX2's Extended RAM (`0x02000000`-`0x07EFFFFB`, needs the per-game `ExtraMemory` setting; check `ExtRam_Present()`), never code; docs/MEMORY-MAP.md.
 - New code: write it in C (`mods/c/`, `tools/cmod.py`; README.md, "Mods in C"), not hand-assembled MIPS. Small mods go in the C mod cave, anything bigger in the mod area `0x000A0000`-`0x000DFFFF` with globals (`@bss`) in `0x000E0000`-`0x000EFFFF`; claim the range in docs/MEMORY-MAP.md. Prefer `@hook FUNC` (call the original as `orig_FUNC`) to hand-picked call sites. Use the structs and typed symbols instead of raw offsets: add fields to `symbols/structs.tsv` and types to `symbols.tsv`'s fifth column, then rerun `codemap.py symbols`. Check the output with `--asm`.
 - Before a moveset swap or mix, check the animations with `python tools/codemap.py anim-check ISO/SLUS_211.50 A 0xSTYLE` (docs/ANIMATION.md).
 

@@ -215,6 +215,16 @@ Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind 
 - `Inventory_InitForHero` `0x0013D000` fills it from a start list chosen by the hero template: Aaron `0x41DBF0`, Raven `0x41DB10`, Jason G `0x41DB70`, Lola `0x41DC60`, Gina `0x41DCD0`. Lists are `{s16 code, s16 qty}` ending -1, where code = category x 100 + n, converted by `0x13DE00` using the category table at `0x412F40`.
 - Item names are in CDATA.XAF entries 391-396 (English 392, ids `0x2EE0`-`0x446A`: "DRINK R", "CHICKEN", "CASH", weapons...). How an item index maps to its name id isn't pinned down yet.
 
+## Blacklist and VS unlocks
+
+Read from the code on 2026-10-14; not tested. The pause menu's **B.LIST** item (text 39523 / 52120, help text 52124 "Take a look at the blacklist.") opens the blacklist. The system save (`g_SystemData`, 584 bytes, kept across playthroughs; the save prompt says it holds "blacklist information") has a bit per person id at `+0x54` (`0x0060C754`, up to `+0x9E`: 600 bits):
+
+- `0x0013E7E0(person)` sets the bit, plus a few special bits at `+0x4C`-`+0x52` for persons 0x39, 0x3C, 0x3F, 0x4A-0x4E, 0x6A, 0x6D. It is called after a fight from `0x00350AB0` with the person of the fighter in the battle record (any person but 185), from `0x002D75B0`, and twice by the ending (`0x002AF790`) for persons 0x6A and 0x6D.
+- `0x0013D8E0(person)` reads it. VS mode's character select (`0x00363B30` "Select up to 3 characters", cursor `0x00368120`, and `0x003653A0`, `0x00365E30`, `0x003674A0`, `0x0036D060`, `0x0036F090`) skips people whose bit is clear: **beating someone in story mode unlocks them in VS mode**. `g_VsRoster` `0x00589A40` holds the 84 VS fighters.
+- `0x0013D890(person)` (set `+0x54` too) is used by `0x0013B110` on the five heroes; `0x0013D940` / `0x0013D990` / `0x0013D9E0` set, clear and read a second bit array at `+0x9F` (called by the ending and the post-ending new game).
+
+Not traced yet: the B.LIST screen itself (pause menu state 13, `0x002B6A90(0xD)`) and which list of people it shows; it very probably reads the same `+0x54` bits. **Adding someone to the blacklist / VS roster** is then: set their bit (`0x0060C754 + id / 8`, bit `id % 8`), and for someone new to VS, add their id to `g_VsRoster`.
+
 ## Saves
 
 The memory card code is Capcom's "RD3 Memory Card System 1.11". `MemCard_SetupFiles` `0x001DA020` registers directory `BASLUS-21150XXX` with a 584-byte system file (`g_SystemData`), a 0x36A74-byte game file and three icons.

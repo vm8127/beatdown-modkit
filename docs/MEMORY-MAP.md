@@ -29,6 +29,29 @@ Claimed ranges in the mod areas:
 | `0x000A0000`-`0x000A00FF` | "C mod test: the player takes no damage" (`mods/c/test_no_damage.c`, 96 bytes used of 0x100) |
 | `0x000E0000`-`0x000E000F` | its globals (8 bytes used of 0x10) |
 
+## Extended RAM: 95 MB more in PCSX2 (optional)
+
+PCSX2 can give the PS2 128 MB instead of 32 MB, like the dev-kit consoles had: **"Enable Extended RAM (Dev Console)"**, ini key `ExtraMemory = true` in section `[EmuCore/CPU]`. It works **per game**: put it in `gamesettings/SLUS-21150_C9F6EF9A.ini` and only Beat Down gets the extra RAM. Tested by Claude in the sandbox on 2026-10-14/15 (`python tools/pcsx2.py ram128 on|off` switches it there):
+
+- The game boots, loads the memory card and runs normally. Its heap still starts at `0x00788180` (sbrk was `0x01569000` at the title), and its main stack moves to the new top of RAM (`0x07FF0000`-`0x07FFFFFF`). Everything else from `0x02000000` to `0x07EFFFFF`, **about 95 MB, stays zero**: free for mods.
+- A cheat's code ran every frame and read and wrote `0x02000000` only with the option on (`tools/debug/ram128_probe.c`); with it off, PCSX2 drops writes there and reads 0 (no crash).
+- **Save states don't cross over**: a 32 MB state won't load with 128 MB on ("Memory size mismatch, save state requires 32MB"), and the other way round. Memory card saves are fine both ways. Turning it on means making new save states.
+- A real PS2 has no such RAM, so mods that need it are PCSX2-only (all of ours are anyway).
+
+How mods should use it:
+
+| Range | Use |
+|---|---|
+| `0x02000000`-`0x07EFFFFB` | **Extended mod data**: big tables, scripts, text, models, buffers. Only when `ExtRam_Present()` (`tools/cmod/game.h`) says the RAM is there; fall back or do nothing otherwise. Claim ranges in the table below |
+| `0x07EFFFFC` | `ExtRam_Present()`'s test word |
+| `0x07F00000`-`0x07FEFFFF` | keep clear: below the moved stack |
+
+Keep code (and the hooks) in the normal mod area, so a mod still loads cleanly when someone hasn't turned the option on; put only data in extended RAM. Cheat lines (`patch=1`) can write there too, but they would rewrite megabytes every frame; a C mod should build its data there at run time instead.
+
+| Extended range | Used by |
+|---|---|
+| (none yet) | |
+
 ## Code caves
 
 The game has no free memory set aside inside its own image, so small hooks go in places nothing runs or reads. Bigger code goes in the mod area above.
