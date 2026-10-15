@@ -129,7 +129,7 @@ patch=1,EE,2031B3E4,extended,0C08598E
 
 [Negotiation menu on knockout (test v2)]
 author=Claude for Daniel
-description=When you knock out a non-boss enemy in story mode, the game normally plays a short after-KO talk (Battle_StartTalk kind 1). This turns it into the threaten talk (kind 0), so the RECRUIT/ROB/INTERROGATE/BEATDOWN/CANCEL menu opens, but only when that enemy shows a Pride bar (Battle_PrideHudShown 0x002E3A20, which also rules out group fights). The knocked-out enemy's Pride is set to 0 first. v2: CANCEL on a knocked-out enemy (0 HP) gives the normal after-KO ending (kind 1, step 1600); on a living enemy (manual threaten) it stays vanilla. Triangle now jumps to CANCEL in this menu. Hooks at 0x002DE478 and 0x002DEF70, caves 0x003E0168-0x003E017C and 0x00218F00-0x00218F40 (end of the unused library function the roster uses the start of). v1 and v2 tested in PCSX2 2026-10-13. See docs/PLAN-auto-negotiation.md.
+description=When you knock out a non-boss enemy in story mode, the game normally plays a short after-KO talk (Battle_StartTalk kind 1). This turns it into the threaten talk (kind 0), so the RECRUIT/ROB/INTERROGATE/BEATDOWN/CANCEL menu opens, but only when that enemy shows a Pride bar (Battle_PrideHudShown 0x002E3A20, which also rules out group fights). The knocked-out enemy's Pride is set to 0 first. v2: CANCEL on a knocked-out enemy (0 HP) gives the normal after-KO ending (kind 1, step 1600); on a living enemy (manual threaten) it stays vanilla. Triangle now jumps to CANCEL in this menu. Hooks at 0x002DE478 and 0x002DEF70, caves 0x003E0168-0x003E017C and 0x00218F00-0x00218F40 (end of the unused library function the roster uses the start of). v1 and v2 tested in PCSX2 2026-10-13. See docs/mods/PLAN-auto-negotiation.md.
 patch=1,EE,203E0168,extended,03E0882D
 patch=1,EE,203E016C,extended,0C0B8E88
 patch=1,EE,203E0170,extended,00000000
@@ -510,7 +510,7 @@ patch=1,EE,202FB884,extended,00000000
 
 [New characters: Eggusz (person 51) in the subway, chapter 2]
 author=Claude for Daniel
-description=Adds brand-new characters to story mode (docs/PLAN-new-characters.md). Eggusz (person and template 51, a slot left over from a cut character editor): bald, black mustache, red leather jacket, jeans, black sneakers; Jason G's fighting style; level 12, 3000 HP, Pride 200, attack x1.0, $1000. He stands around in the ABANDONED SUBWAY STATION (area 5) during chapter 2 (story stage 6) like any street person: walk up, fight him, RECRUIT him. Everything about a character is one row of the tables in mods/c/new_characters.c.
+description=Adds brand-new characters to story mode (docs/mods/PLAN-new-characters.md). Eggusz (person and template 51, a slot left over from a cut character editor): bald, black mustache, red leather jacket, jeans, black sneakers; Jason G's fighting style; level 12, 3000 HP, Pride 200, attack x1.0, $1000. He stands around in the ABANDONED SUBWAY STATION (area 5) during chapter 2 (story stage 6) like any street person: walk up, fight him, RECRUIT him. Everything about a character is one row of the tables in mods/c/new_characters.c.
 patch=1,EE,200A1000,extended,24020033
 patch=1,EE,200A1004,extended,14820004
 patch=1,EE,200A1008,extended,00000000

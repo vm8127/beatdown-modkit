@@ -159,7 +159,7 @@ Inventory	0x4	u32[512]	items	bits 0-11 item, 12-15 quantity
 SystemData	size	0x248		g_SystemData, the system save file (options, unlocks)
 SystemData	0x04	u8	difficulty	indexes g_EnemyDamageByDifficulty
 SystemData	0x10	u8	language	0 JP, 1 EN, 2 FR, 3 DE, 4 ES, 5 IT
-SystemData	0x164	u8[228]	dummy	reserved: the game's debug print calls it dummy[228] and no code reads or writes it; new characters' blacklist bits go here (docs/NATIVE-CHARACTERS.md)
+SystemData	0x164	u8[228]	dummy	reserved: the game's debug print calls it dummy[228] and no code reads or writes it; new characters' blacklist bits go here (docs/mods/NATIVE-CHARACTERS.md)
 
 ScriptOpcode	size	0x14		g_ScriptOpcodes entry: an EXF_* script command
 ScriptOpcode	0x00	char*	name
@@ -172,7 +172,7 @@ TitleMenuElement	0x08	f32	scale
 TitleMenuElement	0x0C	u16	label	label index
 TitleMenuElement	0x10	u32*	colour
 
-Battle	size	?		battle context, *g_Battle (docs/PLAN-auto-negotiation.md)
+Battle	size	?		battle context, *g_Battle (docs/mods/PLAN-auto-negotiation.md)
 Battle	0x10	s32	state	0 = fighting, 2 = a side went down
 Battle	0x58	s32	unk58	cleared when the after-KO talk starts
 Battle	0x60	s32	winner

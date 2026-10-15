@@ -175,7 +175,7 @@ Money (**confirmed**): `Person_AddMoney` `0x0013CDC0` (id, delta) and `Person_Se
 
 **Free character slots**: templates and persons **51 and 52** are blank placeholders (preset 0, 1 HP, level 1, class row 1) that no mission script and no `Person_Get` constant in the code refers to (checked 2026-10-15). Persons 0-199 are saved and one per template, so these two are the natural slots for new characters (a recruitable person must be 0-199). Persons 200-209 are temporary street enemies (ids from templates 200+, looked up through `+0x3E`).
 
-**Id space** (read from the code 2026-10-15): person ids and template ids are the same numbers. 0-199 have saved records; 200-601 are templates only (street enemies, story extras), copied into the temporary records 200-209 when they appear. `Person_Get`'s lookup is also inlined in 6 functions. Per-person tables outside the record: `g_PersonAbsent` `0x0060BBB0` (u8[600]), `g_SaveBlock_369AC` `0x0060BAE0`, `g_PersonLocState` `0x0060D1AD`, `g_PersonLocation` `0x0060D275` (u8[200] each, saved), `g_CarryAllyFlags` / `g_CarryBlistInfo`, the blacklist bits. Full list, with every loop over 0-199: docs/NATIVE-CHARACTERS.md.
+**Id space** (read from the code 2026-10-15): person ids and template ids are the same numbers. 0-199 have saved records; 200-601 are templates only (street enemies, story extras), copied into the temporary records 200-209 when they appear. `Person_Get`'s lookup is also inlined in 6 functions. Per-person tables outside the record: `g_PersonAbsent` `0x0060BBB0` (u8[600]), `g_SaveBlock_369AC` `0x0060BAE0`, `g_PersonLocState` `0x0060D1AD`, `g_PersonLocation` `0x0060D275` (u8[200] each, saved), `g_CarryAllyFlags` / `g_CarryBlistInfo`, the blacklist bits. Full list, with every loop over 0-199: docs/mods/NATIVE-CHARACTERS.md.
 
 Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind (2 and 5 are tested), `+0x16` s16, `+0x30` s32, `+0x46` u16. `dumps/persons.txt` lists every template's preset, class row, level, HP, guard, rank and money.
 
@@ -231,7 +231,7 @@ Read from the code on 2026-10-14; not tested. The pause menu's **B.LIST** item (
 
 ### The B.LIST screen
 
-Read from the code on 2026-10-15 for the new characters (docs/PLAN-new-characters.md); the moved list is built into `mods/c/new_characters.c`. Names are in symbols.tsv (`BList_*`).
+Read from the code on 2026-10-15 for the new characters (docs/mods/PLAN-new-characters.md); the moved list is built into `mods/c/new_characters.c`. Names are in symbols.tsv (`BList_*`).
 
 - **The list** `g_BList` `0x006614A0`: 110 s16 person ids and a -1 at `0x0066157C`; the row text handles follow at `0x00661580`. `BList_Build` `0x0018D250` (sort) fills it: template t (1-200) goes to place `PersonDef.blacklist_no` (`+0x44`, 1-110; all 110 are used, 0 = not listed). So **the list holds every listed person from the start**; what you have learned about each one is `Person.blist_info` (`+0x430`, copied from `PersonDef +0x46`; bits 0x8 skills, 0x20 group, 0x200 level, 0x1000 name, else "???"; most code sets it to 0xFFFF, e.g. after a fight; meanings read from the code, not tested). People with `ally_flags` bit 1 get 0xFFFF when the list is built.
 - **Order**: first by level (people whose level is known, highest first; the rest after them in place order), then by the sort: 0 = group (the player's hero; allies, split into `Person_IsState3` `0x001C3DD0` (byte `0x0060D1AD[id]` == 3), in hospital, arrested, the rest; story bosses (kind 5); other non-zero kinds; then `PersonDef.blist_group` (+0x00, low byte) 1, 3, 4, 6, 7, 8, others; unknown group last), 1 = skills (`Person.skills` bit 4, 8, 2, any of 0x3E0, 0x10, none; unknown last), 2 = name (`Text_ToAscii` `0x0033A670` + `Str_CompareBytes` `0x00186A30`; unknown names last), anything else (VS mode passes 3) = level only. Nine persons are shown as their other record unless they are allies: 0x58->0x6E, 0x52->0x6D, 0x51->0x6A, 0x12->0x3C, 0x0F->0x4C, 0x0D->0x39, 0x0B->0x4A, 0x09->0x3F, 0x03->0x4B (also in `BList_EntryName` `0x0018D020`).
@@ -276,7 +276,7 @@ The save is a plain copy of RAM, so a save editor only needs these offsets and t
 
 Every block ends in a 4-byte trailer whose second half is a 16-bit ones'-complement checksum of the block (`MemCard_SetChecksum` `0x001DE320`; `MemCard_TestChecksum` `0x001DE440` checks it when a slot is loaded). Saving (`MemCard_SaveSlot` `0x001DED10`) writes the system block, the slot's game block and its header in place with `MemCard_WriteFile` `0x001E0F40` (open, seek, write, close); loading uses `MemCard_LoadSlot` `0x001DFC50` / `MemCard_ReadFile` `0x001E0AD0`. A save editor must recompute the checksum.
 
-`g_SystemData +0x164`-`+0x247` is reserved padding: the debug print in `Boot_LoadModules` shows it as "dummy[228]" and no code touches it. New characters can keep data there (docs/NATIVE-CHARACTERS.md, section 11).
+`g_SystemData +0x164`-`+0x247` is reserved padding: the debug print in `Boot_LoadModules` shows it as "dummy[228]" and no code touches it. New characters can keep data there (docs/mods/NATIVE-CHARACTERS.md, section 11).
 
 ## Menus, shops, scripts, text
 
@@ -313,12 +313,12 @@ Untested starting points. RAM values are rewritten by the game, so a pnach cheat
 
 ## Battle flow and the talk scene
 
-Traced 2026-10-13 for the negotiation-on-knockout mod; full notes in docs/PLAN-auto-negotiation.md. `g_Battle` (`gp-20356`, `0x005FFC6C`; gp is `0x00604BF0`) points at the battle context. `Battle_Update` `0x002DD500` is the battle state machine (state at `+0x10`), `Battle_OnFighterDown` `0x002E2F60` records a knockout, `Battle_RequestTalk` `0x002DE540` is the threaten button, `Battle_StartTalk` `0x002DE6E0` starts a talk scene (kind 0 threaten menu, 1 after a knockout, 3 beg for your life) and `Talk_Update` `0x002DE850` runs it. `Battle_PrideHudShown` `0x002E3A20` decides whether Pride bars are shown.
+Traced 2026-10-13 for the negotiation-on-knockout mod; full notes in docs/mods/PLAN-auto-negotiation.md. `g_Battle` (`gp-20356`, `0x005FFC6C`; gp is `0x00604BF0`) points at the battle context. `Battle_Update` `0x002DD500` is the battle state machine (state at `+0x10`), `Battle_OnFighterDown` `0x002E2F60` records a knockout, `Battle_RequestTalk` `0x002DE540` is the threaten button, `Battle_StartTalk` `0x002DE6E0` starts a talk scene (kind 0 threaten menu, 1 after a knockout, 3 beg for your life) and `Talk_Update` `0x002DE850` runs it. `Battle_PrideHudShown` `0x002E3A20` decides whether Pride bars are shown.
 
 
 ## Area people, street looks and fight models
 
-Found 2026-10-15 for the new characters (docs/PLAN-new-characters.md, docs/PARTS.md); tested in the sandbox.
+Found 2026-10-15 for the new characters (docs/mods/PLAN-new-characters.md, docs/PARTS.md); tested in the sandbox.
 
 - **Who stands in an area**: `Area_Load` `0x002FE3D0` calls `Area_BuildPeople` `0x002E67C0`, which fills `g_AreaPeople` `0x006CB920` (7 `AreaPerson` slots of 64 bytes) from `g_PeoplePlacement` (pointer at `0x005FEBB8`): s32 layer offsets, each layer an offset per area id to 7 entries. Layer 0 = base, 0-3 by time/state, the story stage's layer from `g_StageLayer` `0x00509AA0` (stages 6-10 use layers 6-10; 1-5 use 5, which is empty), plus mission layers. `Area_PeopleBase` `0x002E6DC0` and `Area_PeopleLayer` `0x002E7130` apply them (type 1 person, 2/3 copied, 4/5 clear). `Area_SpawnPeople` `0x00139E50` spawns them, one `NpcSpawn_Step` `0x00178700` per person. `AreaPerson +6` is the dialogue script played when you talk to them.
 - **Area ids**: `Area_Current()` returns 5 in the ABANDONED SUBWAY STATION and 1 on DOWNTOWN STREET; docs/UNLOCKS.md's location table says the subway is 2. Which numbering `Area_ChangeTo` and the text ids use needs checking.

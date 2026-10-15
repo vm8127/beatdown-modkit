@@ -1,5 +1,5 @@
 // @section New characters: Eggusz (person 51) in the subway, chapter 2
-// @description Adds brand-new characters to story mode (docs/PLAN-new-characters.md). Eggusz (person and template 51, a slot left over from a cut character editor): bald, black mustache, red leather jacket, jeans, black sneakers; Jason G's fighting style; level 12, 3000 HP, Pride 200, attack x1.0, $1000. He stands around in the ABANDONED SUBWAY STATION (area 5) during chapter 2 (story stage 6) like any street person: walk up, fight him, RECRUIT him. Everything about a character is one row of the tables in mods/c/new_characters.c.
+// @description Adds brand-new characters to story mode (docs/mods/PLAN-new-characters.md). Eggusz (person and template 51, a slot left over from a cut character editor): bald, black mustache, red leather jacket, jeans, black sneakers; Jason G's fighting style; level 12, 3000 HP, Pride 200, attack x1.0, $1000. He stands around in the ABANDONED SUBWAY STATION (area 5) during chapter 2 (story stage 6) like any street person: walk up, fight him, RECRUIT him. Everything about a character is one row of the tables in mods/c/new_characters.c.
 // @org 0x000A1000
 // @max 0x2000
 // @bss 0x000E1000 0xC00

@@ -159,7 +159,7 @@ p = p + trunc(p x 0.2 x Technique level)                         player only
 
 A taunt (PROVOCATION) takes `Pride max x a factor` (`0x003114E0`; the factor comes from the taunt's data and wasn't traced).
 
-How negotiation runs in the code (traced and tested for the negotiation-on-knockout mod, docs/PLAN-auto-negotiation.md):
+How negotiation runs in the code (traced and tested for the negotiation-on-knockout mod, docs/mods/PLAN-auto-negotiation.md):
 
 - Pride bars, and so threatening, only exist when `Battle_PrideHudShown` `0x002E3A20` passes: not VS mode, game flag `0x0076EA90` bit 9 clear, the target's person `+0x388` bit 31 clear, and battle type `0x0076EAA0` not 3 (probably group fights; you can't threaten there).
 - The threaten button (`Battle_RequestTalk` `0x002DE540`) works when your target is down, guarding, or held in a threaten grab, and starts talk kind 0 (`Battle_StartTalk` `0x002DE6E0`). After a normal story knockout of a non-boss, the game plays talk kind 1 instead (`Battle_CanTalkAfterKO` `0x002E38D0`); kind 3 is "beg for your life".

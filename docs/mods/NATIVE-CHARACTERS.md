@@ -1,6 +1,6 @@
 # Native characters: inventory
 
-What it would take for new characters to work like the game's own: no per-character hooks, every system finds them through the same tables it uses for everyone else. This is the inventory Daniel asked for on 2026-10-15 (after Eggusz, docs/PLAN-new-characters.md): every table indexed by person id, template id or preset, every hard-coded limit, and the code that touches them. Read from the decomp (`decomp/all.c`) and `codemap.py addr-refs` by Claude on 2026-10-15; nothing here is tested in-game. How it was found is at the end, so it can be redone after a decomp rebuild.
+What it would take for new characters to work like the game's own: no per-character hooks, every system finds them through the same tables it uses for everyone else. This is the inventory Daniel asked for on 2026-10-15 (after Eggusz, docs/mods/PLAN-new-characters.md): every table indexed by person id, template id or preset, every hard-coded limit, and the code that touches them. Read from the decomp (`decomp/all.c`) and `codemap.py addr-refs` by Claude on 2026-10-15; nothing here is tested in-game. How it was found is at the end, so it can be redone after a decomp rebuild.
 
 ## Verdict
 
