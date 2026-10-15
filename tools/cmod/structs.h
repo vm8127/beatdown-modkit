@@ -189,13 +189,17 @@ struct Fighter {
     void *unk18;  /* +0x18 CODEMAP said "in use"; holds a heap pointer (0x01694A20) in a fight */
     u8 _001C[0x290];
     f32 pos[0x3];  /* +0x2ac position x, y, z */
-    u8 _02B8[0x3cec];
+    u8 _02B8[0x18];
+    f32 facing;  /* +0x2d0 facing angle in degrees (timeline effect ops add it) */
+    s32 motion_frame;  /* +0x2d4 current motion frame = (anim time + 1/120) * 60, set after Action_Timeline; the timeline waits on it */
+    u8 _02D8[0x3ccc];
     s16 motion;  /* +0x3fa4 current animation slot (anim id + 1; the overlay's MOT + 1) */
     s16 prev_motion;  /* +0x3fa6 */
     f32 blend;  /* +0x3fa8 blend time (seconds) */
-    u8 _3FAC[0x28];
+    u8 _3FAC[0x24];
+    f32 timeline_wait;  /* +0x3fd0 Action_Timeline: wait until motion_frame >= this (op 0x0A); motion script op 4 clears it */
     u8 *motion_script;  /* +0x3fd4 current action's motion script (docs/ANIMATION.md) */
-    u8 *second_stream;  /* +0x3fd8 current action's second stream */
+    u8 *second_stream;  /* +0x3fd8 current action's timeline (second stream), run by Action_Timeline (docs/ANIMATION.md, Frame data) */
     u8 *loop_start;  /* +0x3fdc motion script loop start */
     f32 motion_start;  /* +0x3fe0 motion start time (seconds) */
     f32 motion_end;  /* +0x3fe4 motion end time (seconds) */
@@ -211,10 +215,13 @@ struct Fighter {
     u8 _434A[0x2e];
     u32 state;  /* +0x4378 2 = ATTACK, 4 = HOLD, 0x1E0 = damage states */
     u8 _437C[0xc];
-    u32 flags4388;  /* +0x4388 0x4000 = holding a weapon */
-    u8 _438C[0x4];
+    u32 flags4388;  /* +0x4388 control bits (overlay PCTRL names): 1 CONTROL, 2 GUARD, 4 NOT CONTROL, 0x20 ATTACK, 0x4000 WEAPON (holding a weapon); timeline op 0x2E */
+    u32 status;  /* +0x438c status bits (overlay names): 1 MATCHLESS, 8 NOT THROW, 0x40 BEFORE ATTACK, 0x200 STIFF, 0x400 HIT, 0x2000 NOT HORMING, 0x8000 REVERSAL, 0x20000 GUARD...; timeline op 0x2D */
     u8 flags4390;  /* +0x4390 bit 2: armour or special state (no counter/combo scaling) */
-    u8 _4391[0x83];
+    u8 _4391[0x17];
+    s16 release_frame;  /* +0x43a8 timeline op 0x3C: Fighter_ReturnControl at motion frame - 1 (0 = none) */
+    s16 guard_frame;  /* +0x43aa timeline op 0x3C: sets flags4388 bit 1 (GUARD) at motion frame - 1 */
+    u8 _43AC[0x68];
     f32 attack_mul;  /* +0x4414 attack multiplier */
     f32 defense_mul;  /* +0x4418 defense multiplier, normally 1.0 */
     s16 hp;  /* +0x441c */
@@ -234,9 +241,15 @@ struct Fighter {
     f32 limb_fatigue;  /* +0x44b8 per-limb float lowered by 0.1 every 30 points used (array; length not known) */
     u8 _44BC[0x32];
     s16 hit_count;  /* +0x44ee */
-    u8 _44F0[0x1e];
+    u32 attack_parts;  /* +0x44f0 bit n = g_AttackSpheres part n is live (timeline op 0x24) */
+    s16 attack_from;  /* +0x44f4 first active motion frame (op 0x24 centre - before) */
+    s16 attack_to;  /* +0x44f6 last active motion frame (op 0x24 centre + after) */
+    u8 _44F8[0x14];
+    u8 combo_count;  /* +0x450c moves chained so far; op 0x15 sets 1, Action_TryCombo adds 1, limit Person +0x384 + 1 */
+    u8 input_buffered;  /* +0x450d inputs pressed while busy (state & 6); Action_TryCombo needs it non-zero */
     s16 combo_hits;  /* +0x450e combo count used for damage scaling */
-    u8 _4510[0xc];
+    s32 last_input;  /* +0x4510 last input code from Pad_ReadCommand (-1 = none) */
+    u8 _4514[0x8];
     s16 rev;  /* +0x451c REV meter */
     s16 rev_max;  /* +0x451e */
     u8 _4520[0x50];
@@ -256,9 +269,12 @@ _Static_assert(__builtin_offsetof(Fighter, person) == 0x4, "Fighter.person");
 _Static_assert(__builtin_offsetof(Fighter, person_slot) == 0x8, "Fighter.person_slot");
 _Static_assert(__builtin_offsetof(Fighter, unk18) == 0x18, "Fighter.unk18");
 _Static_assert(__builtin_offsetof(Fighter, pos) == 0x2ac, "Fighter.pos");
+_Static_assert(__builtin_offsetof(Fighter, facing) == 0x2d0, "Fighter.facing");
+_Static_assert(__builtin_offsetof(Fighter, motion_frame) == 0x2d4, "Fighter.motion_frame");
 _Static_assert(__builtin_offsetof(Fighter, motion) == 0x3fa4, "Fighter.motion");
 _Static_assert(__builtin_offsetof(Fighter, prev_motion) == 0x3fa6, "Fighter.prev_motion");
 _Static_assert(__builtin_offsetof(Fighter, blend) == 0x3fa8, "Fighter.blend");
+_Static_assert(__builtin_offsetof(Fighter, timeline_wait) == 0x3fd0, "Fighter.timeline_wait");
 _Static_assert(__builtin_offsetof(Fighter, motion_script) == 0x3fd4, "Fighter.motion_script");
 _Static_assert(__builtin_offsetof(Fighter, second_stream) == 0x3fd8, "Fighter.second_stream");
 _Static_assert(__builtin_offsetof(Fighter, loop_start) == 0x3fdc, "Fighter.loop_start");
@@ -272,7 +288,10 @@ _Static_assert(__builtin_offsetof(Fighter, action) == 0x4346, "Fighter.action");
 _Static_assert(__builtin_offsetof(Fighter, hit_action) == 0x4348, "Fighter.hit_action");
 _Static_assert(__builtin_offsetof(Fighter, state) == 0x4378, "Fighter.state");
 _Static_assert(__builtin_offsetof(Fighter, flags4388) == 0x4388, "Fighter.flags4388");
+_Static_assert(__builtin_offsetof(Fighter, status) == 0x438c, "Fighter.status");
 _Static_assert(__builtin_offsetof(Fighter, flags4390) == 0x4390, "Fighter.flags4390");
+_Static_assert(__builtin_offsetof(Fighter, release_frame) == 0x43a8, "Fighter.release_frame");
+_Static_assert(__builtin_offsetof(Fighter, guard_frame) == 0x43aa, "Fighter.guard_frame");
 _Static_assert(__builtin_offsetof(Fighter, attack_mul) == 0x4414, "Fighter.attack_mul");
 _Static_assert(__builtin_offsetof(Fighter, defense_mul) == 0x4418, "Fighter.defense_mul");
 _Static_assert(__builtin_offsetof(Fighter, hp) == 0x441c, "Fighter.hp");
@@ -288,7 +307,13 @@ _Static_assert(__builtin_offsetof(Fighter, limb_pool_max) == 0x4440, "Fighter.li
 _Static_assert(__builtin_offsetof(Fighter, pending_damage) == 0x44b0, "Fighter.pending_damage");
 _Static_assert(__builtin_offsetof(Fighter, limb_fatigue) == 0x44b8, "Fighter.limb_fatigue");
 _Static_assert(__builtin_offsetof(Fighter, hit_count) == 0x44ee, "Fighter.hit_count");
+_Static_assert(__builtin_offsetof(Fighter, attack_parts) == 0x44f0, "Fighter.attack_parts");
+_Static_assert(__builtin_offsetof(Fighter, attack_from) == 0x44f4, "Fighter.attack_from");
+_Static_assert(__builtin_offsetof(Fighter, attack_to) == 0x44f6, "Fighter.attack_to");
+_Static_assert(__builtin_offsetof(Fighter, combo_count) == 0x450c, "Fighter.combo_count");
+_Static_assert(__builtin_offsetof(Fighter, input_buffered) == 0x450d, "Fighter.input_buffered");
 _Static_assert(__builtin_offsetof(Fighter, combo_hits) == 0x450e, "Fighter.combo_hits");
+_Static_assert(__builtin_offsetof(Fighter, last_input) == 0x4510, "Fighter.last_input");
 _Static_assert(__builtin_offsetof(Fighter, rev) == 0x451c, "Fighter.rev");
 _Static_assert(__builtin_offsetof(Fighter, rev_max) == 0x451e, "Fighter.rev_max");
 _Static_assert(__builtin_offsetof(Fighter, hit_index) == 0x4570, "Fighter.hit_index");

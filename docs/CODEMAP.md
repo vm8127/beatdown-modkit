@@ -96,8 +96,11 @@ action ─> g_ActionHits[action]             0x00580A40, 2004 pointers: hit reco
                                            Fighter_SetAction 0x0031F120 loads these into the fighter
                                            (+0x3FD4/+0x3FD8) and sets +0x4346 = action; Action_Step
                                            0x0031FAE0 runs the motion script (which animations play,
-                                           frame ranges): see docs/ANIMATION.md
+                                           frame ranges); Action_Timeline 0x00320310 runs the second
+                                           stream (active frames, combo cancel, effects): docs/ANIMATION.md
 ```
+
+Frame data (docs/ANIMATION.md, "Frame data"): the timeline waits on the motion frame `+0x2D4`; op 0x24 sets the attack window (`+0x44F4`-`+0x44F6`, spheres `+0x44F0` from `g_AttackSpheres` `0x00515D90`) that `Fighter_AttackCollide` `0x002EC560` checks; op 0x16 is the combo cancel point (`Action_TryCombo` `0x0031F250`); op 0x3C hands control back early (`Fighter_ReturnControl` `0x0030BC40`). `python tools/codemap.py framedata ISO/SLUS_211.50 0x13` prints it per command. Animation data (STAGE.XAF, RenderWare compressed keyframes): docs/ANIMATION.md, "Animation file format", and `tools/animkit.py`.
 
 The matching is done by `Cmd_MatchSequence` `0x002A6720` (input history at `+0`, count at `+256`) and `Cmd_MatchSingle` `0x002A68B0`. A non-zero condition is a 16-byte record `{u16 move list index, then required stat levels}`; `Cmd_CheckCondition` `0x002A63A0` (fighter, condition) compares bytes `+2`.. with the fighter's stat levels from `0x002F8B40`, so these are the "learn at level" gates on hero moves (read from the code, not tested). They don't name a hero, so a command keeps working when copied into another style's list (`bdkit.py mix-moveset`). `Fighter_RemapAction` only touches negative action IDs, and command lists hold positive ones.
 
@@ -305,7 +308,7 @@ Untested starting points. RAM values are rewritten by the game, so a pnach cheat
 
 ## Open leads
 
-- **Action event records and the second stream**: `g_ActionEvents` records start with a handler address (`0x30BF10` and `0x30BFA0` both call `Fighter_SetAction` on the fighter's `+0x4348`). The motion script is decoded (docs/ANIMATION.md, `codemap.py actions`); the second stream at `+0x3FD8` (starting `0x35, 1, ...`) and the event records probably hold the frame data.
+- **Action event records**: `g_ActionEvents` records start with a handler address (`0x30BF10` and `0x30BFA0` both call `Fighter_SetAction` on the fighter's `+0x4348`), `+8` is the action `FUN_003084E0` queues. The motion script and the second stream (the timeline with the frame data) are decoded (docs/ANIMATION.md, `codemap.py actions` / `framedata`); the event records aren't.
 - **Hit record fields** other than damage (`+0` kind, `+4` maybe stun or knockback, `+10`, `+12`, `+14` flags).
 - **Scripts**: found (docs/SCRIPTS.md); its "Open questions" lists what is left.
 - **Shops** (see above) and level-up / EXP code (strings "LEVEL: ", "EXP: " near `0x5B83F8`).

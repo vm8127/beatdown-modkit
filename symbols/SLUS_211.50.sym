@@ -132,6 +132,12 @@
 00235F50 RpGeometryForAllMaterials
 00237878 RpMaterialSetTexture
 002503B0 RtAnimAnimationStreamRead
+00251378 RtAnimRegisterInterpolationScheme
+00253400 RwFloat16Compress
+00253660 RpHAnimCmpKeyInterpolate
+00254350 RpHAnimCmpKeyMulRecip
+00254970 RpHAnimCmpKeyStreamRead
+0025B3E8 RwStreamFindChunk
 0025B5F8 RwStreamReadChunkHeaderInfo
 00264138 RwTextureStreamRead
 00264500 RwTexDictionaryStreamRead
@@ -143,8 +149,11 @@
 0029C420 Tex_Request
 0029C810 Tex_Collect
 0029CD10 Xaf_LoadAnimation
+0029E3C0 Lzss_Decode
 0029E500 Pack_Load
+0029EC00 AnimPack_OpenItem
 0029ED70 Xaf_LoadAnimPack
+002A42E0 Pad_ReadCommand
 002A5B80 Fighter_PickWeaponMove
 002A63A0 Cmd_CheckCondition
 002A6720 Cmd_MatchSequence
@@ -190,7 +199,9 @@
 002E7130 Area_PeopleLayer
 002E7A50 Location_Current
 002E9590 Options_SetMode
+002EC560 Fighter_AttackCollide
 002F0900 Fighter_PlayMotion
+002F1610 Fighter_UpdateMotion
 002F4BF0 Fighter_AttachPart
 002F52C0 Fighter_UsesPresetModel
 002F53A0 Fighter_LoadModel
@@ -218,6 +229,7 @@
 002FA180 Fighter_IsHolding
 002FB120 Fighter_HasPride
 002FB780 Fighter_SetGuard
+002FB840 Fighter_NewAttackId
 002FB880 Fighter_ApplyDamage
 002FB8D0 Fighter_PrideDamage
 002FBAE0 Fighter_SubPride
@@ -235,6 +247,9 @@
 00304B60 Fighter_Spawn
 00305CC0 Combat_ResolveHit
 00307E40 Fighter_StartAction
+0030AEB0 Fighter_TaskAction
+0030BC40 Fighter_ReturnControl
+0030CA90 Fighter_TaskWalk
 0030DFD0 Combat_TakeHit
 00313F90 Fighter_PrideRegen
 00314D30 Combat_SituationFactor
@@ -250,8 +265,10 @@
 0031D080 Area_BattleSpotCount
 0031D0C0 Area_PickBattleSpot
 0031F120 Fighter_SetAction
+0031F250 Action_TryCombo
 0031F650 Action_Next
 0031FAE0 Action_Step
+00320310 Action_Timeline
 003255D0 Dialogue_RunEntry
 003340D0 Debug_ShopSelect
 0033A670 Text_ToAscii
@@ -562,6 +579,10 @@
 0050C230 g_ActionRemap_S
 0050D6A0 g_ClassTable
 00515C10 g_StyleCommands
+00515CC0 g_BodySpheres
+00515D90 g_AttackSpheres
+00515EA0 g_HurtSpheres
+00516050 g_SphereTables
 00516980 g_BattleSpotDefault
 005170F0 g_AreaDefs
 00580A40 g_ActionHits
@@ -653,6 +674,7 @@
 006614A0 g_BList
 00685450 g_Pad1
 0069C2B0 g_McFiles
+0069DF08 g_RtAnimInterpInfo
 006C55F0 g_AnimSlots
 006C7140 g_AnimSlotRefs
 006C7860 g_AnimGroupRefs

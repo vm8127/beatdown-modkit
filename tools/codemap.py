@@ -509,6 +509,175 @@ def cmd_actions(a):
         print(f"action {act}: " + "; ".join(parts))
 
 
+# ---------------------------------------------------------------------------
+# The action's second stream (fighter +0x3FD8): the move's timeline, run every frame by Action_Timeline
+# 0x00320310 next to Action_Step. Opcodes and sizes in bytes read from its switch (docs/ANIMATION.md,
+# "Frame data"). Times are in frames of the current motion (fighter +0x2D4 = anim time * 60).
+# ---------------------------------------------------------------------------
+STREAM_OPS = {
+    0x01: ("end", 2), 0x02: ("loop", 4), 0x03: ("next", 2), 0x05: ("speed", 4), 0x0A: ("wait", 4),
+    0x0B: ("sub", 8), 0x0C: ("op0C", 10), 0x0D: ("fx", 12), 0x0E: ("fx2", 14), 0x10: ("fxpos", 8),
+    0x11: ("waitmotion", 4), 0x13: ("weapon13", 10), 0x14: ("op14", 8), 0x15: ("combo", 2),
+    0x16: ("cancel", 4), 0x17: ("move17", 12), 0x18: ("move18", 8), 0x19: ("move19", 8), 0x1A: ("turn", 4),
+    0x1B: ("op1B", 4), 0x1D: ("op1D", 6), 0x1E: ("op1E", 4), 0x1F: ("op1F", 4), 0x20: ("revmax", 4),
+    0x21: ("op21", 4), 0x22: ("op22", 4), 0x23: ("op23", 6), 0x25: ("op25", 4), 0x26: ("headlook", 4),
+    0x27: ("weapon27", 4), 0x28: ("weapon28", 2), 0x29: ("op29", 4), 0x2A: ("op2A", 2), 0x2B: ("throwhit", 4),
+    0x2D: ("status", 8), 0x2E: ("control", 8), 0x2F: ("state", 6), 0x30: ("hitindex", 4), 0x31: ("op31", 4),
+    0x32: ("ifstatus", 10), 0x33: ("branch", 6), 0x35: ("op35", 4), 0x36: ("op36", 2), 0x37: ("op37", 4),
+    0x38: ("op38", 10), 0x39: ("op39", 4), 0x3A: ("nop3A", 4), 0x3B: ("op3B", 6), 0x3C: ("op3C", 6),
+    0x3D: ("op3D", 6), 0x3E: ("weapon3E", 4), 0x41: ("op41", 6), 0x42: ("op42", 4), 0x43: ("op43", 4),
+    0x44: ("op44", 4), 0x45: ("op45", 4), 0x46: ("op46", 6), 0x47: ("op47", 4), 0x49: ("op49", 6),
+    0x4A: ("op4A", 4), 0x4B: ("op4B", 4), 0x4C: ("op4C", 2), 0x4D: ("op4D", 6), 0x4E: ("op4E", 6),
+    0x4F: ("op4F", 4), 0x50: ("op50", 4),
+}
+# bit names printed by the developer overlay (Debug_FighterInfo 0x00302260)
+CONTROL_BITS = {0x1: "CONTROL", 0x2: "GUARD", 0x4: "NOT CONTROL", 0x8: "HEAP", 0x10: "PRESS", 0x20: "ATTACK",
+                0x40: "HEAP_KICK", 0x80: "PRESS_ACT", 0x100: "NEJIKOMI", 0x200: "REVISION POS",
+                0x400: "REVISION WALL", 0x800: "REVISION MOB", 0x1000: "FRONT STEP", 0x2000: "BACK STEP",
+                0x4000: "WEAPON", 0x8000: "COUNTER", 0x10000: "NOT REVERSAL", 0x40000: "NOT WALK",
+                0x80000: "HOLD WALL", 0x100000: "HOLD MOB"}
+STATUS_BITS = {0x1: "MATCHLESS", 0x8: "NOT THROW", 0x10: "SET PLAYER", 0x20: "ROTATE HEAD", 0x40: "BEFORE ATTACK",
+               0x80: "BEFORE HOLD", 0x100: "HOLD POWER", 0x200: "STIFF", 0x400: "HIT", 0x800: "WALL",
+               0x1000: "LONG RANGE", 0x2000: "NOT HORMING", 0x4000: "STRIKE BACK", 0x8000: "REVERSAL",
+               0x10000: "COUNTER", 0x20000: "GUARD", 0x40000: "FEAR", 0x80000: "AOMUKE MOUNT",
+               0x100000: "UTUBUSE MOUNT", 0x200000: "BUZAMA", 0x400000: "ACTION SB", 0x800000: "SB NOT CTRL"}
+ATTACK_PARTS = 0x00515D90       # g_AttackSpheres: 12 x {s8 bone, f32 offset xyz, f32 radius} (x2 when attacking)
+
+
+def action_stream(e, act):
+    """Decode an action's second stream into (op, name, args) tuples. Empty if it isn't in the ELF."""
+    if not 0 <= act < ACTION_COUNT:
+        return []
+    p = e.u32(ACTION_SCRIPTS + 8 * act + 4)
+    if not 0x00100000 <= p < 0x005FE000:
+        return []
+    out = []
+    for _ in range(512):
+        op = e.s16(p)
+        if op == 0x12:                                 # random follow-up list ending -1
+            q = p + 2
+            while e.s16(q) != -1:
+                q += 2
+            n = q + 2 - p
+        elif op == 0x24:                               # attack window: centre, before, after, parts ... -1
+            q = p + 8
+            while e.s16(q) != -1:
+                q += 2
+            n = q + 2 - p
+        elif op == 0x1C:                               # voice: variable length
+            n = 4 if e.s16(p + 2) == 0 else (8 if e.s16(p + 4) == -1 else 12)
+        else:
+            n = STREAM_OPS.get(op, (None, 2))[1]       # unknown opcodes are skipped as one word, as the game does
+        name = {0x12: "random", 0x24: "attack", 0x1C: "voice"}.get(op) or STREAM_OPS.get(op, (f"op{op:02X}",))[0]
+        out.append((op, name, [e.s16(p + 2 + 2 * k) for k in range(n // 2 - 1)]))
+        if op == 0x01:
+            break
+        p += n
+    return out
+
+
+def bit_names(table, v):
+    return "+".join(n for b, n in table.items() if v & b) or f"0x{v:X}"
+
+
+def frame_data(e, act):
+    """The timeline of one action: [(anim frame, text)], the first play of its motion script, speed changes."""
+    events, speeds, t, hit = [], [(0, 1.0)], 0, 0
+    recs = hits(e, act)
+    for op, name, args in action_stream(e, act):
+        if name == "wait":
+            t = args[0]
+        elif name == "speed":
+            speeds.append((t, args[0] / 1000))
+        elif name == "attack":
+            c, before, after, parts = args[0], args[1], args[2], args[3:-1]
+            dmg = recs[hit]["damage"] if hit < len(recs) else "?"
+            events.append((c - before, f"ACTIVE {c - before}-{c + after} (game {{g:{c - before}}}-{{g:{c + after}}})"
+                                       f" parts {','.join(map(str, parts))}, hit record {hit} damage {dmg}"))
+        elif name == "combo":
+            events.append((t, "combo window opens"))
+        elif name == "cancel":
+            events.append((t, "cancel point (buffered input -> next move)"))
+        elif name == "hitindex":
+            hit = args[0]
+            events.append((t, f"hit record {args[0]}"))
+        elif name == "throwhit":
+            events.append((t, f"throw damage ({args[0]})"))
+        elif name in ("status", "control"):
+            v = (args[1] & 0xFFFF) << 16 | (args[2] & 0xFFFF)
+            tab = STATUS_BITS if name == "status" else CONTROL_BITS
+            events.append((t, f"{'set' if args[0] == 1 else 'clear'} {bit_names(tab, v)}"))
+        elif name in ("branch", "ifstatus"):
+            events.append((t, f"{name} -> action {args[-1]}"))
+        elif name == "waitmotion":
+            events.append((t, f"wait for motion slot {args[0]}"))
+        elif name == "loop":
+            events.append((t, "loop"))
+            break
+        elif name == "op3C":
+            if args[0]:
+                events.append((args[0] - 1, "control returns (Fighter_ReturnControl: new moves allowed)"))
+            if args[1]:
+                events.append((args[1] - 1, "GUARD control bit set (only guard-type inputs)"))
+        elif name == "end":
+            events.append((t, "timeline ends"))
+    return sorted(events, key=lambda x: x[0]), speeds
+
+
+def game_frame(speeds, f):
+    """Anim frame -> game frames (60/s) from the start, given [(anim frame, speed)] changes."""
+    g, last, sp = 0.0, 0, 1.0
+    for at, s in speeds:
+        if at >= f:
+            break
+        g += (at - last) / sp
+        last, sp = at, s
+    return g + (f - last) / sp
+
+
+def cmd_framedata(a):
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")    # input arrows
+    e = bdkit.Elf(a.elf)
+    lib = None
+    try:
+        import animkit
+        lib = animkit.Library(a.elf, a.stage)
+    except (ImportError, SystemExit, OSError):
+        pass
+    todo = []
+    for x in a.ids:
+        v = int(x, 0)
+        if x.lower().startswith("0x") and v < 0x30:
+            todo += [(" ".join(INPUTS.get(c, f"#{c:02X}") for c in codes), act) for _, codes, act in style_commands(e, v)]
+        else:
+            todo.append(("", v))
+    for inp, act in dict.fromkeys(todo):
+        play = next((args for name, args in motion_script(e, act) if name == "play"), None)
+        head = f"{inp + '  ' if inp else ''}action {act}"
+        if play:
+            m, s0, s1, blend = play
+            length = ""
+            if lib:
+                try:
+                    an = lib.anim(m)[0]
+                    length = f", anim length {an.frames}"
+                except SystemExit:
+                    length = ", anim not in any group"
+            head += f": anim {m} [{s0}-{'end' if s1 == -1 else s1}, blend {blend}{length}]"
+        events, speeds = frame_data(e, act)
+        if play and lib and length.startswith(", anim length"):
+            stop = an.frames if s1 == -1 else min(s1, an.frames)
+            events.append((stop, "motion ends (then the motion script goes on, usually back to the stance)"))
+        if len(speeds) > 1 or speeds[0][1] != 1.0:
+            head += "  speed " + " ".join(f"{s:g}@{f}" for f, s in speeds[1:])
+        print(head)
+        for f, txt in sorted(events, key=lambda x: x[0]):
+            gf = game_frame(speeds, f)
+            txt = re.sub(r"\{g:(-?\d+)\}", lambda m: f"{game_frame(speeds, int(m[1])):.1f}", txt)
+            print(f"    {f:4}  (game {gf:5.1f})  {txt}")
+
+
 def style_motions(e, style):
     """Animation ids played by the first motion script of every command in a style's list."""
     out = set()
@@ -688,6 +857,8 @@ def main():
     x = s.add_parser("hits"); x.add_argument("elf"); x.add_argument("action"); x.set_defaults(fn=cmd_hits)
     x = s.add_parser("persons"); x.add_argument("elf"); x.set_defaults(fn=cmd_persons)
     x = s.add_parser("actions"); x.add_argument("elf"); x.add_argument("ids", nargs="+"); x.set_defaults(fn=cmd_actions)
+    x = s.add_parser("framedata"); x.add_argument("elf"); x.add_argument("ids", nargs="+"); x.add_argument("--stage")
+    x.set_defaults(fn=cmd_framedata)
     x = s.add_parser("anim-check"); x.add_argument("elf"); x.add_argument("cls", nargs="?"); x.add_argument("style", nargs="?")
     x.set_defaults(fn=cmd_anim_check)
     x = s.add_parser("pnach-map"); x.add_argument("pnach"); x.set_defaults(fn=cmd_pnach_map)

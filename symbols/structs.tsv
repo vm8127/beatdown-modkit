@@ -75,11 +75,14 @@ Fighter	0x0004	s32	person	person id; when 0x0060C960 bit 1 is set, the record's 
 Fighter	0x0008	s32	person_slot	the person id Fighter_AssignPerson was given
 Fighter	0x0018	void*	unk18	CODEMAP said "in use"; holds a heap pointer (0x01694A20) in a fight
 Fighter	0x02AC	f32[3]	pos	position x, y, z
+Fighter	0x02D0	f32	facing	facing angle in degrees (timeline effect ops add it)
+Fighter	0x02D4	s32	motion_frame	current motion frame = (anim time + 1/120) * 60, set after Action_Timeline; the timeline waits on it
 Fighter	0x3FA4	s16	motion	current animation slot (anim id + 1; the overlay's MOT + 1)
 Fighter	0x3FA6	s16	prev_motion
 Fighter	0x3FA8	f32	blend	blend time (seconds)
+Fighter	0x3FD0	f32	timeline_wait	Action_Timeline: wait until motion_frame >= this (op 0x0A); motion script op 4 clears it
 Fighter	0x3FD4	u8*	motion_script	current action's motion script (docs/ANIMATION.md)
-Fighter	0x3FD8	u8*	second_stream	current action's second stream
+Fighter	0x3FD8	u8*	second_stream	current action's timeline (second stream), run by Action_Timeline (docs/ANIMATION.md, Frame data)
 Fighter	0x3FDC	u8*	loop_start	motion script loop start
 Fighter	0x3FE0	f32	motion_start	motion start time (seconds)
 Fighter	0x3FE4	f32	motion_end	motion end time (seconds)
@@ -90,8 +93,11 @@ Fighter	0x432C	s16	weapon	held weapon item, -1 = none
 Fighter	0x4346	s16	action	current action id (the overlay's TASK)
 Fighter	0x4348	s16	hit_action	attack action used for the hit lookup
 Fighter	0x4378	u32	state	2 = ATTACK, 4 = HOLD, 0x1E0 = damage states
-Fighter	0x4388	u32	flags4388	0x4000 = holding a weapon
+Fighter	0x4388	u32	flags4388	control bits (overlay PCTRL names): 1 CONTROL, 2 GUARD, 4 NOT CONTROL, 0x20 ATTACK, 0x4000 WEAPON (holding a weapon); timeline op 0x2E
+Fighter	0x438C	u32	status	status bits (overlay names): 1 MATCHLESS, 8 NOT THROW, 0x40 BEFORE ATTACK, 0x200 STIFF, 0x400 HIT, 0x2000 NOT HORMING, 0x8000 REVERSAL, 0x20000 GUARD...; timeline op 0x2D
 Fighter	0x4390	u8	flags4390	bit 2: armour or special state (no counter/combo scaling)
+Fighter	0x43A8	s16	release_frame	timeline op 0x3C: Fighter_ReturnControl at motion frame - 1 (0 = none)
+Fighter	0x43AA	s16	guard_frame	timeline op 0x3C: sets flags4388 bit 1 (GUARD) at motion frame - 1
 Fighter	0x4414	f32	attack_mul	attack multiplier
 Fighter	0x4418	f32	defense_mul	defense multiplier, normally 1.0
 Fighter	0x441C	s16	hp
@@ -107,7 +113,13 @@ Fighter	0x4440	s16[6]	limb_pool_max
 Fighter	0x44B0	s16	pending_damage
 Fighter	0x44B8	f32	limb_fatigue	per-limb float lowered by 0.1 every 30 points used (array; length not known)
 Fighter	0x44EE	s16	hit_count
+Fighter	0x44F0	u32	attack_parts	bit n = g_AttackSpheres part n is live (timeline op 0x24)
+Fighter	0x44F4	s16	attack_from	first active motion frame (op 0x24 centre - before)
+Fighter	0x44F6	s16	attack_to	last active motion frame (op 0x24 centre + after)
+Fighter	0x450C	u8	combo_count	moves chained so far; op 0x15 sets 1, Action_TryCombo adds 1, limit Person +0x384 + 1
+Fighter	0x450D	u8	input_buffered	inputs pressed while busy (state & 6); Action_TryCombo needs it non-zero
 Fighter	0x450E	s16	combo_hits	combo count used for damage scaling
+Fighter	0x4510	s32	last_input	last input code from Pad_ReadCommand (-1 = none)
 Fighter	0x451C	s16	rev	REV meter
 Fighter	0x451E	s16	rev_max
 Fighter	0x4570	u8	hit_index	current hit within the action
