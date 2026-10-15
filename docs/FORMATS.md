@@ -61,7 +61,7 @@ How the game loads them (read): `Pack_Load` `0x0029E500` walks an entry's top-le
 
 ## PS2-native textures (0x15)
 
-The world textures (FSTAGE.XAF section 0 of every area pack, shared entries 55 and 56) and the texture dictionaries in CDATA.XAF 196-384 and FSCENE.XAF are **RenderWare PS2 "texture native" chunks**: ready-made GS upload packets. Decoded 2026-10-15 for the remake's M6 with `tools/ps2tex.py` (checked: all 36 subway textures look right as PNGs, and every texture in FSTAGE.XAF decodes; see the counts in the tool's docstring run below). Layout (seen on all of them):
+The world textures (FSTAGE.XAF section 0 of every area pack, shared entries 55 and 56) and the texture dictionaries in CDATA.XAF 196-384 and FSCENE.XAF are **RenderWare PS2 "texture native" chunks**: ready-made GS upload packets. Decoded 2026-10-15 for the remake's M6 with `tools/ps2tex.py` (checked: all 36 subway textures look right as PNGs, and all 3,225 textures in FSTAGE.XAF decode without error; 519 have some alpha). Layout (seen on all of them):
 
 ```
 0x16 TexDictionary  Struct {u16 count, u16 device 6}, then count x 0x15, then an empty Extension
@@ -76,7 +76,7 @@ The world textures (FSTAGE.XAF section 0 of every area pack, shared entries 55 a
   Extension         empty
 ```
 
-- **Raster format**: low 16 bits 0x2504 (PAL8 + 8888 + texture), 0x4504 (PAL4) or 0x0504 (32-bit, no palette); high 16 bits 2 = the data has GS headers. Only these three, and **no mipmaps** (flag 0x8000 never set) anywhere in FSTAGE.XAF (seen: 4-bit is the bulk, then 8-bit, then a few dozen 32-bit).
+- **Raster format**: low 16 bits 0x2504 (PAL8 + 8888 + texture), 0x4504 (PAL4) or 0x0504 (32-bit, no palette); high 16 bits 2 = the data has GS headers. Only these three, and **no mipmaps** (flag 0x8000 never set) anywhere in FSTAGE.XAF (seen: 2,688 4-bit, 489 8-bit, 48 32-bit). 47 textures have no GS headers (high half 0): the 512x256 32-bit `STG_nn_MCAR/NCAR/SCAR` sheets in FSTAGE 122-180, which are **car textures** (a yellow taxi in 130; so those entries are the traffic cars, probably one per area: open), stored as plain rows.
 - **GS header** (0x50 bytes before the pixels and before the palette): a GIFtag (NLOOP 3, A+D) setting TRXPOS, **TRXREG** (u32 width, height at header `+0x20`) and TRXDIR, then the IMAGE GIFtag. There is no BITBLTBUF: the driver adds the destination at upload time.
 - **TEX0**: TBP0 and CBP are 0 (relative), TBW = width / 64 (at least 2 for 4/8-bit), PSM 0x13 (PSMT8), 0x14 (PSMT4) or 0 (PSMCT32), CPSM 0 (32-bit palette), CSM 0 (CSM1).
 - **Swizzle**: 4- and 8-bit pixels are uploaded as a **width/2 x height/2 rectangle** in another format, so the bytes are in GS-memory order, not row order. 8-bit: the rectangle is PSMCT32 (w x h bytes); 4-bit: PSMCT16 (w x h / 2 bytes; the format is not in the data, deduced from the size and confirmed by the decoded images). To decode, write the rectangle into emulated GS memory in that format with buffer width TBW / 2, then read the texture back as PSMT8 / PSMT4 with TBW (`ps2tex.unswizzle`, GS block/column tables). 32-bit textures are uploaded as themselves (linear rows).

@@ -153,7 +153,7 @@ From `AreaDef` (symbols/structs.tsv):
 
 - 0: 1 byte. 55, 56: texture dictionaries (56 = the shared one, `Stage_LoadCommon`; 55 loaded by `0x00155E70(0)` from `0x0031E2E0`).
 - 57-127 (71 entries, about 36 KB each, first words 0x1F-0x21): **not stage data**. `0x00154BB0(slot, ?, n)` loads entry 57 + n for each of the two fighters at a fight start, n = the person's `+0x46` (from `PersonDef +8`, 0-70); parsed by `0x00154AF0` (header counts, then 148-byte and 272-byte records). Meaning open (per-character data for fights).
-- 122-180: texture dictionaries (20 KB to 700 KB), users not found (open).
+- 122-180: texture dictionaries (20 KB to 700 KB), users not found (open). They include 512x256 32-bit sheets named `STG_nn_MCAR` / `NCAR` / `SCAR` (nn = 03..53, close to the area ids) that decode as **car textures** (entry 130: a yellow taxi; `tools/ps2tex.py`, seen), so probably the traffic cars per area (guess).
 
 ## Open questions
 
