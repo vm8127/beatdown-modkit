@@ -16,10 +16,10 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 ## After the running work lands
 
-- [ ] **M6 complete (running since 2026-10-15 as a background subagent of the main session; restart from this line if no `levels/subway.tscn` commit follows):** the subway as a full level: area loader, lights, all props, closed doors, battle spots, items, camera collision, a fight at the battle spots, level tests.
+- [ ] **M6 complete (running since 2026-10-15 as a background subagent of the main session; restart from this line if no `levels/subway.tscn` commit follows):** the subway and DOWNTOWN STREET (area 1) as full levels with working doors between them (V, 2026-10-15): area loader, lights, all props, battle spots, items, camera collision, a fight at the battle spots, area change through the doors, level tests.
 
 - [ ] **M4a follow-ups:** root motion pushes the capsule into the dummy (applied past body collision; seen in the smoke screenshot); hitstun / hitstop / knockback are placeholders (not in the hit records: find where the game keeps them); motion-input time limits (`g_InputPatterns`) and where ↑/↓ come from; grabs and context moves can't be input yet; command conditions, Pride and TIRED unused.
 
 - [ ] **M4 (running since 2026-10-15 as a background subagent of the main session; restart from this line if no M4 commit follows):** animated Aaron replaces the capsule: each move plays its clip (blend 8), hit spheres attached to the hitting body parts' bones.
-- [ ] **M6 follow-up (V, 2026-10-15: later; the subway is the only area for now):** doors as exits between areas (Downtown <-> subway), more areas. Battle spots and props inside the subway are fine to do sooner.
+- [ ] **M6 follow-up (later):** the other areas and their doors (subway <-> Downtown is in M6 now). Battle spots and props inside the subway are fine to do sooner.
 - [ ] V plays M0 / M4 and gives feel feedback (timing, hitstop, camera).
