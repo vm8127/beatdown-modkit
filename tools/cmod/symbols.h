@@ -11,6 +11,7 @@ int Graph_FindName(const char *name);  /* 0x00138d20 */
 int Flag_Get(int n);  /* 0x00138e20 */
 void Flag_Set(int n);  /* 0x00138e70 */
 void Flag_Clear(int n);  /* 0x00138ec0 */
+int Area_SpawnPeople(int phase, AreaPerson *list);  /* 0x00139e50 */
 void SaveData_Pack(void *buf);  /* 0x0013a950 */
 void SaveData_Unpack(void *buf);  /* 0x0013aab0 */
 void Person_Init(int slot, int person_def, int temp);  /* 0x0013b490 */
@@ -20,6 +21,7 @@ const char *Fighter_DisplayName(int person_id);  /* 0x0013ca80 */
 void Person_SetMoney(int person_id, int value);  /* 0x0013cc70 */
 void Person_AddMoney(int person_id, int delta);  /* 0x0013cdc0 */
 void Inventory_InitForHero(void);  /* 0x0013d000 */
+int Person_IsPresent(int person_id);  /* 0x0013da30 */
 void Criminal_AddLeadership(int n);  /* 0x0013df00 */
 void Criminal_AddCash(int n);  /* 0x0013df20 */
 void Criminal_AddCharisma(int n);  /* 0x0013df40 */
@@ -27,6 +29,7 @@ void Criminal_AddCashScore(int amount);  /* 0x0013df60 */
 int StoryVar_Add(int index, int delta);  /* 0x00172bd0 */
 int StoryVar_Sub(int index);  /* 0x00172e10 */
 int Fighter_FindNpcSlot(int person_id);  /* 0x00176130 */
+int NpcSpawn_Step(int phase, s16 *request);  /* 0x00178700 */
 s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
 const char *MoveList_NameText(int unused, int style, int line);  /* 0x001c5bf0 */
 const char *MoveList_InputText(int unused, int style, int line);  /* 0x001c5c30 */
@@ -47,8 +50,14 @@ int Anim_UnloadGroup(int group);  /* 0x002dc790 */
 void Anim_UnloadGroupList(int *groups);  /* 0x002dc880 */
 void Battle_StartTalk(int kind);  /* 0x002de6e0 */
 void Battle_OnFighterDown(Fighter *fighter, int flag);  /* 0x002e2f60 */
+AreaPerson *Area_People(void);  /* 0x002e6300 */
+void *Area_BuildPeople(void);  /* 0x002e67c0 */
+void Area_PeopleBase(AreaPerson *entries);  /* 0x002e6dc0 */
+void Area_PeopleLayer(AreaPerson *entries);  /* 0x002e7130 */
 int Location_Current(void);  /* 0x002e7a50 */
 void Fighter_PlayMotion(Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames);  /* 0x002f0900 */
+int Fighter_UsesPresetModel(Fighter *fighter);  /* 0x002f52c0 */
+int Fighter_LoadModel(int phase, int slot, int flags);  /* 0x002f53a0 */
 s16 Fighter_RemapAction(Fighter *fighter, int action);  /* 0x002f8a30 */
 s16 Fighter_RemapActionNeg(Fighter *fighter, int action);  /* 0x002f8a60 */
 int Player_GetAbilityLevel(Fighter *fighter, int ability);  /* 0x002f8ab0 */
@@ -82,6 +91,7 @@ void HpBar_Build(int side);  /* 0x0031b210 */
 void Fighter_SetAction(Fighter *fighter, int action);  /* 0x0031f120 */
 int Action_Next(Fighter *fighter, int action);  /* 0x0031f650 */
 void Action_Step(Fighter *fighter);  /* 0x0031fae0 */
+void *Appearance_FindItem(int code);  /* 0x00349b40 */
 const char *Text_Get(int text_id, int zero);  /* 0x00387980 */
 int Criminal_Rank(int which);  /* 0x003937c0 */
 int Hero_StartEncounter(int hero);  /* 0x003964f0 */
@@ -312,8 +322,10 @@ void ClearCount_Inc(void);  /* 0x003df520 */
 int ClearCount_Get(void);  /* 0x003df540 */
 extern ScriptOpInfo g_ScriptOpcodes[204];  /* 0x00411ac0 */
 extern PersonDef g_PersonDefs[602];  /* 0x00413130 */
+extern s16 g_StreetTextures[1890];  /* 0x00430c90 */
 extern ItemDef g_ItemTable[488];  /* 0x004f2400 */
 extern AnimGroup g_AnimGroups[317];  /* 0x004fb4c0 */
+extern s32 g_StageLayer[12];  /* 0x00509aa0 */
 extern ClassRow g_ClassTable[51];  /* 0x0050d6a0 */
 extern Command *g_StyleCommands[37];  /* 0x00515c10 */
 extern HitRecord *g_ActionHits[2004];  /* 0x00580a40 */
@@ -332,8 +344,12 @@ extern u32 g_JobListA[34];  /* 0x005db6d0 */
 extern u32 g_JobListB[16];  /* 0x005db760 */
 extern u8 g_AutoMissions[26];  /* 0x005dbd40 */
 extern u32 g_TalkMissions[2];  /* 0x005dbd60 */
+extern u8 *g_PeoplePlacement;  /* 0x005febb8 */
 extern s16 g_Party[4];  /* 0x005febd0 */
+extern s32 g_NpcSpawnState;  /* 0x005feddc */
+extern s32 g_NpcSpawnModel;  /* 0x005fede0 */
 extern Battle *g_Battle;  /* 0x005ffc6c */
+extern s32 g_AreaPeopleCount;  /* 0x005ffcf0 */
 extern Preset *g_PresetData;  /* 0x005ffdd8 */
 extern u8 g_EventFlags[1024];  /* 0x0060a680 */
 extern s32 g_ClearCount;  /* 0x0060badc */
@@ -344,9 +360,12 @@ extern s16 g_StoryVars[128];  /* 0x0060c990 */
 extern s32 g_TotalMoneyEarned;  /* 0x0060d19c */
 extern Person g_Persons[210];  /* 0x0060d360 */
 extern s32 g_PlayerMoney;  /* 0x0060d3a0 */
+extern s32 g_NpcSpawnTextures[10];  /* 0x00645b20 */
+extern AreaPerson g_AreaPeople[7];  /* 0x006cb920 */
 extern Fighter g_Fighters[13];  /* 0x006cfb70 */
 extern s16 g_Player_HP;  /* 0x006d3f8c */
 extern s16 g_Player_MaxHP;  /* 0x006d3f8e */
+extern s32 g_AppearanceItems;  /* 0x0075b330 */
 extern MissionMgr g_MissionMgr;  /* 0x0076ed60 */
 extern u8 g_JobCleared[13];  /* 0x0076f0e0 */
 extern u8 g_JobResults[13];  /* 0x0076f0f0 */

@@ -14,6 +14,7 @@ trace-map commands work anywhere. Python 3 standard library only.
                                                     # 32 MB save states don't load while it is on (docs/MEMORY-MAP.md)
   python tools/pcsx2.py stop
   python tools/pcsx2.py status                      # PINE: running / paused / shut down, and the game id
+  python tools/pcsx2.py resume                      # unpause (a save state taken while loading can leave it paused)
   python tools/pcsx2.py r32 0x006D3F8C [count]      # read words (also r8, r16); w32 / w16 / w8 ADDR VALUE write
   python tools/pcsx2.py dump 0x006CFB70 0x4730 out.bin
   python tools/pcsx2.py flag 0x5F6 0x1F41 [--set | --clear]   # story flags (g_EventFlags), read or change
@@ -196,7 +197,23 @@ def cmd_cheats(a):
     if a.trace:
         if not os.path.exists(trace):
             sys.exit("no trace cheat yet: run `trace build` first")
-        text = text.rstrip("\n") + "\n\n" + open(trace, encoding="utf-8").read()
+        # Functions that an enabled cheat already patches (a @hook writes a function's first two words, like
+        # the trace stubs) are left untraced, so the cheat being tested keeps working.
+        taken, cur = set(), None
+        for ln in text.split("\n"):
+            if ln.startswith("[") and ln.endswith("]"):
+                cur = ln[1:-1]
+            elif cur in sections and ln.startswith("patch="):
+                taken.add(int(ln.split(",")[2], 16) & 0x0FFFFFFF)
+        kept, dropped = [], 0
+        for ln in open(trace, encoding="utf-8").read().split("\n"):
+            if ln.startswith("patch=") and (int(ln.split(",")[2], 16) & 0x0FFFFFFF) in taken:
+                dropped += 1
+                continue
+            kept.append(ln)
+        if dropped:
+            print(f"trace: left out {dropped} patch lines where the enabled cheats already write")
+        text = text.rstrip("\n") + "\n\n" + "\n".join(kept)
         sections.append(TRACE_SECTION)
     names = [ln[1:-1] for ln in text.split("\n") if ln.startswith("[") and ln.endswith("]")]
     for s in sections:
@@ -512,6 +529,19 @@ def cmd_flag(a):
         print(f"flag {n:#06x} ({n}) = {1 if v & bit else 0}")
 
 
+def cmd_resume(a):
+    """Unpause the sandbox (PCSX2's TogglePause hotkey, Space) if PINE says it is paused; a save state taken
+    while the game loads can leave it paused."""
+    if Pine().status() != 1:
+        print("not paused")
+        return
+    post_key("Space", True)
+    time.sleep(0.05)
+    post_key("Space", False)
+    time.sleep(0.5)
+    print({0: "running", 1: "still paused", 2: "shut down"}.get(Pine().status(), "?"))
+
+
 def cmd_status(a):
     p = Pine()
     st = {0: "running", 1: "paused", 2: "shut down"}.get(p.status(), "?")
@@ -725,6 +755,7 @@ def main():
     x.add_argument("state", choices=("on", "off"))
     x.set_defaults(fn=cmd_ram128)
     sub.add_parser("status").set_defaults(fn=cmd_status)
+    sub.add_parser("resume").set_defaults(fn=cmd_resume)
     x = sub.add_parser("flag")
     x.add_argument("flags", type=num, nargs="+")
     x.add_argument("--set", action="store_true")

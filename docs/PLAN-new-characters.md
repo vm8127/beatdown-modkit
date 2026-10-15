@@ -1,6 +1,6 @@
 # Plan: new characters you can meet, fight and recruit
 
-Started 2026-10-15. Goal: add brand-new characters to story mode: they appear somewhere, you fight them, you can recruit them, and they show up in the blacklist and VS mode. The first one is **Eggusz**. Status: **planning; nothing built yet.** Update this file as the work goes (what was found, what was tested, by whom).
+Started 2026-10-15. Goal: add brand-new characters to story mode: they appear somewhere, you fight them, you can recruit them, and they show up in the blacklist and VS mode. The first one is **Eggusz**. Status: **in progress (2026-10-15): Eggusz stands in the subway in chapter 2, talks, and fights (tested by Claude in the sandbox); his look, RECRUIT, VS and the install are not done yet.** See "Progress log" at the end. Update this file as the work goes (what was found, what was tested, by whom).
 
 ## Eggusz (the first new character)
 
@@ -38,3 +38,34 @@ How a look is built: an outfit **preset** (CDATA.XAF entry 0, 189 presets, `Pres
 ## Testing
 
 Sandbox PCSX2 (`tools/pcsx2.py`, README "Testing in a sandbox PCSX2"): Daniel's save state 1 (Aaron, stage 8) loads with 32 MB RAM (`pcsx2.py ram128 off`, the current setting). Teleport with `tools/debug/teleport.c`; debug cheats go in `tools/debug/` (`@org 0x000DF000`-`0x000DFFFF`, one hook per function: two debug cheats hooking `MissionMgr_Task` at once don't work). If the mod needs extended RAM, new 128 MB save states are needed (ask Daniel).
+
+## Progress log
+
+### 2026-10-15 (Claude, sandbox PCSX2, Daniel's save state 2 = start of chapter 2, Raven)
+
+**Built:** `mods/c/new_characters.c` (C mod, `@org 0x000A1000`, `@bss 0x000E1000`; not installed in Daniel's PCSX2 yet, not in `mods/*.pnach` yet). One table row per character (`new_chars[]`: person, preset number, base template + stat overrides, name, fight outfit slots, street model) and one per placement (`new_places[]`: person, area, story-stage mask, slot, `AreaPerson` entry). Hooks:
+- `Person_Init` hook writes the templates into `g_PersonDefs` (copy of template 83, a normal street person, with preset 87, class row 37, level 12, 3000 HP, Pride 200, rank 1, $1000, kind 0, no start weapon).
+- `Preset_Get` is replaced (`@jump`; it starts with a branch so it can't take `@hook`): preset 87 returns a preset image built in `@bss` from the table's slot list plus the body params of `body_preset`.
+- `Text_Get` hook: text 11001 + 51 (person 51's name, was "edit1p") returns "Ｅｇｇｕｓｚ" (full-width UTF-8 like the game's text).
+- `Area_BuildPeople` hook: after the game fills the area's 7 people slots, adds Eggusz's entry in the subway in stage 6 if that slot is empty and he passes the game's own checks (present, HP > 0, not in the party, not an ally); a save made before the mod gets person 51 rebuilt from the template there.
+- `NpcSpawn_Step` hook (street model override): **pauses PCSX2** during the subway load, even with values identical to the game's, so it is switched off (`street_model = -1`) until understood. The pause happens while the spawn of person 177 (the first slot) is in step 2.
+
+**Tested (sandbox, Claude):** Eggusz appears in the ABANDONED SUBWAY STATION in stage 6, at person 128's spot (-27.6, 11.8). Walking up and pressing Cross talks to him: the HP bar says "Eggusz", he plays dialogue 67 ("Hey, there. How ya doin'?") and offers NEGOTIATION (Circle) / BATTLE (Square). BATTLE starts "Raven VS Eggusz", a 1-on-1 street fight; in it he is fighter slot 1, person 51, HP 3000/3000, class row 37 (Jason G's style). Not yet tried: winning, RECRUIT, his moves in action, VS mode.
+
+**Found (read from code, checked in the sandbox):**
+- **Who stands where**: `Area_BuildPeople` `0x002E67C0` (called by `Area_Load` `0x002FE3D0`) fills `g_AreaPeople` `0x006CB920` (7 x 64-byte `AreaPerson`) from the placement data at `g_PeoplePlacement` (pointer `0x005FEBB8`, in RAM): 12 layer offsets, each layer = an offset per **area id** to 7 entries. Layer 0 is the base, layers 0-3 also by time/state, the story-stage layer comes from `g_StageLayer` `0x00509AA0` (stages 1-5 -> layer 5, which is empty; 6-10 -> 6-10), and mission layers. Entry type 1 = person (ids < 200 saved persons, 200+ templates made into temporary persons), 4/5 clears a slot. `Area_PeopleBase` `0x002E6DC0` / `Area_PeopleLayer` `0x002E7130` apply them; `Area_SpawnPeople` `0x00139E50` spawns them (`NpcSpawn_Step` `0x00178700` per person).
+- **Area ids differ from the docs' location table**: the subway is `Area_Current()` **5** (the docs say 2). Downtown street = 1. The location table in docs/UNLOCKS.md needs re-checking.
+- **Chapter 2 starts at story stage 6** (Daniel's chapter-2 save). Stage 6's subway layer adds person 83 in slot 6; the base layer has temps 313-316.
+- `AreaPerson +6` is the **dialogue script** (SCRIPT.XAF 0-999) played when you talk to the person: 67 = generic tough guy, 433 = "There used to be a subway down here". `+4` and `+0x10` go to the fighter (`+0x470A`, `+0x4708`; `+0x10` is the idle motion, 571 etc.). Interaction radius = template `+0x1C` (float, 30.0 for 83).
+- **Positions from type-4 entries are not usable** (the first try put him inside a wall).
+- **Three different models per person**: walking around = low-poly street model CDATA.XAF entry preset + 7 with the textures in `g_StreetTextures` `0x00430C90` (10 per preset); fights = the prebuilt ARCHIVE.XAF entry = preset number (`Fighter_LoadModel` `0x002F53A0`), **except persons 51 and 52** (`Fighter_UsesPresetModel` `0x002F52C0` returns 0 for them: they were the cut character editor's "edit1p"/"edit2p" slots), whose fight model is built from the outfit slots (head pieces from ARCHIVE.XAF combinations, clothes = ARCHIVE.XAF item + 0x3A6, textures = DATA.XAF ids). So a new look works in fights only for persons 51/52, and walking around only through a street model.
+- **Outfit slot format**: `{item, parts[16]}` where item indexes `g_ItemTable` (its `+0x10` is a DATA.XAF mesh) and parts are **DATA.XAF texture ids** (not ARCHIVE.XAF entries, as the README said). First bug: I copied `g_ItemTable`'s default part lists (meshes) as textures, and the fight load waited forever for a mesh as texture (state 0xC). Use the preset's own slot parts.
+- `bdkit.py tex DATA.XAF out ids...` (new) writes textures as PNG (8-bit with CSM1-swizzled 256-colour palette, or 4-bit stored one pixel per byte with 16 colours).
+- **Eggusz's fight look** (now in the table, not yet seen in a fight): preset 56's body 195 and head 84 (texture 336 = light skin with a black mustache), preset 89's red leather jacket (top item 208, texture 3419), trousers item 227 with preset 27's blue denim texture 5902, black sneakers (items 35/36, texture 1870), bald scalp (hair item 23, texture 1650 from preset 55), body build params of preset 56 (1, 6). Street look planned: preset 89's street model (bald, red leather jacket) with face atlas 7567 (mustache), jeans 4535, jacket 5236, scalp 1650.
+- Character editor tables: appearance records (`g_AppearanceItems` `0x0075B330`, 485 x 0x70) `+0x2C` group, `+0x30` kind and `+0x24` index pick an item from `g_EditorItems` `0x00503514` (HAIRSTYLE:BALD -> item 23, SLICKED BACK -> 335). Tops and trousers go through per-body-build lists instead.
+- Unused preset numbers (no template uses them): 1, 19, 20, 87, 94, 97, 127, 129, 132, 141, 143; their entries in the per-preset tables (`g_PresetFlagA`, `g_PresetValueB`, `g_PresetBody`) are normal, so new characters use these (Eggusz = 87). Preset numbers 189+ would read past those tables.
+- `PersonDef.level` is a byte (`+0x0E`), not s16; `+0x0C` goes to `Person.kind`, `+0x30` to `Person.skills` (bit 31 hides the Pride bar: Wendel's template 77 has it, so his template is not copied).
+
+**Next:** (1) find why the street-model override pauses PCSX2; (2) see the composed look in a fight and in free roam, show Daniel; (3) win the fight and RECRUIT (or negotiate); (4) VS roster slot + blacklist bit; (5) install, README "Mods so far", MEMORY-MAP ranges, docs.
+
+Sandbox tips learned: `pcsx2.py resume` (new) unpauses; face a person by pressing the stick briefly toward them (camera-relative) before Cross; the fighter's facing angle is `+0x2D0` (degrees); `pcsx2.py cheats --trace` now leaves out functions that enabled cheats already hook.

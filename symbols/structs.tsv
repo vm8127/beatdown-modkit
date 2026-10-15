@@ -25,15 +25,23 @@ Preset	0x318	PresetParams	params
 PersonDef	size	0x48		person template, g_PersonDefs (602 records); Person_Init copies it into a person
 PersonDef	0x04	s16	preset	outfit preset: the model
 PersonDef	0x06	u16	class_row	row in g_ClassTable: body, style, animation groups
-PersonDef	0x08	u8	unk08	copied to the person record
+PersonDef	0x00	s16	unk00	1 for some street NPCs (templates 8, 0x101...); not read by Person_Init
+PersonDef	0x02	s16	unk02	not read by Person_Init (53: 99, 77: 51, 83: 5)
+PersonDef	0x08	u8	unk08	copied to person +0x46
+PersonDef	0x0B	s8	unk0B	copied to person +7 (Person_Init)
+PersonDef	0x0C	u8	person_kind	copied to Person.kind (+0x3C) by Person_Init
 PersonDef	0x0D	u8	kind	5 = story boss (Person_IsBoss); 2 is also tested
-PersonDef	0x0E	s16	level
+PersonDef	0x0E	s8	level	a byte (Person_Init sign-extends it into Person.level); +0x0F is another byte (0x32 = 50 in most templates, 0x1E in some)
+PersonDef	0x0F	u8	unk0F	50 in most templates (maybe the level cap); not read by Person_Init
 PersonDef	0x10	s16	max_hp
 PersonDef	0x12	s16	pride	Pride Gauge max ("guard" in dumps/persons.txt)
 PersonDef	0x15	s8	attack_rank	index into g_AttackRankMul
+PersonDef	0x16	s16	unk16	copied to person +0x3A4 (Person_Init)
 PersonDef	0x18	s32	money
 PersonDef	0x28	s32	weapon_break_mod	added to the weapon loss chance (heroes -20 to 0)
+PersonDef	0x30	u32	skills	copied to Person.skills (+0x388) by Person_Init
 PersonDef	0x34	u8[16]	start_entries	two entries applied at spawn, probably weapons (copied to person +0x390)
+PersonDef	0x46	u16	unk46	copied to person +0x430 (Person_Init)
 
 Person	size	0x43C		person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get
 Person	0x000	u32	flags
@@ -232,3 +240,15 @@ MissionMgr	0x08	u32	flags	MissionMgr_SetFlags; 0x80 = battle result pending
 MissionMgr	0x0C	s32	mission0	id running in slot 0, -1 none
 MissionMgr	0x10	s32	mission1	id running in slot 1 (missions 100, 101), -1 none
 MissionMgr	0x1C	Mission[2]	slots	
+AreaPerson	size	0x40		one of the 7 people/object slots of the current area (g_AreaPeople), copied from the placement data (g_PeoplePlacement) by Area_BuildPeople; read 2026-10-15
+AreaPerson	0x00	s16	type	1 = person, 2 and 3 = copied as they are (objects?), 4 and 5 = clear the slot; 0 = empty
+AreaPerson	0x02	s16	person	person id (0-199: a saved person) or template id (200+: a street enemy made with Person_Init into a temporary person 200-209)
+AreaPerson	0x04	s16	unk04	839-842 for people; copied to fighter +0x470A at spawn (0x00176xxx)
+AreaPerson	0x06	s16	unk06	67 or 75 for named people, 400+ for street enemies
+AreaPerson	0x08	s16[3]	pos	position x, y, z in tenths (read as value * 0.1)
+AreaPerson	0x0E	s16	angle	read with the position (0x002E7D10)
+AreaPerson	0x10	s16	unk10	copied to fighter +0x4708 at spawn (571, 572, 576, 741...)
+AreaPerson	0x12	s16	unk12
+AreaPerson	0x14	s16	unk14	0-4
+AreaPerson	0x16	s16	path_count	number of path points that follow (0 = stands still)
+AreaPerson	0x18	s16[20]	path	path points (x, z pairs; -10000 to -10006 are markers)

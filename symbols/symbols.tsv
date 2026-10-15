@@ -505,3 +505,30 @@
 003a4450	func	Jobs_ResetRun	clears g_JobResults (not g_JobCleared) and flags 0x7EF-0x7F3; the new game after the ending (0x003D5860)	void (void)
 003d5860	func	Ending_NewGame	after the ending: starts the next playthrough, keeping money and g_JobCleared (Jobs_ResetRun)
 002d9890	func	Area_ChangeTo	(from area, to area) sends the player to another area with its default spawn point (EXF_MOVE_STAGE); special spawn points for a few areas	void (int from, int to)
+0013da30	func	Person_IsPresent	(person id) the byte table 0x0060BBB0[id] is 0; Area_PeopleBase/Area_PeopleLayer skip people for whom it is false	int (int person_id)
+00139e50	func	Area_SpawnPeople	(phase, list) phase 0 starts, phase 1 steps: spawns the 7 g_AreaPeople entries (type 1 people with 0x00178700, temporary persons 200+ made by Person_Init) and the party	int (int phase, AreaPerson *list)
+002e6300	func	Area_People	-> g_AreaPeople	AreaPerson *(void)
+002e67c0	func	Area_BuildPeople	fills g_AreaPeople for the current area from g_PeoplePlacement: the base layer (0), a time/state layer (0-3), the story-stage layer (g_StageLayer), mission layers; then counts the people into g_AreaPeopleCount. Called by Area_Load	void *(void)
+002e6dc0	func	Area_PeopleBase	(entries) copies 7 placement entries into g_AreaPeople (type 1 only if Person_IsPresent)	void (AreaPerson *entries)
+002e7130	func	Area_PeopleLayer	(entries) overlays 7 placement entries: type 4/5 clears the slot, 2/3 copy, 1 copies a person if present, alive, not in the party and not an ally (allies only in their mission)	void (AreaPerson *entries)
+002fe3d0	func	Area_Load	loads an area (stage), calls Area_BuildPeople
+006cb920	data	g_AreaPeople	7 x 64-byte people/object slots of the current area	AreaPerson[7]
+005ffcf0	data	g_AreaPeopleCount	number of type 1 entries in g_AreaPeople	s32
+005febb8	data	g_PeoplePlacement	pointer to the placement data in RAM: s32 layer offsets[12], each layer an offset per area id (0 = none) to 7 AreaPerson entries; 0x01431EB0 in Daniel's chapter 2 save	u8 *
+00509aa0	data	g_StageLayer	s32[12]: the placement layer of each story stage (stages 1-5 -> 5, which is empty; 6-10 -> 6-10)	s32[12]
+0075b330	data	g_AppearanceItems	s32 count (485), then 0x70-byte records: +0 code (what g_Appearance holds), +4 description text 17xxx, +8 name text 16xxx, +0xC price, +0x48 one value per colour variant	s32
+00349b40	func	Appearance_FindItem	(code) -> the g_AppearanceItems record with that code, or 0	void *(int code)
+00431b60	data	g_PresetFlagA	u8 per outfit preset (189); 1 for most; street NPC spawn (0x00176xxx) sets up something extra when 1
+00431c20	data	g_PresetValueB	s16 per outfit preset (189), copied to fighter +0xC at street spawn; 1 for most
+0041da40	data	g_PresetBody	s8 per outfit preset (189; read as g_PersonDefs[601].start_entries[preset - 44] by 0x002F7740): 0 = body from the person's sex, else a body table index + 1
+00178700	func	NpcSpawn_Step	(phase, request {fighter slot - 2, person, g_AreaPeople slot}) phase 0 starts, then call with 1 until it returns 1: spawns a person walking around (street NPC or party member) with the low-poly street model of their preset (step 1 picks it, step 2 loads it)	int (int phase, s16 *request)
+005feddc	data	g_NpcSpawnState	NpcSpawn_Step's step (1 pick the model, 2 load, 3 done)	s32
+005fede0	data	g_NpcSpawnModel	CDATA.XAF entry of the street model being spawned: preset + 7	s32
+00645b20	data	g_NpcSpawnTextures	the 10 texture ids of the street model being spawned, copied from g_StreetTextures	s32[10]
+00430c90	data	g_StreetTextures	s16[189][10]: per outfit preset, the DATA.XAF textures of its street model: 3 shared (3561, 4529, 4729), skin, face and body atlas, pants, top, hair, -1, 0	s16[1890]
+002f52c0	func	Fighter_UsesPresetModel	(fighter) 1 if the fighter's outfit slots equal its preset's, so the fight model is the prebuilt ARCHIVE.XAF entry = preset number; always 0 for persons 51 and 52 (the cut character editor's slots), whose model is built from the slots	int (Fighter *fighter)
+002f53a0	func	Fighter_LoadModel	(phase, slot, flags) loads a fighter's fight model: the prebuilt ARCHIVE.XAF entry of its preset, or (persons 51/52, changed outfits) head pieces from ARCHIVE.XAF combinations, clothes as ARCHIVE.XAF item + 0x3A6, textures from DATA.XAF by the slots' part ids; state in 0x005FFD48 (0x17 = done)	int (int phase, int slot, int flags)
+0029c420	func	Xaf_LoadDataTexture	(0, DATA.XAF entry, &handle, 1) starts or finds a texture load
+002abde0	func	Editor_ApplyItem	character editor / dressing: applies an appearance record (its +0x2C group and +0x30 kind pick a list in g_EditorItems, +0x24 the index) to a fighter's outfit
+00503514	data	g_EditorItems	character editor item lists: [sex * 0xC00 + group * 0x300 + kind * 0x20] = {s16 *items, ...}; items[index] is a g_ItemTable item (e.g. HAIRSTYLE:BALD -> item 23, SLICKED BACK -> 335)
+

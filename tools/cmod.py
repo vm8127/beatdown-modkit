@@ -24,7 +24,8 @@ Directives, in `// @name args` comment lines anywhere in the C file:
                          address), which runs FUNC's first two instructions and continues at FUNC+8
   @jal SITE FUNC         SITE holds a `jal`; make it `jal FUNC` instead (FUNC gets the same arguments)
   @jump SITE FUNC        overwrite the instruction at SITE with `j FUNC` and the next one with `nop`
-                         (replaces a whole game function when SITE is its first instruction)
+                         (replaces a whole game function when SITE is its first instruction; SITE may be a
+                         symbols.tsv name for @jal, @jump, @ptr and @word too)
   @ptr SITE FUNC         write FUNC's address at SITE (function pointer tables)
   @word SITE VALUE       write a 32-bit VALUE at SITE (table entries)
 
@@ -86,6 +87,16 @@ def num(s):
     return int(s, 0)
 
 
+def site(s):
+    """A patch site: a number, or a name from symbols.tsv (resolved by the build)."""
+    try:
+        return int(s, 0)
+    except ValueError:
+        if not NAME_RE.match(s):
+            raise
+        return s
+
+
 def parse_directives(src):
     d = dict(section=None, description="", org=None, max=0x100, bss=None, patches=[], hooks=[])
     for ln, line in enumerate(src.splitlines(), 1):
@@ -104,9 +115,9 @@ def parse_directives(src):
             elif key == "hook":
                 d["hooks"].append((args[0], args[1]))
             elif key in ("jal", "jump", "ptr"):
-                d["patches"].append((key, num(args[0]), args[1]))
+                d["patches"].append((key, site(args[0]), args[1]))
             elif key == "word":
-                d["patches"].append((key, num(args[0]), num(args[1])))
+                d["patches"].append((key, site(args[0]), num(args[1])))
             else:
                 sys.exit(f"line {ln}: unknown directive @{key}")
         except (IndexError, ValueError):
@@ -251,6 +262,12 @@ def build(elf_path, c_path, asm=False):
         return addrs[name]
 
     end = d["org"] + len(code)
+    gsyms = game_symbols()
+    for i, (k, st, a) in enumerate(d["patches"]):
+        if isinstance(st, str):
+            if st not in gsyms:
+                sys.exit(f"@{k} {st}: not a name in symbols.tsv")
+            d["patches"][i] = (k, gsyms[st], a)
     for k, site, _ in d["patches"]:
         if d["org"] <= site < end:
             sys.exit(f"@{k} {site:#010x} is inside the mod's own code")

@@ -29,6 +29,7 @@ typedef struct Job Job;
 typedef struct MissionReq MissionReq;
 typedef struct Mission Mission;
 typedef struct MissionMgr MissionMgr;
+typedef struct AreaPerson AreaPerson;
 
 /* one outfit slot: an item and the model parts it adds */
 struct OutfitSlot {
@@ -67,36 +68,50 @@ _Static_assert(sizeof(Preset) == 0x498, "sizeof Preset");
 
 /* person template, g_PersonDefs (602 records); Person_Init copies it into a person */
 struct PersonDef {
-    u8 _0000[0x4];
+    s16 unk00;  /* +0x0 1 for some street NPCs (templates 8, 0x101...); not read by Person_Init */
+    s16 unk02;  /* +0x2 not read by Person_Init (53: 99, 77: 51, 83: 5) */
     s16 preset;  /* +0x4 outfit preset: the model */
     u16 class_row;  /* +0x6 row in g_ClassTable: body, style, animation groups */
-    u8 unk08;  /* +0x8 copied to the person record */
-    u8 _0009[0x4];
+    u8 unk08;  /* +0x8 copied to person +0x46 */
+    u8 _0009[0x2];
+    s8 unk0B;  /* +0xb copied to person +7 (Person_Init) */
+    u8 person_kind;  /* +0xc copied to Person.kind (+0x3C) by Person_Init */
     u8 kind;  /* +0xd 5 = story boss (Person_IsBoss); 2 is also tested */
-    s16 level;  /* +0xe */
+    s8 level;  /* +0xe a byte (Person_Init sign-extends it into Person.level); +0x0F is another byte (0x32 = 50 in most templates, 0x1E in some) */
+    u8 unk0F;  /* +0xf 50 in most templates (maybe the level cap); not read by Person_Init */
     s16 max_hp;  /* +0x10 */
     s16 pride;  /* +0x12 Pride Gauge max ("guard" in dumps/persons.txt) */
     u8 _0014[0x1];
     s8 attack_rank;  /* +0x15 index into g_AttackRankMul */
-    u8 _0016[0x2];
+    s16 unk16;  /* +0x16 copied to person +0x3A4 (Person_Init) */
     s32 money;  /* +0x18 */
     u8 _001C[0xc];
     s32 weapon_break_mod;  /* +0x28 added to the weapon loss chance (heroes -20 to 0) */
-    u8 _002C[0x8];
+    u8 _002C[0x4];
+    u32 skills;  /* +0x30 copied to Person.skills (+0x388) by Person_Init */
     u8 start_entries[0x10];  /* +0x34 two entries applied at spawn, probably weapons (copied to person +0x390) */
-    u8 _0044[0x4];
+    u8 _0044[0x2];
+    u16 unk46;  /* +0x46 copied to person +0x430 (Person_Init) */
 };
+_Static_assert(__builtin_offsetof(PersonDef, unk00) == 0x0, "PersonDef.unk00");
+_Static_assert(__builtin_offsetof(PersonDef, unk02) == 0x2, "PersonDef.unk02");
 _Static_assert(__builtin_offsetof(PersonDef, preset) == 0x4, "PersonDef.preset");
 _Static_assert(__builtin_offsetof(PersonDef, class_row) == 0x6, "PersonDef.class_row");
 _Static_assert(__builtin_offsetof(PersonDef, unk08) == 0x8, "PersonDef.unk08");
+_Static_assert(__builtin_offsetof(PersonDef, unk0B) == 0xb, "PersonDef.unk0B");
+_Static_assert(__builtin_offsetof(PersonDef, person_kind) == 0xc, "PersonDef.person_kind");
 _Static_assert(__builtin_offsetof(PersonDef, kind) == 0xd, "PersonDef.kind");
 _Static_assert(__builtin_offsetof(PersonDef, level) == 0xe, "PersonDef.level");
+_Static_assert(__builtin_offsetof(PersonDef, unk0F) == 0xf, "PersonDef.unk0F");
 _Static_assert(__builtin_offsetof(PersonDef, max_hp) == 0x10, "PersonDef.max_hp");
 _Static_assert(__builtin_offsetof(PersonDef, pride) == 0x12, "PersonDef.pride");
 _Static_assert(__builtin_offsetof(PersonDef, attack_rank) == 0x15, "PersonDef.attack_rank");
+_Static_assert(__builtin_offsetof(PersonDef, unk16) == 0x16, "PersonDef.unk16");
 _Static_assert(__builtin_offsetof(PersonDef, money) == 0x18, "PersonDef.money");
 _Static_assert(__builtin_offsetof(PersonDef, weapon_break_mod) == 0x28, "PersonDef.weapon_break_mod");
+_Static_assert(__builtin_offsetof(PersonDef, skills) == 0x30, "PersonDef.skills");
 _Static_assert(__builtin_offsetof(PersonDef, start_entries) == 0x34, "PersonDef.start_entries");
+_Static_assert(__builtin_offsetof(PersonDef, unk46) == 0x46, "PersonDef.unk46");
 _Static_assert(sizeof(PersonDef) == 0x48, "sizeof PersonDef");
 
 /* person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get */
@@ -569,5 +584,32 @@ _Static_assert(__builtin_offsetof(MissionMgr, mission0) == 0xc, "MissionMgr.miss
 _Static_assert(__builtin_offsetof(MissionMgr, mission1) == 0x10, "MissionMgr.mission1");
 _Static_assert(__builtin_offsetof(MissionMgr, slots) == 0x1c, "MissionMgr.slots");
 _Static_assert(sizeof(MissionMgr) == 0x2e4, "sizeof MissionMgr");
+
+/* one of the 7 people/object slots of the current area (g_AreaPeople), copied from the placement data (g_PeoplePlacement) by Area_BuildPeople; read 2026-10-15 */
+struct AreaPerson {
+    s16 type;  /* +0x0 1 = person, 2 and 3 = copied as they are (objects?), 4 and 5 = clear the slot; 0 = empty */
+    s16 person;  /* +0x2 person id (0-199: a saved person) or template id (200+: a street enemy made with Person_Init into a temporary person 200-209) */
+    s16 unk04;  /* +0x4 839-842 for people; copied to fighter +0x470A at spawn (0x00176xxx) */
+    s16 unk06;  /* +0x6 67 or 75 for named people, 400+ for street enemies */
+    s16 pos[0x3];  /* +0x8 position x, y, z in tenths (read as value * 0.1) */
+    s16 angle;  /* +0xe read with the position (0x002E7D10) */
+    s16 unk10;  /* +0x10 copied to fighter +0x4708 at spawn (571, 572, 576, 741...) */
+    s16 unk12;  /* +0x12 */
+    s16 unk14;  /* +0x14 0-4 */
+    s16 path_count;  /* +0x16 number of path points that follow (0 = stands still) */
+    s16 path[0x14];  /* +0x18 path points (x, z pairs; -10000 to -10006 are markers) */
+};
+_Static_assert(__builtin_offsetof(AreaPerson, type) == 0x0, "AreaPerson.type");
+_Static_assert(__builtin_offsetof(AreaPerson, person) == 0x2, "AreaPerson.person");
+_Static_assert(__builtin_offsetof(AreaPerson, unk04) == 0x4, "AreaPerson.unk04");
+_Static_assert(__builtin_offsetof(AreaPerson, unk06) == 0x6, "AreaPerson.unk06");
+_Static_assert(__builtin_offsetof(AreaPerson, pos) == 0x8, "AreaPerson.pos");
+_Static_assert(__builtin_offsetof(AreaPerson, angle) == 0xe, "AreaPerson.angle");
+_Static_assert(__builtin_offsetof(AreaPerson, unk10) == 0x10, "AreaPerson.unk10");
+_Static_assert(__builtin_offsetof(AreaPerson, unk12) == 0x12, "AreaPerson.unk12");
+_Static_assert(__builtin_offsetof(AreaPerson, unk14) == 0x14, "AreaPerson.unk14");
+_Static_assert(__builtin_offsetof(AreaPerson, path_count) == 0x16, "AreaPerson.path_count");
+_Static_assert(__builtin_offsetof(AreaPerson, path) == 0x18, "AreaPerson.path");
+_Static_assert(sizeof(AreaPerson) == 0x40, "sizeof AreaPerson");
 
 #endif

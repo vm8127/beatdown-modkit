@@ -21,6 +21,7 @@ Usage examples (run `python tools/bdkit.py -h` for the full list):
   python tools/bdkit.py roster    ISO/SLUS_211.50 mods/roster.json    # story heroes recast from a roster file
   python tools/bdkit.py moves     ISO/SLUS_211.50 ISO/XAF/CDATA.XAF 0x13   # move list (names + inputs) of a style
   python tools/bdkit.py style-map ISO/SLUS_211.50 ISO/XAF/CDATA.XAF > docs/movesets.md
+  python tools/bdkit.py tex       ISO/XAF/DATA.XAF out_dir 8153 7489   # outfit textures (slot parts) as PNG
   python tools/bdkit.py read      ISO/SLUS_211.50 0x50D8B0 16         # hex dump at a game address
   python tools/bdkit.py addr      0x50D8B0                            # address <-> ELF/ISO offsets
 
@@ -920,6 +921,47 @@ def cmd_style_map(a):
     print("\n".join(L))
 
 
+def texture_png(blob):
+    """A DATA.XAF texture (asset type 0x18: 40-byte header with width at +0x18 and height at +0x1C, 8-bit pixels,
+    then a 256-colour RGBA palette; 4-bit ones store one pixel per byte and have 16 colours) as PNG bytes. The
+    256-colour palette is in the PS2's CSM1 order (entries 8-15 and 16-23 of every 32 swapped); alpha 0x80 means
+    opaque."""
+    import zlib
+    w, h, bpp = struct.unpack_from("<III", blob, 0x18)
+    n = w * h
+    pix = blob[0x28:0x28 + n]
+    ncol = 256 if bpp == 8 else 16
+    pal = blob[0x28 + n:0x28 + n + 4 * ncol]
+    cols = [pal[4 * i:4 * i + 4] for i in range(ncol)]
+    if ncol == 256:
+        cols = [cols[(i & ~0x18) | ((i & 0x08) << 1) | ((i & 0x10) >> 1)] for i in range(256)]
+    pix = bytes(p % ncol for p in pix)
+    rows = b"".join(b"\0" + b"".join(bytes(cols[p][:3]) + bytes([min(255, cols[p][3] * 2)]) for p in pix[y * w:(y + 1) * w])
+                    for y in range(h))
+    chunk = lambda t, d: struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xFFFFFFFF)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)) +
+            chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b""))
+
+
+def cmd_tex(a):
+    """Write DATA.XAF textures (the part ids in outfit slots) as PNG files."""
+    os.makedirs(a.out, exist_ok=True)
+    ents = xaf_entries(a.xaf)
+    with open(a.xaf, "rb") as f:
+        for i in (int(x, 0) for x in a.index):
+            o, size = ents[i][1:3]
+            f.seek(o)
+            blob = f.read(size)
+            if struct.unpack_from("<I", blob)[0] != 0x18:
+                print(f"{i}: not a texture ({describe(blob[:16])})")
+                continue
+            path = os.path.join(a.out, f"{i}.png")
+            with open(path, "wb") as g:
+                g.write(texture_png(blob))
+            w, h = struct.unpack_from("<II", blob, 0x18)
+            print(f"{i}: {w}x{h} -> {path}")
+
+
 def cmd_read(a):
     e = Elf(a.elf)
     v = int(a.addr, 0)
@@ -967,6 +1009,7 @@ def main():
     x.add_argument("--lang", default="en", choices=sorted(MOVE_TEXT_ENTRY)); x.set_defaults(fn=cmd_moves)
     x = s.add_parser("style-map"); x.add_argument("elf"); x.add_argument("cdata")
     x.add_argument("--lang", default="en", choices=sorted(MOVE_TEXT_ENTRY)); x.set_defaults(fn=cmd_style_map)
+    x = s.add_parser("tex"); x.add_argument("xaf"); x.add_argument("out"); x.add_argument("index", nargs="+"); x.set_defaults(fn=cmd_tex)
     x = s.add_parser("read"); x.add_argument("elf"); x.add_argument("addr"); x.add_argument("length", nargs="?", default="64"); x.set_defaults(fn=cmd_read)
     x = s.add_parser("addr"); x.add_argument("addr"); x.set_defaults(fn=cmd_addr)
     a = p.parse_args()
