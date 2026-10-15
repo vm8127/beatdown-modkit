@@ -7,7 +7,8 @@ Checks the disc's MD5s (README.md) first and stops on a mismatch, then deletes a
 Deterministic: the same disc gives the same files. Standard library only. Never commit the output.
 
 Converters (one module each, run in this order; --only picks some):
-  models   character models -> models/*.glb (conv_models.py)
+  models   character models, rigged -> models/*.glb (conv_models.py)
+  anims    fighter animations on the body skeleton -> anims/*.glb (conv_anims.py)
 """
 import argparse
 import hashlib
@@ -19,9 +20,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "..", "tools"))   # bdkit.py, rwkit.py
 
+import conv_anims  # noqa: E402
 import conv_models  # noqa: E402
 
-CONVERTERS = {"models": conv_models.convert}
+CONVERTERS = {"models": conv_models.convert, "anims": conv_anims.convert}
 
 # README.md, "Before you start": the files the converters read, with their sizes and MD5s
 DISC = {

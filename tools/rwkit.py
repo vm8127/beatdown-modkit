@@ -326,9 +326,24 @@ DATA_ENTRIES = 8276
 
 class Part:
     """One placed geometry: vertices already in the model's bind-pose space (RenderWare units, about 10 cm), with a
-    DATA.XAF texture id (or None) per material."""
-    def __init__(self, name, geo, matrix, textures):
+    DATA.XAF texture id (or None) per material. Binding to the body skeleton (HAnim node indices of the body clump):
+    skin_map[k] = body node of the geometry's skin bone k (skinned parts), or node = the body node a rigid part
+    hangs on (weight 1)."""
+    def __init__(self, name, geo, matrix, textures, skin_map=None, node=None):
         self.name, self.geo, self.matrix, self.textures = name, geo, matrix, textures
+        self.skin_map, self.node = skin_map, node
+
+
+def skin_map(clump, body_tags):
+    """Skin bone k of a clump (= its own HAnim node index k) -> the body's node index, matched by bone tag (node id).
+    body_tags: node id -> body node index. Clothes carry a partial skeleton with the body's tags (docs/FORMATS.md)."""
+    nodes = skeleton_nodes(clump)
+    return [body_tags[clump.frames[nodes[k]].hanim_id] for k in range(len(nodes))]
+
+
+def node_tags(clump):
+    """HAnim node id (bone tag) -> node index."""
+    return {clump.frames[f].hanim_id: k for k, f in skeleton_nodes(clump).items()}
 
 
 def _elf_str(e, va):
@@ -379,13 +394,13 @@ def outfit_model(e, names, read_data, preset_blob, preset):
     The body (category 0) is a skinned clump with the skeleton; every other item's clump is either skinned in the
     same bind-pose space (tops, pants) or rigid, hung on body skeleton node ItemDef.node (head 10, hands 19/14,
     feet 7/4). Material textures named like an item placeholder are replaced by the slot's texture at that index."""
-    parts, body, nodes, body_world = [], None, {}, None
+    parts, body, nodes, body_world, tags = [], None, {}, None, {}
     for item, texs in outfit_slots(preset_blob, preset):
         d = item_def(e, item)
         clump = read_clumps(read_data(d["mesh"]))[0]
         world = world_matrices(clump.frames)
         if d["category"] == 0:
-            body, nodes, body_world = clump, skeleton_nodes(clump), world
+            body, nodes, body_world, tags = clump, skeleton_nodes(clump), world, node_tags(clump)
         swap = {names[p]: t for p, t in zip(d["placeholders"], texs)}
         for fr, gi in clump.atomics:
             g = clump.geometries[gi]
@@ -400,7 +415,8 @@ def outfit_model(e, names, read_data, preset_blob, preset):
             for mt in g.materials:
                 n = mt.texture
                 tex.append(swap.get(n, names.index(n) if n in names else None) if n else None)
-            parts.append(Part(f"item{item}_mesh{d['mesh']}_{gi}", g, m, tex))
+            sm = skin_map(clump, tags) if g.skin and tags else None
+            parts.append(Part(f"item{item}_mesh{d['mesh']}_{gi}", g, m, tex, sm, None if sm else d["node"]))
     return parts
 
 
@@ -435,7 +451,8 @@ def street_model(e, names, pack_blob, preset):
                     elif ci > 0:
                         t = ids[7]
                 tex.append(t)
-            parts.append(Part(f"clump{ci}_{gi}", g, m, tex))
+            sm = skin_map(clump, node_tags(clumps[0])) if g.skin else None
+            parts.append(Part(f"clump{ci}_{gi}", g, m, tex, sm, None if sm else (0 if ci == 0 else 10)))
     return parts, by_id
 
 
