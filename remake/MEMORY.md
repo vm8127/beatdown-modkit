@@ -28,6 +28,7 @@ Read this first in every remake session, and update it before stopping (or whene
 | 2026-10-15 | Big independent tasks go to separate sessions or subagents (fresh context), e.g. M1 (session), M3/M6 research (subagents: the app refused to start more sessions from that turn). Each writes its own docs/tool files; shared files (symbols.tsv, CODEMAP.md, this file) only by small edits. | Daniel |
 | 2026-10-15 | Keep this file current at every step (Daniel: "keep your thinking cache"), so an interrupted session restarts from here, not from scratch. | Daniel |
 | 2026-10-15 | Godot style: scenes (.tscn) for hand-made parts (fighter template, dev arena, camera, UI), resources (.tres) for move data, code only for what's assembled from game data. M0 was converted to this (it first built everything in code). | Daniel asked, Claude chose |
+| 2026-10-15 | The subway (area 5) is the only area for now; doors between areas and other levels come later. Enemy AI (M5) also later. | Daniel |
 | 2026-10-15 | Incremental development with a developer scene (`remake/godot/dev/`); every feature lands there first (PLAN.md, "Incremental development"). | Daniel |
 
 ## Open questions for Daniel
