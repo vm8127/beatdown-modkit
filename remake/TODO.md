@@ -16,6 +16,8 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 ## After the running work lands
 
+- [ ] **M6 complete (running since 2026-10-15 as a background subagent of the main session; restart from this line if no `levels/subway.tscn` commit follows):** the subway as a full level: area loader, lights, all props, closed doors, battle spots, items, camera collision, a fight at the battle spots, level tests.
+
 - [ ] **M4a follow-ups:** root motion pushes the capsule into the dummy (applied past body collision; seen in the smoke screenshot); hitstun / hitstop / knockback are placeholders (not in the hit records: find where the game keeps them); motion-input time limits (`g_InputPatterns`) and where ↑/↓ come from; grabs and context moves can't be input yet; command conditions, Pride and TIRED unused.
 
 - [ ] **M4 (running since 2026-10-15 as a background subagent of the main session; restart from this line if no M4 commit follows):** animated Aaron replaces the capsule: each move plays its clip (blend 8), hit spheres attached to the hitting body parts' bones.
