@@ -47,6 +47,10 @@ void SaveBlock369AC_Tick(void);  /* 0x0013ea40 */
 void Allies_ListByStatus(int reset, u8 mask);  /* 0x00142f90 */
 int StoryVar_Add(int index, int delta);  /* 0x00172bd0 */
 int StoryVar_Sub(int index);  /* 0x00172e10 */
+void *Street_RetextureMaterial(void *material, void *ctx);  /* 0x001754b0 */
+void *Street_RetextureAtomic(void *atomic, void *ctx);  /* 0x001755a0 */
+void *Street_HairMaterial(void *material, s16 *ctx);  /* 0x001755e0 */
+void *Street_HairAtomic(void *atomic, void *ctx);  /* 0x00175650 */
 int Fighter_FindNpcSlot(int person_id);  /* 0x00176130 */
 int NpcSpawn_Step(int phase, s16 *request);  /* 0x00178700 */
 int Str_CompareBytes(const char *a, const char *b);  /* 0x00186a30 */
@@ -81,6 +85,15 @@ int MemCard_ReadFile(int port, int file, void *buf, int offset, int size);  /* 0
 int MemCard_WriteFile(int port, int file, void *buf, int offset, int size);  /* 0x001e0f40 */
 int MemCard_CreateFile(int port, int file);  /* 0x001e1550 */
 int MemCard_CreateDataFile(int port, int file);  /* 0x001e18e0 */
+void *RpClumpStreamRead(void *stream);  /* 0x00231ee8 */
+void *RpClumpForAllAtomics(void *clump, void *cb, void *data);  /* 0x00232998 */
+void *RpGeometryForAllMaterials(void *geometry, void *cb, void *data);  /* 0x00235f50 */
+void *RpMaterialSetTexture(void *material, void *tex);  /* 0x00237878 */
+void *RtAnimAnimationStreamRead(void *stream);  /* 0x002503b0 */
+void *RwStreamReadChunkHeaderInfo(void *stream, void *info);  /* 0x0025b5f8 */
+void *RwTextureStreamRead(void *stream);  /* 0x00264138 */
+void *RwTexDictionaryStreamRead(void *stream);  /* 0x00264500 */
+void *RwImageStreamRead(void *stream);  /* 0x00269e38 */
 int Tex_Release(void *tex);  /* 0x0026eac0 */
 int Xaf_QueueLoad(int archive, int entry, int mode);  /* 0x0029bc40 */
 void Xaf_Service(void);  /* 0x0029c190 */
@@ -109,6 +122,7 @@ void Area_PeopleBase(AreaPerson *entries);  /* 0x002e6dc0 */
 void Area_PeopleLayer(AreaPerson *entries);  /* 0x002e7130 */
 int Location_Current(void);  /* 0x002e7a50 */
 void Fighter_PlayMotion(Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames);  /* 0x002f0900 */
+void Fighter_AttachPart(int item, Fighter *f, int slot, void *clump, int a5);  /* 0x002f4bf0 */
 int Fighter_UsesPresetModel(Fighter *fighter);  /* 0x002f52c0 */
 int Fighter_LoadModel(int phase, int slot, int flags);  /* 0x002f53a0 */
 s16 Fighter_RemapAction(Fighter *fighter, int action);  /* 0x002f8a30 */
@@ -384,6 +398,8 @@ extern ScriptOpInfo g_ScriptOpcodes[204];  /* 0x00411ac0 */
 extern PersonDef g_PersonDefs[602];  /* 0x00413130 */
 extern s16 g_StartAllies[5];  /* 0x0041db00 */
 extern s16 g_StreetTextures[1890];  /* 0x00430c90 */
+extern u8 g_PresetFlagA[189];  /* 0x00431b60 */
+extern void *g_ArchiveTexNames[10];  /* 0x004ec950 */
 extern ItemDef g_ItemTable[488];  /* 0x004f2400 */
 extern AnimGroup g_AnimGroups[317];  /* 0x004fb4c0 */
 extern s32 g_StageLayer[12];  /* 0x00509aa0 */
@@ -397,6 +413,7 @@ extern u32 g_MissionFlagRanges[148];  /* 0x0059995c */
 extern void *g_MissionEventHandlers[10];  /* 0x00599bb0 */
 extern MissionReq g_MissionReq[147];  /* 0x0059a750 */
 extern void *g_AutoMissionChecks[26];  /* 0x0059a9a0 */
+extern u32[8276] g_TexNames[2];  /* 0x0059ae30 */
 extern s16 g_VsPortraitCells[258];  /* 0x005b81f0 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */

@@ -53,6 +53,8 @@ All commands below are run from the top of the workspace.
 | `docs/CODEMAP.md` | **Code map**: named functions, tables and structs in the main program (combat and damage, the command table, character loading, people and money, items, saves) |
 | `docs/MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
 | `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
+| `docs/FORMATS.md` | **Model and texture formats**: RenderWare chunks, clumps, skeleton and skinning, street models and fight models built from outfit slots (`tools/rwkit.py`) |
+| `tools/rwkit.py` | RenderWare decoder: chunk trees (`tree`), clump summaries (`info`), and the model assembly the remake's glTF export uses |
 | `docs/PARTS.md` | **Body and outfit parts reference**: what makes a character's look (fight and street), the ids found so far, how to view them (`bdkit.py tex`) |
 | `docs/SCRIPTS.md` | **Scripts, missions, side jobs, events and dialogue**: how missions start (job menu, area load, talking, story flags), their requirements and results, the 50 side jobs, the script file format, the event VM and all 204 commands, with a worked example and modding notes |
 | `docs/UNLOCKS.md` | **Unlocks**: the prerequisites of all 50 side jobs (story stage, % of jobs cleared, game clears, special conditions) and of meeting and recruiting each hero in story mode (story stage, Criminal Level, location, disguise, flags), plus location ids, appearance categories and chapter objectives |
@@ -77,7 +79,7 @@ All commands below are run from the top of the workspace.
 | `dumps/anim_groups.txt` | All 317 animation groups: which STAGE.XAF pack and which animation IDs |
 | `dumps/iso_files.txt` | Every file on the disc with sector (LBA) and size |
 | `dumps/xaf_*.txt` | Index of every XAF archive: entry number, offset, size, asset type |
-| `dumps/xaf_ARCHIVE.txt` | Outfit and body part names (HAI_ hair, EYE_, MOU_ mouth, WEA_ weapons...) |
+| `dumps/xaf_ARCHIVE.txt` | Outfit and body part names (HAI_ hair, EYE_, MOU_ mouth, WEA_ tops...; docs/FORMATS.md lists the kinds) |
 | `mods/SLUS-21150_C9F6EF9A.pnach` | Finished patches (PCSX2 cheats), one `[section]` per mod |
 | `mods/roster.json` | The story roster `bdkit.py roster` builds its cheat section from (see docs/mods/ROSTER.md) |
 | `tools/cmod.py`, `tools/cmod/game.h` | Builds mods written in C into cheat sections (see "Mods in C"); `structs.h` and `symbols.h` next to `game.h` are generated |
@@ -131,12 +133,14 @@ Entries have no names. The game asks for them by number. The loader is `0x0029BC
 
 ### Asset types (first u32 of an entry)
 
+The entries are **RenderWare 3.x binary streams**: every chunk is `{u32 type, u32 size, u32 library id}` followed by `size` bytes, and the first word is the first chunk's RenderWare id. Full description in docs/FORMATS.md; `python tools/rwkit.py tree|info XAF ENTRY` dumps one.
+
 | Value | Type | Notes |
 |---|---|---|
-| `0x16` | model | chunk tree, sub-chunk tags look like `0x1C02000F` / `0x1C02002D` |
-| `0x18` | texture pack | e.g. 128x128 8-bit with palette; header has width/height |
-| `0x10` | mesh | contains Softimage user data like `BONETAG=29` |
-| `0x1B` | animation | |
+| `0x16` | model: texture dictionary (`rwID_TEXDICTIONARY`) | PS2-native textures (`0x15`, library id `0x1C02000F`), usually followed by a clump; CDATA.XAF 196-384, FSTAGE, FSCENE |
+| `0x18` | texture: image (`rwID_IMAGE`) | 4- or 8-bit, palette; `bdkit.py tex` converts them |
+| `0x10` | mesh: clump (`rwID_CLUMP`) | frames (bones, Softimage user data `BONETAG=29`), plain geometry (triangles, UVs, normals), materials naming placeholder textures, Skin and HAnim plugins; street packs (CDATA preset + 7) are 8 images then 2 clumps |
+| `0x1B` | animation (`RtAnimAnimation`) | docs/ANIMATION.md |
 | STAGE.XAF pack | animation pack | `u32 count`, then `count` offsets with bit 31 set |
 
 ## Characters and movesets
@@ -204,7 +208,7 @@ Fighter table at `0x00413134`, 72 bytes per record, 602 records, indexed by figh
 
 The playable heroes' fighter IDs are at `0x004334B0`: Raven 107, Jason G 53, **Aaron 68**, Lola 22, Gina 108. Aaron also has records 153 and 590 (used outside the player slot). Chester is 20 and 152, preset 23. Ignacy is 11, 74 and 162 (presets 84 and 160).
 
-Outfit presets are CDATA.XAF entry 0: 189 records of `0x498` bytes, read through `0x002A8720(preset, 1 = parts | 2 = params)`. Each record is 22 slots of `{u32 item, s16 parts[16] ending in -1}` (item = a `g_ItemTable` row, whose `+0x10` is the DATA.XAF mesh; parts = **DATA.XAF texture ids**; see docs/PARTS.md), which init copies into the fighter at `+0x68`, then params at `+0x318`. Boss presets (Chester's 23) set param `+0x18` = 1, which sets fighter flag 8.
+Outfit presets are CDATA.XAF entry 0: 189 records of `0x498` bytes, read through `0x002A8720(preset, 1 = parts | 2 = params)`. Each record is 22 slots of `{u32 item, s16 parts[16] ending in -1}` (item = a `g_ItemTable` row, whose `+0x10` is the DATA.XAF mesh; parts = **DATA.XAF texture ids** that replace the item's placeholder textures `+0x14` one for one; see docs/PARTS.md and docs/FORMATS.md), which init copies into the fighter at `+0x68`, then params at `+0x318`. Boss presets (Chester's 23) set param `+0x18` = 1, which sets fighter flag 8.
 
 **To give fighter A the look of fighter B**, don't change A's preset number: the game checks preset numbers to recognise the heroes (the HP bar name `0x0013CA80`, name ID `0x002F9930`, and at least 7 other functions with the same preset switch), so a hero given a boss preset loses its name. Instead, `bdkit.py swap-model SLUS_211.50 A B` prints a hook: 14 words in unused padding at `0x003E0130` that swap A's presets for B's, and both `jal 0x002A8720` in fighter init (`0x0013B54C` parts, `0x0013B55C` params) are pointed at it. A keeps its preset number, name and class row. Keep body sizes equal (A's class row still picks the body animations); the tool warns when they differ.
 

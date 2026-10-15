@@ -30,7 +30,7 @@ Item categories (`g_ItemTable +0`) seen in presets: 0 body, 1 head, 2 hair, 3 mo
 
 ### Street pack (walking-around look)
 
-CDATA.XAF entry preset + 7 = 8 texture chunks (copies of DATA.XAF textures) then the mesh (type `0x10`). The chunks are in `g_StreetTextures` order: `3561, 4529, 4729` (shared by every male street model), **skin**, **face/body atlas**, **pants**, **top**, **hair**; then `-1, 0`. Textures are cached by name, and DATA.XAF and CDATA.XAF share the name table, so a DATA texture loaded beforehand under its own id replaces the pack's chunk when the id is put in the list (what `new_characters.c` does).
+CDATA.XAF entry preset + 7 = 8 texture chunks (copies of DATA.XAF textures) then two clumps, body and hair (docs/FORMATS.md). The chunks are in `g_StreetTextures` order: the 4 placeholders the meshes name, `3561 SKI_A01AAA, 4529 PAL_A01AAA, 4729 WEL_A01AAA` and a hair placeholder (`1629 HAI_A03AAA` or `1611 HAI_A01AAA`), then the person's **face/body atlas** (`SKI_`), **pants**, **top**, **hair**; then `-1, 0`. The game swaps placeholder i for texture i + 4 (and gives the hair clump texture 7) when `g_PresetFlagA[preset]` is 1. (Corrected 2026-10-15: the 4th id is the hair placeholder, not skin; read from `Street_RetextureMaterial` `0x001754B0`.) Textures are cached by name, and DATA.XAF and CDATA.XAF share the name table, so a DATA texture loaded beforehand under its own id replaces the pack's chunk when the id is put in the list (what `new_characters.c` does).
 
 ## Parts found
 

@@ -147,10 +147,13 @@ AnimGroup	0x0	s16	stage_entry	STAGE.XAF entry
 AnimGroup	0x4	s16*	anims	animation ids
 
 ItemDef	size	0x34		g_ItemTable entry (more fields further on: weapon class at +126 and +145 belong to another record)
-ItemDef	0x00	u32	category
+ItemDef	0x00	u32	category	0 body, 1 head, 2 hair, 3 mouth, 4 eyes, 5/6 hands, 7/8 shoes, 18 top, 19 pants (docs/PARTS.md)
+ItemDef	0x04	u32	attach_node	body skeleton (HAnim) node a rigid part hangs on: 10 head, 19/14 hands, 7/4 feet (Fighter_AttachPart; docs/FORMATS.md)
 ItemDef	0x08	u32	flags
 ItemDef	0x0C	void*	use_handler
-ItemDef	0x12	s16[17]	parts	ARCHIVE.XAF part ids ending -1
+ItemDef	0x10	u16	mesh	DATA.XAF clump of the part (the game loads its copy from ARCHIVE.XAF entry item + 0x3A6)
+ItemDef	0x12	u16	anim	DATA.XAF animation (0x1B) of tops and pants, else 0
+ItemDef	0x14	s16[16]	placeholders	DATA.XAF ids of the placeholder textures the mesh's materials name, ending -1; outfit slot part i replaces placeholder i
 
 Inventory	size	0x804		g_Inventory (saved)
 Inventory	0x0	u32	count

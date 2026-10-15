@@ -10,7 +10,7 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test |
 | `godot/game/` | The game: `fighter/` (fighter state machine, moves, player and dummy brains), `camera/` |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
-| `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`) and the glTF/Godot writers |
+| `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models) and `gltf_writer.py` |
 
 Game formats and mechanics learned for the remake are documented in the main docs (`README.md`, `docs/`), not here.
 
@@ -29,6 +29,14 @@ __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot
 ```
 
 Controls and dev keys are listed on screen (Tab hides them). The F-keys: F1 hitboxes, F2 slow motion, F3 pause, F4 step one frame, F5 spawn a dummy, F6 dummy mode (stand, guard, counter-jab, fight), F7 reset.
+
+## Model viewer
+
+Shows every model in `assets_ripped/models/` (run the asset tool first). Left/Right turn, Up/Down zoom, Space stops the turntable; `-- --shot=<file.png>` saves a screenshot and quits (`--dist=`, `--height=` move the camera).
+
+```bash
+__external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://dev/model_viewer.tscn
+```
 
 ## Smoke test
 

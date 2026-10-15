@@ -58,7 +58,7 @@ Facts settled while planning this (2026-10-15):
 
 ## What's missing (reverse engineering still needed)
 
-1. **Mesh format**: XAF chunk type `0x10`, contains Softimage user data like `BONETAG=29`. Street people use a low-poly mesh at CDATA.XAF entry preset + 7; fighters build their look from 22 outfit slots (`g_ItemTable` `+0x10` → DATA.XAF mesh). Probably VIF/GIF packet data: find the loader and renderer in `decomp/` (start from `Pack_Load` `0x0029E500`).
+1. **Mesh format** (done in M1, docs/FORMATS.md): XAF chunk type `0x10`, contains Softimage user data like `BONETAG=29`. Street people use a low-poly mesh at CDATA.XAF entry preset + 7; fighters build their look from 22 outfit slots (`g_ItemTable` `+0x10` → DATA.XAF mesh). Probably VIF/GIF packet data: find the loader and renderer in `decomp/` (start from `Pack_Load` `0x0029E500`).
 2. **Skeleton and skin weights** (body sizes S/M/L have different skeletons).
 3. **Animation format** (STAGE.XAF packs, loaded per group by `Xaf_LoadAnimPack` `0x0029ED70`).
 4. **Stage geometry and collision.**
@@ -101,3 +101,4 @@ Each one ends with something playable or viewable. Do them roughly in this order
 - 2026-10-15: Plan written.
 - 2026-10-15: Moved to `remake/PLAN.md`; `remake/` holds everything remake-specific, `remake/MEMORY.md` is the session memory (Daniel asked for both). First-session questions asked.
 - 2026-10-15: **M0 built** (not yet played by Daniel): `remake/godot/` dev arena, fixed-frame fighter state machine, placeholder moves with cancel windows, 10-frame input buffer, sphere-vs-hurtbox hits with hitstop, hitstun, knockback, knockdown and guard, dummy AI modes, debug overlay, pause / step / slow-mo, and a smoke test (`-- --smoke`, passes: jab, jab, straight = 3-hit combo, 50 damage). GDScript, Godot 4.7.2. M1 started in its own session.
+- 2026-10-15: **M1 done** (not yet seen by Daniel): models are RenderWare 3.x clumps with plain geometry (docs/FORMATS.md); `tools/rwkit.py` decodes them and assembles street models (CDATA preset + 7, retextured) and fight models (outfit slots: placeholder textures swapped, rigid parts hung on skeleton nodes); `remake/tools/remake_assets.py ISO remake/godot/assets_ripped` checks the MD5s and writes two textured .glb (street preset 89, Aaron preset 78), deterministic; Godot 4.7.2 imports them with no errors and `dev/model_viewer.tscn` renders them (screenshot checked).

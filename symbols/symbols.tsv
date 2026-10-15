@@ -518,7 +518,7 @@
 00509aa0	data	g_StageLayer	s32[12]: the placement layer of each story stage (stages 1-5 -> 5, which is empty; 6-10 -> 6-10)	s32[12]
 0075b330	data	g_AppearanceItems	s32 count (485), then 0x70-byte records: +0 code (what g_Appearance holds), +4 description text 17xxx, +8 name text 16xxx, +0xC price, +0x48 one value per colour variant	s32
 00349b40	func	Appearance_FindItem	(code) -> the g_AppearanceItems record with that code, or 0	void *(int code)
-00431b60	data	g_PresetFlagA	u8 per outfit preset (189); 1 for most; street NPC spawn (0x00176xxx) sets up something extra when 1
+00431b60	data	g_PresetFlagA	u8 per outfit preset (189): 1 = the street model is retextured: NpcSpawn_Step swaps its 4 placeholder textures (g_StreetTextures[preset][0..3]) for the person's 4 ([4..7]) with Street_RetextureMaterial 0x001754B0, and gives the hair clump [7] (docs/FORMATS.md)	u8[189]
 00431c20	data	g_PresetValueB	s16 per outfit preset (189), copied to fighter +0xC at street spawn; 1 for most
 0041da40	data	g_PresetBody	s8 per outfit preset (189; read as g_PersonDefs[601].start_entries[preset - 44] by 0x002F7740): 0 = body from the person's sex, else a body table index + 1
 00178700	func	NpcSpawn_Step	(phase, request {fighter slot - 2, person, g_AreaPeople slot}) phase 0 starts, then call with 1 until it returns 1: spawns a person walking around (street NPC or party member) with the low-poly street model of their preset (step 1 picks it, step 2 loads it)	int (int phase, s16 *request)
@@ -618,3 +618,19 @@
 001ded10	func	MemCard_SaveSlot	card state machine that saves: system block, the slot's game block, the slot header (state 200 = done)	void (void)
 001dfc50	func	MemCard_LoadSlot	card state machine that loads a slot's game block and tests its checksum	void (void)
 0069c2b0	data	g_McFiles	RD3 file table: 5 x 0x40 {char name[0x20], +0x20 total size, +0x24 type (-1 free), +0x28 slots, +0x2C system size, +0x30 header size, +0x34 game size}	u8[320]
+001754b0	func	Street_RetextureMaterial	RpGeometryForAllMaterials callback (material, {s16 ?, s16 n, RwTexture **list}): if the material's texture name equals list[i] (i < n) it gets list[i + n] (RpMaterialSetTexture); n = 4 for street bodies	void *(void *material, void *ctx)
+001755a0	func	Street_RetextureAtomic	RpClumpForAllAtomics callback: runs Street_RetextureMaterial on the atomic's geometry (+0x18)	void *(void *atomic, void *ctx)
+001755e0	func	Street_HairMaterial	RpGeometryForAllMaterials callback (material, {s16 step, s16 index, RwTexture **list}): sets list[index] on every material, then index += step (0 for the street hair: every hair material gets list[7])	void *(void *material, s16 *ctx)
+00175650	func	Street_HairAtomic	RpClumpForAllAtomics callback: runs Street_HairMaterial on the atomic's geometry	void *(void *atomic, void *ctx)
+00231ee8	func	RpClumpStreamRead	RenderWare: reads a clump (chunk 0x10: frame list, geometry list, atomics) from a stream; Pack_Load calls it for chunk type 0x10	void *(void *stream)
+00232998	func	RpClumpForAllAtomics	RenderWare: calls cb(atomic, data) for each atomic of the clump until cb returns NULL	void *(void *clump, void *cb, void *data)
+00235f50	func	RpGeometryForAllMaterials	RenderWare: calls cb(material, data) for each material of the geometry (list at +0x20, count +0x24)	void *(void *geometry, void *cb, void *data)
+00237878	func	RpMaterialSetTexture	RenderWare: material->texture = tex (reference count +0x54 + 1, the old one released with Tex_Release)	void *(void *material, void *tex)
+002503b0	func	RtAnimAnimationStreamRead	RenderWare: reads an animation (chunk 0x1B); Pack_Load calls it for chunk type 0x1B	void *(void *stream)
+0025b5f8	func	RwStreamReadChunkHeaderInfo	RenderWare: reads a 12-byte chunk header {type, size, library id} and unpacks the version (0x1C02000A -> 0x37002); Pack_Load uses it to walk an entry	void *(void *stream, void *info)
+00264138	func	RwTextureStreamRead	RenderWare: reads a texture chunk (0x06); Pack_Load calls it for chunk type 6	void *(void *stream)
+00264500	func	RwTexDictionaryStreamRead	RenderWare: reads a texture dictionary (chunk 0x16, PS2 native textures 0x15 inside); Pack_Load calls it for chunk type 0x16	void *(void *stream)
+00269e38	func	RwImageStreamRead	RenderWare: reads an image (chunk 0x18); Pack_Load then makes a texture of it named after the next key in request->+4	void *(void *stream)
+002f4bf0	func	Fighter_AttachPart	(item, fighter, part slot, clump, ?) puts an outfit item's clump on the fighter: category 0 (body) becomes the fighter's main clump with the skeleton (HAnim hierarchy); any other item is hung on body skeleton node ItemDef.attach_node (part slot +0x5F0 = hierarchy nodeInfo[node].frame); category 7 (left shoe) also calls 0x002FA9F0	void (int item, Fighter *f, int slot, void *clump, int a5)
+004ec950	data	g_ArchiveTexNames	per XAF archive id, a pointer to its texture name table {u32 ?, char *name} per entry: DATA, FSTAGE?, CDATA all point at g_TexNames 0x0059AE30; GRAPH at 0x005AB0D0	void *[10]
+0059ae30	data	g_TexNames	{u32 ?, char *name} per DATA.XAF entry (8276): the texture cache key; outfit placeholders are names like LEG_A01AAA, real textures LEG_B01AAA (docs/FORMATS.md)	u32[8276][2]

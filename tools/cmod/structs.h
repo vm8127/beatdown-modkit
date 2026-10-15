@@ -367,17 +367,21 @@ _Static_assert(sizeof(AnimGroup) == 0x8, "sizeof AnimGroup");
 
 /* g_ItemTable entry (more fields further on: weapon class at +126 and +145 belong to another record) */
 struct ItemDef {
-    u32 category;  /* +0x0 */
-    u8 _0004[0x4];
+    u32 category;  /* +0x0 0 body, 1 head, 2 hair, 3 mouth, 4 eyes, 5/6 hands, 7/8 shoes, 18 top, 19 pants (docs/PARTS.md) */
+    u32 attach_node;  /* +0x4 body skeleton (HAnim) node a rigid part hangs on: 10 head, 19/14 hands, 7/4 feet (Fighter_AttachPart; docs/FORMATS.md) */
     u32 flags;  /* +0x8 */
     void *use_handler;  /* +0xc */
-    u8 _0010[0x2];
-    s16 parts[0x11];  /* +0x12 ARCHIVE.XAF part ids ending -1 */
+    u16 mesh;  /* +0x10 DATA.XAF clump of the part (the game loads its copy from ARCHIVE.XAF entry item + 0x3A6) */
+    u16 anim;  /* +0x12 DATA.XAF animation (0x1B) of tops and pants, else 0 */
+    s16 placeholders[0x10];  /* +0x14 DATA.XAF ids of the placeholder textures the mesh's materials name, ending -1; outfit slot part i replaces placeholder i */
 };
 _Static_assert(__builtin_offsetof(ItemDef, category) == 0x0, "ItemDef.category");
+_Static_assert(__builtin_offsetof(ItemDef, attach_node) == 0x4, "ItemDef.attach_node");
 _Static_assert(__builtin_offsetof(ItemDef, flags) == 0x8, "ItemDef.flags");
 _Static_assert(__builtin_offsetof(ItemDef, use_handler) == 0xc, "ItemDef.use_handler");
-_Static_assert(__builtin_offsetof(ItemDef, parts) == 0x12, "ItemDef.parts");
+_Static_assert(__builtin_offsetof(ItemDef, mesh) == 0x10, "ItemDef.mesh");
+_Static_assert(__builtin_offsetof(ItemDef, anim) == 0x12, "ItemDef.anim");
+_Static_assert(__builtin_offsetof(ItemDef, placeholders) == 0x14, "ItemDef.placeholders");
 _Static_assert(sizeof(ItemDef) == 0x34, "sizeof ItemDef");
 
 /* g_Inventory (saved) */

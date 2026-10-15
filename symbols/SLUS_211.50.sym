@@ -55,6 +55,10 @@
 00142F90 Allies_ListByStatus
 00172BD0 StoryVar_Add
 00172E10 StoryVar_Sub
+001754B0 Street_RetextureMaterial
+001755A0 Street_RetextureAtomic
+001755E0 Street_HairMaterial
+00175650 Street_HairAtomic
 00176130 Fighter_FindNpcSlot
 00178700 NpcSpawn_Step
 00186A30 Str_CompareBytes
@@ -107,6 +111,15 @@
 001E1550 MemCard_CreateFile
 001E18E0 MemCard_CreateDataFile
 00216538 Unused_DmaGsUpload
+00231EE8 RpClumpStreamRead
+00232998 RpClumpForAllAtomics
+00235F50 RpGeometryForAllMaterials
+00237878 RpMaterialSetTexture
+002503B0 RtAnimAnimationStreamRead
+0025B5F8 RwStreamReadChunkHeaderInfo
+00264138 RwTextureStreamRead
+00264500 RwTexDictionaryStreamRead
+00269E38 RwImageStreamRead
 0026EAC0 Tex_Release
 0029BA10 Xaf_OpenAll
 0029BC40 Xaf_QueueLoad
@@ -161,6 +174,7 @@
 002E7A50 Location_Current
 002E9590 Options_SetMode
 002F0900 Fighter_PlayMotion
+002F4BF0 Fighter_AttachPart
 002F52C0 Fighter_UsesPresetModel
 002F53A0 Fighter_LoadModel
 002F8990 Fighter_IsAlive
@@ -503,6 +517,7 @@
 00430C90 g_StreetTextures
 00431B60 g_PresetFlagA
 00431C20 g_PresetValueB
+004EC950 g_ArchiveTexNames
 004F2400 g_ItemTable
 004FB4C0 g_AnimGroups
 00503514 g_EditorItems
@@ -531,6 +546,7 @@
 00599BB0 g_MissionEventHandlers
 0059A750 g_MissionReq
 0059A9A0 g_AutoMissionChecks
+0059AE30 g_TexNames
 005AB0D0 g_GraphNames
 005AC3A0 g_LanguageNames
 005B3360 g_ScriptCallFuncs
