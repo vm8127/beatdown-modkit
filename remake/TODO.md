@@ -11,7 +11,7 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 ## Next, in order
 
 1. [ ] **M5 research: enemy AI (V: later).** How street fighters decide to attack, guard, circle and take turns, read from `decomp/` and documented in `docs/` (new section or `docs/AI.md`, symbols in `symbols.tsv`). Pure research, no Godot files, so it can't conflict with anything. M5 needs it.
-2. [ ] **Game text (running since 2026-10-15 as a background subagent of the main session; restart from this line if no text commit follows).** Extract names, move names, menu text and negotiation lines through `remake/tools/remake_assets.py` (new converter), so the remake shows the game's own text. Text banks: see docs/SCRIPTS.md. M7 needs it.
+2. [x] **Game text: done 2026-10-15** (`tools/textkit.py`, `remake/tools/conv_text.py` -> `assets_ripped/text/`, `GameText`; docs/FORMATS.md, "Text"). Left for later: the game's colour palette, the font, which buttons icons ①-⑥ are.
 3. [ ] **M7 prep: negotiation and recruiting.** The post-fight menu (RECRUIT / ROB / INTERROGATE / BEATDOWN) as Godot UI and logic, with the Pride gauge and formulas from `docs/MECHANICS.md`, tested in the dev arena.
 
 ## After the running work lands

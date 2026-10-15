@@ -9,9 +9,9 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | [PLAN.md](PLAN.md) | The brief: goal, rules, what research to reuse, milestones, progress log |
 | `godot/` | The Godot project (open `godot/project.godot`) |
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test; model viewer; stage test |
-| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/` |
+| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/`, `text/` (`GameText`: the game's text by id, from `assets_ripped/text/`) |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
-| `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models, `conv_moves.py`: fighting styles) and `gltf_writer.py`; `test_moves.py` checks the generated moves |
+| `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models, `conv_moves.py`: fighting styles, `conv_text.py`: text banks and dialogue as JSON) and `gltf_writer.py`; `test_moves.py` checks the generated moves, `test_text.py` the text (`python remake/tools/test_text.py ISO remake/godot/assets_ripped`) |
 
 Game formats and mechanics learned for the remake are documented in the main docs (`README.md`, `docs/`), not here.
 
