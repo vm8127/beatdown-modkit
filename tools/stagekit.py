@@ -19,6 +19,7 @@ Output files are converted game data: keep them out of git.
 """
 import argparse
 import json
+import math
 import os
 import struct
 import sys
@@ -175,6 +176,56 @@ def clump_mesh(sec):
             out.append({"frame": fi, "hanim": fr.hanim_id, "top": top, "verts": verts,
                         "tris": [(a, b, cc, mt) for a, b, cc, mt in g.tris],
                         "materials": [list(mm.color) for mm in g.materials]})
+    return out
+
+
+def _yaw_deg(at):
+    """The game's facing angle of a direction: atan2(x, z) in degrees (0 = +z, 90 = +x; read in 0x002E7B10)."""
+    return math.degrees(math.atan2(at[0], at[2]))
+
+
+def door_records(sec):
+    """The doors clump (section 5) as the game's door list, in its order (docs/STAGES.md, "Doors and exits").
+
+    Doors_Load walks the clump with RpClumpForAllAtomics, which visits the atomics in reverse stream order
+    (RpClumpAddAtomic links each new atomic at the list head); Doors_CollectAtomic files a zone (atomic on a top
+    frame) and then its panel (atomic on the child frame) into record `count`, and counts the record once it has
+    both. The panel frame's child frame (no atomic) is the arrival marker: its LTM is copied to record +0x10, and
+    Door_ArrivalPoint (0x002E7B10) places a player arriving through entrance n (1-based record index) there,
+    facing atan2(at.x, at.z). Returns [{index, bonetag, dest_area, entrance, zone, panel, arrival, into_deg}],
+    zone/panel = {verts, tris} in area units, arrival = {pos, angle_deg}, into_deg = the angle a player must face
+    (within 90 degrees) to use the door (the zone frame's at + 180, 0x002E2930)."""
+    r = rw()
+    out = []
+    for c in r.read_clumps(sec):
+        wm = r.world_matrices(c.frames)
+        cur = {}
+        for fi, gi in reversed(c.atomics):
+            fr = c.frames[fi]
+            g = c.geometries[gi]
+            mesh = {"verts": [list(r.transform_point(p, wm[fi])) for p in g.positions],
+                    "tris": [list(t[:3]) for t in g.tris]}
+            top = fr.parent >= 0 and c.frames[fr.parent].parent == 0
+            if top:
+                cur["zone"] = mesh
+                tag = fr.hanim_id
+                cur["bonetag"] = tag
+                cur["dest_area"], cur["entrance"] = ((-tag) // 10, (-tag) % 10) if tag is not None and tag < 0 \
+                    else (tag, None)
+                at = fr.rot[2]   # the zone frame's modelling matrix at (frame +0x30), as 0x002E2930 reads it
+                cur["into_deg"] = round((_yaw_deg(at) + 180.0 + 180.0) % 360.0 - 180.0, 2)
+            else:
+                cur["panel"] = mesh
+                kids = [k for k, f2 in enumerate(c.frames) if f2.parent == fi]
+                if kids:
+                    m = wm[kids[-1]]
+                    cur["arrival"] = {"pos": list(m[3][:3]), "angle_deg": round(_yaw_deg(m[2]), 2)}
+            if "zone" in cur and "panel" in cur:
+                cur["index"] = len(out) + 1
+                out.append(cur)
+                cur = {}
+                if len(out) == 9:
+                    return out
     return out
 
 
