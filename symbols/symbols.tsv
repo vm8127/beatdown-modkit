@@ -87,6 +87,25 @@
 0034ea50	func	zenGetIOPReply
 00387760	func	Text_LoadLanguage	localized text from CDATA entries 385-432
 00387980	func	Text_Get	(text id) -> string	const char *(int text_id, int zero)
+00387780	func	Text_LoadBank	(?, from heap) loads the queued swappable text bank (CDATA.XAF 403-432) into Text_Get slot 3 (static buffer) or 4 (heap); docs/FORMATS.md, "Text"
+00387d20	func	Text_FindIndex	(slot, text id, lo, hi) binary search of a text bank's id table -> entry index or < 0 (read from Text_Get)	int (int slot, int text_id, int lo, int hi)
+0076ddb0	data	g_TextBanks	5 Text_Get slots x 0x14 bytes {u32 size, s16 count, entry table *, strings *, buffer *}: 0 UI (CDATA 385+), 1 moves (397+), 2 items (391+), 3/4 the swappable bank (missions, partner, rumours, system, credits)
+00600320	data	g_TextSwapSlot	s16: which slot (3 or 4) holds the swappable bank, used by Text_Get for its id ranges
+001b2be0	func	Text_Encode	(box, UTF-8 text) -> font codes (g_TextCodes, u16, 0-terminated) + a colour byte per character; handles new lines, @N/$N colours, the placeholders (person, area, item, money, number, text) and button glyphs (docs/FORMATS.md, "Text")	u16 *(int box, const char *text)
+006620c0	data	g_TextCodes	Text_Encode's output: u16 font codes	u16[512]
+001b7d80	func	Text_SetPerson	(n) person for the ∀ placeholder: 0 = player's hero, else text 11001 + n	void (int n)
+001b7d90	func	Text_SetArea	(area) area for 〒: 1-54 g_AreaDefs name, 100-153 the short name of area - 100	void (int area)
+001b7da0	func	Text_SetItem	(item) item for ㈲: text 11999 + n (n < 108) else 17316 + n	void (int item)
+001b7db0	func	Text_SetItem1	(item) item for ⑦ (some items have their own text 0x39D1-0x39DB)	void (int item)
+001b7dc0	func	Text_SetItem2	(item) item for ⑧	void (int item)
+001b7dd0	func	Text_SetMoney	(amount) for ㈱: "$" (text 10202) + number, German number first	void (int amount)
+001b7de0	func	Text_SetNum2	(n) number for ⑯ (controller port, memory card slot)	void (int n)
+001b7df0	func	Text_SetNum1	(n) number for ⑮ (blocks / KB needed)	void (int n)
+001b7e00	func	Text_SetText1	(text id) for ⑬	void (int text_id)
+001b7e10	func	Text_SetText2	(text id) for ⑭	void (int text_id)
+003b0d50	func	Str_FromInt	(n) -> decimal string in a static buffer (0x0077FEE0); negative numbers get text 60111 first	char *(int n)
+002ebd40	func	Pad_ActionButton	(layout, action 0 punch / 1 kick / 2 guard / 3 special) -> pad bit 0x40 △, 0x80 ×, 0x100 □, 0x200 ○ from g_PadLayouts (JP remaps the layout through 0x0050ADC0)	u32 (int layout, int action)
+005cf7c0	data	g_PadLayouts	6 controller layouts x 4 actions (punch, kick, guard, special) -> pad bit; layout 0 = □ punch, △ kick, × guard, ○ special	u32[24]
 003a4f40	func	Script_LoadEventList	mission loader state machine: queues SCRIPT.XAF entry 1000 + mission id into g_EventList (0x00776100 for missions 100 and 101), then starts it (0x003A50B0)
 004f2400	data	g_ItemTable	488 x 52 bytes: {u32 category, u32 ?, u32 flags, u32 use handler, u16 icon?, s16 parts[...] -1}	ItemDef[488]
 004fb4c0	data	g_AnimGroups	317 x 8 bytes: {s16 STAGE.XAF entry, s16 0, s16* anim IDs}	AnimGroup[317]

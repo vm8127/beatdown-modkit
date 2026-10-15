@@ -93,6 +93,17 @@
 0018EDE0 BList_IndexOf
 0019F370 Debug_HeadStart
 001A8550 BList_DetailPanel
+001B2BE0 Text_Encode
+001B7D80 Text_SetPerson
+001B7D90 Text_SetArea
+001B7DA0 Text_SetItem
+001B7DB0 Text_SetItem1
+001B7DC0 Text_SetItem2
+001B7DD0 Text_SetMoney
+001B7DE0 Text_SetNum2
+001B7DF0 Text_SetNum1
+001B7E00 Text_SetText1
+001B7E10 Text_SetText2
 001BAC80 Appearance_UpdateFlags
 001C3DD0 Person_IsState3
 001C44A0 Allies_FirstFree
@@ -205,6 +216,7 @@
 002E7130 Area_PeopleLayer
 002E7A50 Location_Current
 002E9590 Options_SetMode
+002EBD40 Pad_ActionButton
 002EC560 Fighter_AttackCollide
 002F0900 Fighter_PlayMotion
 002F1610 Fighter_UpdateMotion
@@ -309,7 +321,9 @@
 00370620 VsMode_SelectScreen
 00371160 VsCustom_SetupLists
 00387760 Text_LoadLanguage
+00387780 Text_LoadBank
 00387980 Text_Get
+00387D20 Text_FindIndex
 0038B4A0 Story_AreaEvents2
 0038CE00 Story_AreaEvents
 003937C0 Criminal_Rank
@@ -556,6 +570,7 @@
 003B02C0 Mission_Unavailable
 003B0610 Mission_TalkStart
 003B08A0 Mission_FlagTrigger
+003B0D50 Str_FromInt
 003B2700 VsSelect_DrawPortrait
 003B7400 DebugLanguage_Main
 003C0D50 Ability_ApplyAttack
@@ -617,6 +632,7 @@
 005B81F0 g_VsPortraitCells
 005CAB40 g_MoveListTable
 005CD9B0 g_InputFallback
+005CF7C0 g_PadLayouts
 005D04D0 g_AttackRankMul
 005D04F0 g_EnemyDamageByDifficulty
 005D0650 g_HitSituation
@@ -651,6 +667,7 @@
 005FFE44 g_DebugOverlayPage
 006000D0 g_VsSaveHero
 006000D4 g_VsCustom
+00600320 g_TextSwapSlot
 006005F4 g_VsSelect
 0060A680 g_EventFlags
 0060B480 g_CarryAllyFlags
@@ -680,6 +697,7 @@
 0060D3A0 g_PlayerMoney
 00645B20 g_NpcSpawnTextures
 006614A0 g_BList
+006620C0 g_TextCodes
 00685450 g_Pad1
 0069C2B0 g_McFiles
 0069DF08 g_RtAnimInterpInfo
@@ -694,6 +712,7 @@
 006D3F8E g_Player_MaxHP
 0075B330 g_AppearanceItems
 0076A970 g_VsCustomIds
+0076DDB0 g_TextBanks
 0076ED60 g_MissionMgr
 0076F0E0 g_JobCleared
 0076F0F0 g_JobResults

@@ -1,4 +1,4 @@
-# File formats: models and textures
+# File formats: models, textures and text
 
 How Beat Down's character models are stored and put together, decoded 2026-10-15 for the Godot remake (milestone M1, `remake/`). The archive layout (XAF) is in README.md, "XAF archive format"; animations are in docs/ANIMATION.md. Tools: `tools/rwkit.py` (decoder, chunk dumps, model assembly) and `remake/tools/remake_assets.py` (glTF export).
 
@@ -14,8 +14,9 @@ How sure: **read** = read from the game's code in `decomp/`; **checked** = verif
 5. [Street models (walking around)](#street-models-walking-around)
 6. [Fight models built from outfit slots](#fight-models-built-from-outfit-slots)
 7. [Other model entries](#other-model-entries)
-8. [Tools](#tools)
-9. [Open questions](#open-questions)
+8. [Text](#text)
+9. [Tools](#tools)
+10. [Open questions](#open-questions)
 
 ## RenderWare streams
 
@@ -167,6 +168,50 @@ The game loads each item's model as a pack from **ARCHIVE.XAF entry item + 0x3A6
 - **FSCENE.XAF**: 162 texture dictionary + clump entries next to the cutscene scripts.
 - PS2-native textures (`0x15`): see [above](#ps2-native-textures-0x15), `tools/ps2tex.py`.
 
+## Text
+
+Decoded 2026-10-15 for the remake (TODO "Game text"); **read** from `Text_Get` `0x00387980`, `Text_LoadBank` `0x00387780`, `Text_FindIndex` `0x00387D20` and the text encoder `Text_Encode` `0x001B2BE0`, **checked** on all banks in all six languages (`remake/tools/test_text.py`: every MOVE LIST of docs/movesets.md, names, area 5, the negotiation menu). Tools: `tools/textkit.py` (decoder, CLI), `remake/tools/conv_text.py` (JSON for the remake), `remake/godot/game/text/game_text.gd` (`GameText`).
+
+**Banks.** CDATA.XAF entries 385-432 are 8 banks x 6 languages (entry order JP, EN, FR, DE, ES, IT). An entry is `{u32 size, u16 count, u16 language, count x {u16 id, u16 byte length, u32 offset}}`, then the strings (offsets from the end of the table), UTF-8, NUL-terminated, ids sorted (binary search). The header's language number is `g_SystemData.language`: 0 JP, 1 EN, 2 DE, 3 ES, 4 FR, 5 IT (so the FR entry says 4). `Text_Get` (id) picks the bank by id range, with 5 slots in `g_TextBanks` `0x0076DDB0`:
+
+| Bank | Entries | Slot | Ids Text_Get sends there | Holds |
+|---|---|---|---|---|
+| ui | 385-390 | 0 (always loaded) | everything else | menus, HUD, names (11001 + person, Aaron = 11069), areas (18000-18161, 22000-), tutorials and help (30000-32999), street and battle lines (50000-51016: greetings, taunts, and what looks like each hero's negotiation lines, e.g. 50581 "Su dinero. All of it." / 50585 "Tell me everything you know. Now!" / 50587 "Wanna join me?..."; guess from the text, not traced), status screens (51500-), messages (52000-53999), menu help (60000-, 65500-) |
+| items | 391-396 | 2 | 12000-17999 | item names and descriptions; also a copy of the negotiation menu (13004 ...) |
+| moves | 397-402 | 1 | 40000-49999 | MOVE LIST inputs and names (`g_MoveLists`, docs/movesets.md) |
+| missions | 403-408 | 3/4 | 35000-39498 | job titles and descriptions (`g_Jobs`) |
+| partner | 409-414 | 3/4 | 61000-63999 | party member lines |
+| rumours | 415-420 | 3/4 | 29000-29999 | town rumours and hints |
+| system | 421-426 | 3/4 | 25000-26999 | memory card messages |
+| credits | 427-432 | 3/4 | 5000-8999, 9100-9399 | staff credits |
+
+The swappable banks share one slot (`g_TextSwapSlot` `0x00600320` says 3 = static buffer or 4 = heap) loaded on demand. A missing id falls back to text 10201. Every id each bank holds is in its own range (no unreachable entries). Mission and dialogue text is not in these banks: it is the string table of each SCRIPT.XAF script image (docs/SCRIPTS.md, "Script file format"), same encoding; SCRIPT.XAF 324 and 485-499 still hold Shift-JIS strings from development (unused, read as cp932).
+
+**Encoding and control codes** (`Text_Encode`: UTF-8 in, 16-bit font codes plus a colour byte per character out, `g_TextCodes` `0x006620C0`). ASCII is stored full-width (U+FF01-FF5E, space U+3000); half-width characters are codes:
+
+| In the string | Meaning | Remake markup (`textkit.to_markup`) |
+|---|---|---|
+| `\` `n` (two characters) or LF | new line | `\n` |
+| `@`*d* or `$`*d* (half-width; *d* a digit) | colour *d* for what follows, 0 = default (English uses 6 and 8) | `{c`*d*`}` |
+| `%s` | printf argument (a few UI strings) | kept |
+| ∀ / ⑫ | person name (`Text_SetPerson` `0x001B7D80`; 0 = the player's hero via `Fighter_DisplayName`, else text 11001 + n) / a second person (setter not found) | `{person}` / `{person2}` |
+| 〒 | area name (`Text_SetArea`: 1-54 `AreaDef.name_text`, 100-153 the short name of area n - 100) | `{area}` |
+| ㈲ / ⑦ / ⑧ | item name (`Text_SetItem*`: text 11999 + n, from 108 on 17316 + n; ⑦ ⑧ give items 2, 5, 9, 10, 11, 23, 40 their own texts 0x39D1-0x39DB) | `{item}` `{item1}` `{item2}` |
+| ㈱ | money: text 10202 "$" + `Str_FromInt` (German: number first) | `{money}` |
+| ⑮ / ⑯ | numbers (`Text_SetNum1` / `Text_SetNum2`: KB needed, port or slot number) | `{num1}` / `{num2}` |
+| ⑬ / ⑭ | any text id (`Text_SetText1/2`) | `{text1}` / `{text2}` |
+| ⑪ / ⑩ | opening / closing double quote | “ / ” |
+| 〆 ◎ ◇ ▽ | the button of action punch / kick / guard / special, from the player's controller layout (`Pad_ActionButton` `0x002EBD40`, `g_PadLayouts` `0x005CF7C0`; layout 0: □ △ × ○) | `{btn:punch}` `{btn:kick}` `{btn:guard}` `{btn:special}` |
+| ≠ ⑳ ◆ ▼ | the same four, drawn filled (pressed) | `{btn:punch_on}` ... |
+| ♯ ♭ ♪ | menu buttons: × △ □ (JP: ○ × △) | `{btn:ok}` `{btn:back}` `{btn:third}` |
+| ○ △ □ × / ● ▲ ■ Ⅹ | fixed face-button glyphs, outline / filled | `{btn:circle}` ... `{btn:cross_on}` |
+| ①-⑥, ⑰, ⑱, ∬, α, β, ㊤-㊨ | icon glyphs: ① + stick = RUN, ②/⑤ use the equipped items, ④ grab / pick up (move lists: "□□ ④"), ⑥ taunt, ∬ rapid press ("GRAB ∬□"), α opens a menu | `{icon:1}` ... `{icon:rapid}` `{icon:alpha}` |
+| ⑲ | ® | ® |
+
+Everything else (Latin-1 and Latin Extended-A letters, general punctuation, arrows ←↑→↓ which the MOVE LIST uses, kana, kanji) is a font glyph. Note that NFKC normalisation (what bdkit.py and scriptkit.py use for display) folds the circled placeholders into digits ("controller port ⑯" becomes "port 16"); use `textkit` when the codes matter. A real `{` or `}` would be written `{lb}` / `{rb}` (none occur).
+
+**For the remake** (`conv_text.py`, run by `remake_assets.py` as `text`): `assets_ripped/text/<lang>.json` `{"text": {id: markup}}` (7,943 texts), `dialogue_<lang>.json` `{"scripts": {SCRIPT.XAF entry: [markup]}}` (1,088 scripts, 6,245 strings), `index.json` (banks, tokens, area id -> name texts, style -> move list text ids, id bases). `GameText.text(id)`, `render(id, vars, bbcode)`, `person_name(n)`, `item_name(n)`, `area_name(area)`, `move_list(style)`, `dialogue(entry)`; missing assets give `#id`.
+
 ## Tools
 
 ```
@@ -174,6 +219,7 @@ python tools/rwkit.py tree ISO/XAF/CDATA.XAF 96     # chunk tree of an entry (or
 python tools/rwkit.py info ISO/XAF/DATA.XAF 2650    # frames, bones, geometries, materials, skin
 python tools/ps2tex.py list ISO/XAF/FSTAGE.XAF 5     # PS2-native textures of an area pack (png ... OUT writes them)
 python remake/tools/remake_assets.py ISO remake/godot/assets_ripped   # glTF for the remake
+python tools/textkit.py get ISO/XAF/CDATA.XAF 11069 18002   # text by id with the markup (banks, find, dialogue)
 ```
 
 `rwkit.py` as a library: `read_clumps(blob)`, `images(blob)`, `world_matrices(frames)`, `skeleton_nodes(clump)`, `street_model(...)`, `outfit_model(...)` (returns the placed geometries with their DATA.XAF texture ids).
@@ -188,3 +234,4 @@ python remake/tools/remake_assets.py ISO remake/godot/assets_ripped   # glTF for
 - Pack chunk types 0x23 and 0x0C (`0x00259980`, `0x0022B9A0`).
 - Left/right of the leg and arm chains; confirm by posing in M2.
 - Is the DATA.XAF clump of an item identical to its ARCHIVE.XAF item + 0x3A6 copy?
+- Text: the colour palette behind `@0`-`@9`; which physical buttons icons ①-⑥, ⑰, ⑱, α, β are (L1/R1/L2/R2/START/SELECT?); who sets the second person `⑫` (gp-0x771C); what Text_Encode's `box` (0x308-byte records at `0x006629E4`) holds (line count, wrap width); the font itself (glyph table and texture) for a faithful look. Not checked in the emulator.

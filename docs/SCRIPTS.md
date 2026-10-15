@@ -127,7 +127,8 @@ Script image (`ScriptHeader`):
 +0x04 u32 page_table    offset of u32 page offsets[page_count]
 +0x08 u32 string_count
 +0x0C u32 string_table  offset of u32 string offsets[string_count] (each from the table's own start), then the strings (UTF-8,
-                        full-width ASCII; "\n" is a line break)
+                        full-width ASCII; "\n" is a line break; colours, placeholders, buttons:
+                        docs/FORMATS.md, "Text")
 +0x14 u32 end
 +0x20 code              all offsets above count from here
 ```
