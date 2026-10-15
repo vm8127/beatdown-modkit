@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/fighter/move_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://game/moves/straight.tres" id="2_straight"]
+
+[resource]
+script = ExtResource("1_script")
+move_name = "Low Kick"
+limb = "leg"
+frames = 28
+active_start = 8
+active_end = 10
+cancel_start = 11
+cancel_end = 22
+next = {
+"P": ExtResource("2_straight")
+}
+damage = 14
+hitstop = 6
+hitstun = 22
+knockback = 2.0
+reach = 1.0
+height = 0.45
+radius = 0.4
+lunge = 1.0

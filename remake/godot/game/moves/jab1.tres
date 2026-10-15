@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/fighter/move_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://game/moves/jab2.tres" id="2_jab2"]
+[ext_resource type="Resource" path="res://game/moves/low_kick.tres" id="3_low_kick"]
+
+[resource]
+script = ExtResource("1_script")
+move_name = "Jab"
+limb = "arm"
+side = 0
+frames = 22
+active_start = 6
+active_end = 8
+cancel_start = 9
+cancel_end = 18
+next = {
+"P": ExtResource("2_jab2"),
+"K": ExtResource("3_low_kick")
+}
+damage = 10
+hitstop = 5
+hitstun = 18
+knockback = 1.5
+reach = 0.85
+height = 1.35
+radius = 0.35
+lunge = 1.5

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://game/fighter/move_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+move_name = "Roundhouse"
+limb = "leg"
+frames = 44
+active_start = 14
+active_end = 18
+damage = 30
+hitstop = 12
+hitstun = 30
+knockback = 8.0
+knockdown = true
+launch = 5.5
+reach = 1.05
+height = 1.4
+radius = 0.5
+lunge = 2.0

@@ -7,22 +7,9 @@ const KEYS := """WASD / left stick move · mouse / right stick camera (click to 
 J or LMB / X punch · K or RMB / Y kick · L or Shift / RB guard
 F1 boxes · F2 slow-mo · F3 pause · F4 step one frame · F5 spawn dummy · F6 dummy mode · F7 reset · Tab hide"""
 
-var arena: Node
-var _label: Label
+@export var arena: Node
 
-
-func _ready() -> void:
-	_label = Label.new()
-	_label.position = Vector2(12, 10)
-	var font := SystemFont.new()
-	font.font_names = PackedStringArray(["Consolas", "DejaVu Sans Mono", "Courier New", "monospace"])
-	_label.add_theme_font_override("font", font)
-	_label.add_theme_font_size_override("font_size", 15)
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0, 0, 0, 0.55)
-	bg.set_content_margin_all(8)
-	_label.add_theme_stylebox_override("normal", bg)
-	add_child(_label)
+@onready var _label: Label = $Label
 
 
 func _process(_delta: float) -> void:

@@ -9,7 +9,7 @@ extends Node
 
 const BUFFER := 10
 
-var camera: ThirdPersonCamera   ## for camera-relative movement
+@export var camera: ThirdPersonCamera   ## for camera-relative movement
 var presses: Array[Dictionary] = []   ## {button, frame}, oldest first
 
 

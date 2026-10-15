@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MoveSet" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://game/fighter/move_set.gd" id="1_script"]
+[ext_resource type="Resource" path="res://game/moves/jab1.tres" id="2_jab1"]
+[ext_resource type="Resource" path="res://game/moves/kick1.tres" id="3_kick1"]
+
+[resource]
+script = ExtResource("1_script")
+style_name = "Placeholder (M0)"
+root = {
+"K": ExtResource("3_kick1"),
+"P": ExtResource("2_jab1")
+}

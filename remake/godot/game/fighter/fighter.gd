@@ -8,8 +8,11 @@ extends CharacterBody3D
 ## rendered frame, and never changes the game state.
 ##
 ## The fighter is a state machine: exactly one State at a time, with `state_frame` counting
-## the frames spent in it. A move (Moves.LIST) is split into startup, active and recovery
-## frames; the hitbox only exists on the active frames.
+## the frames spent in it. A move (MoveData, game/moves/*.tres) is split into startup,
+## active and recovery frames; the hitbox only exists on the active frames.
+##
+## The body, limbs, hurtbox and debug views are nodes in fighter.tscn; this script only
+## moves and colours them.
 
 enum State { IDLE, MOVE, ATTACK, GUARD, HITSTUN, BLOCKSTUN, KNOCKDOWN, GETUP }
 
@@ -23,6 +26,7 @@ const LAYER_WORLD := 1
 const LAYER_BODIES := 2
 const LAYER_HURTBOXES := 4
 
+@export var move_set: MoveSet       ## the fighting style: which move each button starts
 @export var display_name := "Fighter"
 @export var color := Color(0.85, 0.3, 0.2)
 @export var max_hp := 300
@@ -32,8 +36,8 @@ const LAYER_HURTBOXES := 4
 var hp := 0
 var state := State.IDLE
 var state_frame := 0
-var move: Dictionary = {}
-var move_id := ""
+var move: MoveData                   ## current move while attacking
+var move_id := ""                    ## its file name, e.g. "jab1"
 var hitstop := 0                     ## frames left frozen by an impact
 var stun := 0                        ## hitstun / blockstun frames left
 var pending_knockback := Vector3.ZERO  ## applied when the hitstop ends
@@ -46,29 +50,27 @@ var combo_damage := 0
 var last_event := ""
 
 var _landed := -1
-var _pivot: Node3D
-var _arms: Array[Node3D] = []
-var _leg: Node3D
-var _shield: MeshInstance3D
-var _hitbox_view: MeshInstance3D
-var _hurtbox_view: MeshInstance3D
-var _hurtbox: Area3D
 var _hit_shape := SphereShape3D.new()
-var _mat: StandardMaterial3D
-var _hp_label: Label3D
 var _flash := 0
 var _flash_color := Color.WHITE
+
+@onready var _pivot: Node3D = $Pivot
+@onready var _arms: Array[Node3D] = [$Pivot/ArmR, $Pivot/ArmL]
+@onready var _leg: Node3D = $Pivot/Leg
+@onready var _shield: MeshInstance3D = $Pivot/Shield
+@onready var _mat: StandardMaterial3D = $Pivot/Body.material_override
+@onready var _hurtbox: Area3D = $Hurtbox
+@onready var _hurtbox_view: MeshInstance3D = $HurtboxView
+@onready var _hitbox_view: MeshInstance3D = $HitboxView
+@onready var _hp_label: Label3D = $HpLabel
 
 
 func _ready() -> void:
 	hp = max_hp
 	add_to_group("fighters")
-	collision_layer = LAYER_BODIES
-	collision_mask = LAYER_WORLD | LAYER_BODIES
 	for child in get_children():
 		if child.has_method("take_press"):
 			brain = child
-	_build()
 
 
 # --- Game logic (fixed frames) -------------------------------------------------------
@@ -119,9 +121,9 @@ func _tick_free() -> void:
 	if brain.wants_guard(self):
 		_enter(State.GUARD)
 		return
-	var press: String = brain.take_press(Moves.ROOT.keys())
+	var press: String = brain.take_press(move_set.root.keys())
 	if press != "":
-		_start_move(Moves.ROOT[press])
+		_start_move(move_set.root[press])
 		return
 	var dir: Vector3 = brain.move_dir(self)
 	if dir.length() > 0.1:
@@ -144,9 +146,9 @@ func _tick_guard() -> void:
 		_enter(State.IDLE)
 
 
-func _start_move(id: String) -> void:
-	move_id = id
-	move = Moves.LIST[id]
+func _start_move(m: MoveData) -> void:
+	move = m
+	move_id = m.resource_path.get_file().get_basename()
 	hit_targets.clear()
 	_enter(State.ATTACK)
 	# Soft lock-on: snap to face the nearest enemy in front, else the stick direction.
@@ -161,24 +163,21 @@ func _start_move(id: String) -> void:
 
 func _tick_attack() -> void:
 	var f := state_frame
-	var active: Array = move["active"]
-	if f < active[0]:
-		var fwd := forward() * float(move.get("lunge", 0.0))
+	if f < move.active_start:
+		var fwd := forward() * move.lunge
 		velocity.x = fwd.x
 		velocity.z = fwd.z
 	else:
 		_apply_friction(WALK_FRICTION)
-	if f >= active[0] and f <= active[1]:
+	if move.is_active(f):
 		_do_hits()
 	# Combo: during the cancel window, a buffered press starts the next move.
-	var cancel: Array = move.get("cancel", [])
-	if cancel.size() == 2 and f >= cancel[0] and f <= cancel[1]:
-		var next: Dictionary = move.get("next", {})
-		var press: String = brain.take_press(next.keys())
+	if move.cancel_open(f):
+		var press: String = brain.take_press(move.next.keys())
 		if press != "":
-			_start_move(next[press])
+			_start_move(move.next[press])
 			return
-	if f >= int(move["frames"]):
+	if f >= move.frames:
 		_enter(State.IDLE)
 
 
@@ -212,13 +211,13 @@ func _tick_getup() -> void:
 # --- Hits ----------------------------------------------------------------------------
 
 func hitbox_center() -> Vector3:
-	return global_position + Vector3.UP * float(move["height"]) + forward() * float(move["reach"])
+	return global_position + Vector3.UP * move.height + forward() * move.reach
 
 
 ## Checks the hit sphere against every hurtbox this frame. A direct shape query is
 ## exact on the frame it runs (an Area3D's overlaps lag one physics frame behind).
 func _do_hits() -> void:
-	_hit_shape.radius = float(move["radius"])
+	_hit_shape.radius = move.radius
 	var q := PhysicsShapeQueryParameters3D.new()
 	q.shape = _hit_shape
 	q.transform = Transform3D(Basis(), hitbox_center())
@@ -236,43 +235,43 @@ func _do_hits() -> void:
 		match result:
 			"combo":
 				combo_hits += 1
-				combo_damage += int(move["damage"])
+				combo_damage += move.damage
 			"hit":
 				combo_hits = 1
-				combo_damage = int(move["damage"])
-		last_event = "%s %s %s" % [move["name"], result, other.display_name]
+				combo_damage = move.damage
+		last_event = "%s %s %s" % [move.move_name, result, other.display_name]
 
 
 ## Called by the attacker. Returns "blocked", "hit" (fresh hit) or "combo" (the victim was
 ## still reeling from an earlier hit, so it couldn't have escaped).
-func take_hit(attacker: Fighter, m: Dictionary) -> String:
+func take_hit(attacker: Fighter, m: MoveData) -> String:
 	var to_attacker := attacker.global_position - global_position
 	to_attacker.y = 0
 	var push := attacker.forward()
 	var guarding := state in [State.GUARD, State.BLOCKSTUN]
 	if guarding and forward().dot(to_attacker.normalized()) > 0.3:
-		hp = maxi(1, hp - int(m["damage"]) / 10)   # chip damage
-		hitstop = int(m["hitstop"] * 0.75)
-		stun = int(m["hitstun"] * 0.7)
-		pending_knockback = push * float(m["knockback"]) * 0.6
+		hp = maxi(1, hp - m.damage / 10)   # chip damage
+		hitstop = int(m.hitstop * 0.75)
+		stun = int(m.hitstun * 0.7)
+		pending_knockback = push * m.knockback * 0.6
 		_start_flash(Color(0.6, 0.8, 1.0))
 		_enter(State.BLOCKSTUN)
 		_shake_camera(0.15)
 		return "blocked"
 
 	var combo := state in [State.HITSTUN, State.KNOCKDOWN]
-	hp -= int(m["damage"])
+	hp -= m.damage
 	_face_now(to_attacker)
-	hitstop = int(m["hitstop"])
+	hitstop = m.hitstop
 	_start_flash(Color.WHITE)
-	if m.get("knockdown", false) or hp <= 0:
+	if m.knockdown or hp <= 0:
 		stun = 0
-		pending_knockback = push * float(m["knockback"]) + Vector3.UP * float(m.get("launch", 5.0))
+		pending_knockback = push * m.knockback + Vector3.UP * m.launch
 		_enter(State.KNOCKDOWN)
 		_shake_camera(0.6)
 	else:
-		stun = int(m["hitstun"])
-		pending_knockback = push * float(m["knockback"])
+		stun = m.hitstun
+		pending_knockback = push * m.knockback
 		_enter(State.HITSTUN)
 		_shake_camera(0.25)
 	return "combo" if combo else "hit"
@@ -343,14 +342,12 @@ func _start_flash(c: Color) -> void:
 func debug_text() -> String:
 	var s := "%-8s %-9s hp %3d/%d" % [display_name, State.keys()[state], hp, max_hp]
 	if state == State.ATTACK:
-		var a: Array = move["active"]
 		var f := state_frame
-		var phase := "startup" if f < a[0] else ("ACTIVE" if f <= a[1] else "recovery")
-		s += "  %s f%d/%d %s" % [move["name"], f, move["frames"], phase]
-		var c: Array = move.get("cancel", [])
-		if c.size() == 2:
-			var open: bool = f >= c[0] and f <= c[1]
-			s += "  combo %s %s" % [move["next"].keys(), "OPEN" if open else "[%d-%d]" % [c[0], c[1]]]
+		var phase := "startup" if f < move.active_start else ("ACTIVE" if f <= move.active_end else "recovery")
+		s += "  %s f%d/%d %s" % [move.move_name, f, move.frames, phase]
+		if move.cancel_start >= 0:
+			var window := "OPEN" if move.cancel_open(f) else "[%d-%d]" % [move.cancel_start, move.cancel_end]
+			s += "  combo %s %s" % [move.next.keys(), window]
 	if stun > 0:
 		s += "  stun %d" % stun
 	if hitstop > 0:
@@ -371,27 +368,28 @@ func _process(delta: float) -> void:
 	_pose_limb(_leg, 0.0, 0.7)
 	_leg.visible = false
 	if state == State.ATTACK:
-		var a: Array = move["active"]
 		var f := float(state_frame)
+		var a0 := float(move.active_start)
+		var a1 := float(move.active_end)
 		var ext := 0.0
-		if f < a[0]:
-			ext = -0.3 * f / a[0]
-		elif f <= a[1]:
+		if f < a0:
+			ext = -0.3 * f / a0
+		elif f <= a1:
 			ext = 1.0
 		else:
-			ext = 1.0 - clampf((f - a[1]) / maxf(1.0, move["frames"] - a[1]) * 1.6, 0.0, 1.0)
-		var limb: Node3D = _leg if move["limb"] == "leg" else _arms[int(move.get("side", 0))]
-		_pose_limb(limb, ext, float(move["height"]))
-		_leg.visible = move["limb"] == "leg"
+			ext = 1.0 - clampf((f - a1) / maxf(1.0, move.frames - a1) * 1.6, 0.0, 1.0)
+		var limb: Node3D = _leg if move.limb == "leg" else _arms[move.side]
+		_pose_limb(limb, ext, move.height)
+		_leg.visible = move.limb == "leg"
 
 	_shield.visible = state in [State.GUARD, State.BLOCKSTUN]
 	_mat.albedo_color = _flash_color if _flash > 0 else color
 
-	var active_now: bool = state == State.ATTACK and state_frame >= move["active"][0] and state_frame <= move["active"][1]
+	var active_now := state == State.ATTACK and move.is_active(state_frame)
 	_hitbox_view.visible = Dev.show_boxes and active_now
 	if active_now:
 		_hitbox_view.global_position = hitbox_center()
-		_hitbox_view.scale = Vector3.ONE * float(move["radius"]) * 2.0
+		_hitbox_view.scale = Vector3.ONE * move.radius * 2.0
 	_hurtbox_view.visible = Dev.show_boxes and _hurtbox.collision_layer != 0
 	_hp_label.text = "%s\n%d" % [display_name, hp]
 
@@ -401,102 +399,3 @@ func _pose_limb(limb: Node3D, ext: float, height: float) -> void:
 	limb.position.z = 0.25 * -minf(ext, 0.0)
 	limb.scale.z = lerpf(0.35, 1.2, maxf(ext, 0.0))
 
-
-func _build() -> void:
-	var col := CollisionShape3D.new()
-	var cap := CapsuleShape3D.new()
-	cap.radius = 0.35
-	cap.height = 1.8
-	col.shape = cap
-	col.position.y = 0.9
-	add_child(col)
-
-	_pivot = Node3D.new()
-	add_child(_pivot)
-	_mat = StandardMaterial3D.new()
-	_mat.albedo_color = color
-	var body := MeshInstance3D.new()
-	var cm := CapsuleMesh.new()
-	cm.radius = 0.35
-	cm.height = 1.8
-	body.mesh = cm
-	body.position.y = 0.9
-	body.material_override = _mat
-	_pivot.add_child(body)
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.08, 0.08, 0.1)
-	_pivot.add_child(_box_mesh(Vector3(0.42, 0.12, 0.15), Vector3(0, 1.55, -0.28), dark))   # visor: shows facing
-	_arms.append(_limb(Vector3(0.13, 0.13, 0.7), Vector3(0.3, 1.3, 0), dark))
-	_arms.append(_limb(Vector3(0.13, 0.13, 0.7), Vector3(-0.3, 1.3, 0), dark))
-	_leg = _limb(Vector3(0.16, 0.16, 0.85), Vector3(0.12, 0.7, 0), dark)
-	_shield = _box_mesh(Vector3(0.8, 1.2, 0.05), Vector3(0, 1.1, -0.5), _translucent(Color(0.5, 0.8, 1.0, 0.35)))
-	_pivot.add_child(_shield)
-
-	_hurtbox = Area3D.new()
-	_hurtbox.collision_layer = LAYER_HURTBOXES
-	_hurtbox.collision_mask = 0
-	_hurtbox.monitoring = false
-	var hs := CollisionShape3D.new()
-	var hc := CapsuleShape3D.new()
-	hc.radius = 0.42
-	hc.height = 1.9
-	hs.shape = hc
-	hs.position.y = 0.95
-	_hurtbox.add_child(hs)
-	add_child(_hurtbox)
-
-	_hurtbox_view = MeshInstance3D.new()
-	var hm := CapsuleMesh.new()
-	hm.radius = 0.42
-	hm.height = 1.9
-	_hurtbox_view.mesh = hm
-	_hurtbox_view.position.y = 0.95
-	_hurtbox_view.material_override = _translucent(Color(0.2, 0.9, 0.3, 0.12))
-	add_child(_hurtbox_view)
-
-	_hitbox_view = MeshInstance3D.new()
-	var sm := SphereMesh.new()
-	sm.radius = 0.5
-	sm.height = 1.0
-	_hitbox_view.mesh = sm
-	_hitbox_view.material_override = _translucent(Color(1.0, 0.15, 0.1, 0.45))
-	_hitbox_view.top_level = true
-	_hitbox_view.visible = false
-	add_child(_hitbox_view)
-
-	_hp_label = Label3D.new()
-	_hp_label.position.y = 2.25
-	_hp_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_hp_label.no_depth_test = true
-	_hp_label.font_size = 56
-	_hp_label.outline_size = 12
-	_hp_label.pixel_size = 0.004
-	add_child(_hp_label)
-
-
-func _limb(size: Vector3, base: Vector3, mat: Material) -> Node3D:
-	var joint := Node3D.new()   # shoulder or hip; the box hangs forward from it along -Z
-	joint.position = base
-	joint.add_child(_box_mesh(size, Vector3(0, 0, -size.z / 2), mat))
-	_pivot.add_child(joint)
-	return joint
-
-
-func _box_mesh(size: Vector3, pos: Vector3, mat: Material) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	mi.mesh = bm
-	mi.position = pos
-	mi.material_override = mat
-	return mi
-
-
-static func _translucent(c: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
-	m.no_depth_test = true
-	return m

@@ -1,39 +1,27 @@
 class_name ThirdPersonCamera
 extends Node3D
-## Orbit camera behind the target: yaw node (this) -> pitch node -> SpringArm3D -> Camera3D.
+## Orbit camera behind the target (third_person_camera.tscn): this node turns (yaw),
+## Pitch tilts, the SpringArm3D holds the Camera3D at `distance`.
 ## The spring arm pulls the camera in when a wall is between it and the player.
 ## It's purely visual, so it runs in _process (every rendered frame) and smooths with
 ## exponential decay, which looks the same at any frame rate.
 
-var target: Node3D
+@export var target: Node3D
+@export var distance := 5.0
+@export var mouse_sensitivity := 0.0025
+@export var stick_speed := 2.5
 var yaw := 0.0
 var pitch := -0.35
-var distance := 5.0
-var mouse_sensitivity := 0.0025
-var stick_speed := 2.5
-var camera: Camera3D
-
-var _pitch_node: Node3D
-var _arm: SpringArm3D
 var _trauma := 0.0
+
+@onready var _pitch_node: Node3D = $Pitch
+@onready var _arm: SpringArm3D = $Pitch/SpringArm3D
+@onready var camera: Camera3D = $Pitch/SpringArm3D/Camera3D
 
 
 func _ready() -> void:
-	top_level = true
 	add_to_group("camera")
-	_pitch_node = Node3D.new()
-	add_child(_pitch_node)
-	_arm = SpringArm3D.new()
-	_arm.collision_mask = 1   # world only, not the fighters
-	_arm.margin = 0.2
-	var probe := SphereShape3D.new()
-	probe.radius = 0.2
-	_arm.shape = probe
-	_pitch_node.add_child(_arm)
-	camera = Camera3D.new()
-	camera.fov = 65
-	_arm.add_child(camera)
-	camera.make_current()
+	snap_to_target()
 
 
 func _unhandled_input(event: InputEvent) -> void:

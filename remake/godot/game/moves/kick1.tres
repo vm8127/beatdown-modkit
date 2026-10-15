@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="MoveData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/fighter/move_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://game/moves/roundhouse.tres" id="2_roundhouse"]
+
+[resource]
+script = ExtResource("1_script")
+move_name = "Front Kick"
+limb = "leg"
+frames = 30
+active_start = 10
+active_end = 13
+cancel_start = 14
+cancel_end = 24
+next = {
+"K": ExtResource("2_roundhouse")
+}
+damage = 18
+hitstop = 8
+hitstun = 24
+knockback = 3.5
+reach = 1.0
+height = 0.9
+radius = 0.4
+lunge = 1.0

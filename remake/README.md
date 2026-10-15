@@ -8,7 +8,7 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | [PLAN.md](PLAN.md) | The brief: goal, rules, what research to reuse, milestones, progress log |
 | `godot/` | The Godot project (open `godot/project.godot`) |
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test |
-| `godot/game/` | The game: `fighter/` (fighter state machine, moves, player and dummy brains), `camera/` |
+| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/` |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
 | `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models) and `gltf_writer.py` |
 
@@ -50,9 +50,11 @@ The first run on a fresh clone needs `--import` once (`... --headless --path rem
 
 ## How the M0 code works
 
+- **Scenes for what's hand-made, code for what comes from the game data.** `dev/dev_arena.tscn` (level boxes, light, sky, the player, three dummies, camera, overlay), `game/fighter/fighter.tscn` (body, limbs, collision, hurtbox, debug views, HP label) and `game/camera/third_person_camera.tscn` are normal scenes: open them in the editor. Code spawns extra fighters (F5) from `fighter.tscn`; later, stages, characters and moves extracted from the disc will be assembled by code the same way.
+
 - **Fixed frames.** All game logic runs in `_physics_process` at 60 frames per second and counts frames, never seconds, like the PS2 game. `Dev.tick` (autoload `dev/dev.gd`) says whether this frame advances; that's how pause, single-frame step and slow motion work without touching the logic.
 - **State machine.** `Fighter` is in exactly one state (idle, move, attack, guard, hitstun, blockstun, knockdown, getup) with a frame counter. Each state has its own tick function.
-- **Moves are data** (`game/fighter/moves.gd`): startup, active and recovery frames, damage, hitstop, hitstun, knockback, and a cancel window with the next move per button. M4 replaces them with the real tables.
+- **Moves are resources** (`game/moves/*.tres`, class `MoveData`; the style `placeholder_style.tres`, class `MoveSet`): startup, active and recovery frames, damage, hitstop, hitstun, knockback, and a cancel window with the next move per button. Click one in the FileSystem dock to edit it in the Inspector. M4 generates them from the real tables.
 - **Input buffer.** `PlayerBrain` keeps presses for 10 frames, so pressing slightly before a combo window still counts.
 - **Hits.** On active frames the attacker queries a sphere against hurtbox areas (exact on that frame), hits each target once per move, and both fighters freeze for the hitstop. Hitstun longer than the attacker's recovery makes a true combo; the overlay counts them.
 - **Brains.** The fighter asks its brain child for a direction, guard and presses. The player and the dummies use the same `Fighter` code; only the brain differs.
