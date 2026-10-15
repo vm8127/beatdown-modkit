@@ -108,7 +108,7 @@ Read from the loader (`Xaf_LoadAnimPack` `0x0029ED70`, `AnimPack_OpenItem` `0x00
 - **Translation** = float16 x scale + offset, per axis.
 - **Previous key**: a byte offset in units of the in-memory key size (24), so index = value / 24. The keys are in RenderWare's order: keys 0 to N-1 are every bone's key at time 0, keys N to 2N-1 every bone's second key, then the rest in the order playback needs them; each key names the previous key of the same bone, so following the links splits the keys into one track per bone. The first N keys' links are garbage (they had none). N, the bone count, isn't stored: it's the number of keys at time 0 at the start, and it is **22 for every animation in STAGE.XAF** (S, M and L bodies alike), the HAnim node count of the skeleton. Node order = the skeleton's HAnim node index order (M2).
 - **Key rate**: every key time is on a 30 Hz grid (3.5 million keys checked), so keys are at most 2 game frames apart; bones that hold still have only 2 keys (start and end). Playback is slerp (rotation) and lerp (translation) between the two keys around the time, as RenderWare's interpolator does.
-- **Translations**: only nodes 1 and 8 move (both start near y = 9.5, hip height, so the unit is probably the decimetre: hips at 0.95 m); all other nodes' translations decode to 0 (up to the float16 noise, about 0.01). So the bone lengths come from the skeleton, not the animation, and nodes 1 and 8 carry the body's motion (an attack's lunge, a fall). How the game combines key translations with the skeleton's offsets is an open question for M2.
+- **Translations**: only nodes 1 and 8 move (both start near y = 9.5, hip height, so the unit is probably the decimetre: hips at 0.95 m); all other nodes' translations decode to 0 (up to the float16 noise, about 0.01). So the bone lengths come from the skeleton, not the animation, and nodes 1 and 8 carry the body's motion (an attack's lunge, a fall). How these bind to the skeleton: next section.
 - Node 0 is always identity: the skeleton's root above the hips.
 
 Animations named in this doc, decoded (`python tools/animkit.py dump ISO/SLUS_211.50 ID --group G`):
@@ -117,8 +117,19 @@ Animations named in this doc, decoded (`python tools/animkit.py dump ISO/SLUS_21
 |---|---|---|---|
 | 4 | stance (action 1), M body, group 160 | 46 | loops (first and last pose within 5 degrees); hips still |
 | 5 | walk (action 2 = `Fighter_RemapAction(2)` from `Fighter_TaskWalk` `0x0030CA90`, read from code), M body, group 161 | 32 | in-place cycle (the hips don't move forward: the code moves the fighter), loops within 8 degrees |
-| 34 | Aaron's Blade Cut (P, action 1805), group 184 | 50 | node 1 moves 3.6 forward and drops 1.9 |
+| 34 | Aaron's Blade Cut (P, action 1805), group 184 | 50 | node 1 lunges forward (+Z) and drops to y 7.6, ends 7.3 forward (0.73 m) back at y 9.56 (corrected 2026-10-15: 3.6 is the position at frame 12, not the total) |
 | 7, 8, 9 | knocked down, rolling on the ground, lying (group 184; from the hip motion) | 88, 58, 18 | node 1 falls from y 9.6 to 1.3 |
+
+## Skeleton binding
+
+Worked out 2026-10-15 for the remake (M2/M3) by applying the keys to the model's skeleton and rendering stance, walk and Blade Cut on Aaron's fight model and preset 89's street model in Godot (poses look right: feet on the ground, guard, the lunge). Not traced in the game's code (the keyframe apply callback `0x00253550` is still unread), so this is a working rule, high confidence from the renders.
+
+- **Track k drives HAnim node k** of the body clump (docs/FORMATS.md, "Skeleton and skinning"): the same order as the skin bones.
+- **Rotation**: the key quaternion replaces the node's local rotation. Its convention is the standard one for the *column* matrix, i.e. the transpose of RenderWare's row matrix (right, up, at): converting the bind pose frames that way gives quaternions close to the animations' (hips bind (-0.5, 0.5, -0.5, 0.5), stance frame 0 (-0.39, 0.30, -0.65, 0.58)). So a glTF/Godot rotation is the key as it is.
+- **Translation**: every node keeps its skeleton offset (the bone lies along its parent's local +X: thigh 4.0, shin 4.3, upper arm 2.4...) except **nodes 1 (hips) and 8 (spine)**, both children of the root, whose key translation replaces it (bind y 10.6, stance 9.6, walk 9.1-9.6: the knees bend). Node 0 (root) and 21 stay at identity.
+- **Root motion**: the animations do move the body away from the origin (Blade Cut ends with the hips 7.3 units = 0.73 m forward, walk stays in place). The remake plays them as they are; how the game moves the fighter's position afterwards (follows node 1? scripted by timeline ops 0x17-0x19?) is still open (Open leads).
+- Clothes' partial skeletons have the body's bind pose exactly (by bone tag; checked on Aaron's top and pants), so binding them by tag needs no extra matrices.
+- Playback in the remake: the keys are written as they are (30 Hz grid, LINEAR = slerp/lerp like `RpHAnimCmpKeyInterpolate`), with consecutive quaternions flipped into the same hemisphere.
 
 ## Frame data: the action timeline
 
@@ -185,6 +196,7 @@ python tools/codemap.py framedata ISO/SLUS_211.50 1805        # one action's tim
 python tools/animkit.py list ISO/SLUS_211.50 --group 184      # a group's animations: frames, bones, keys
 python tools/animkit.py dump ISO/SLUS_211.50 34 --group 184   # one animation's keys per bone (--json, --bone N, --sample 60)
 python tools/animkit.py check ISO/SLUS_211.50                 # decode everything: unit quaternions, key links
+python remake/tools/remake_assets.py ISO remake/godot/assets_ripped --only models,anims   # glTF clips (remake/tools/conv_anims.py)
 ```
 
 `animkit.py` (standard library) is also a module: `Library(elf).anim(id, group)` returns an `Anim` with `tracks()` (per bone: time, quaternion, translation) and `sample(t)`, for the remake's converter. An anim id can be in several groups with different data; pass the group the fighter loads (Aaron's style group is 184).
@@ -224,8 +236,8 @@ In PCSX2, the developer overlay (README, cut content switch 5) shows `TASK` (cur
 - `g_ActionEvents` records (`+8` = the action id `FUN_003084E0` queues, `+0xC` a reaction action): not decoded.
 - The combo limit Person `+0x384`: which stat it is (probably the combo skill that grows with training).
 - Frame data isn't tested in-game yet: in PCSX2, press P twice and watch TASK change at frame 24 of Blade Cut (overlay FRAME).
-- How the skeleton binds: the 22 nodes' order and bind pose are in the model's HAnim plugin (M2, docs/FORMATS.md); key translations are 0 for all nodes but 1 and 8, so the game must keep the skeleton's offsets (check the keyframe apply callback `0x00253550`, not decompiled as a function, and `0x002F0260`). Group 7's anim 731 does translate other nodes (a prop or another skeleton?).
-- Root motion: does the fighter's position follow node 1's translation (saved at `+0x3FB0` on each new motion), or is the movement scripted (timeline ops 0x17-0x19)?
+- Skeleton binding: answered by rendering ("Skeleton binding" above); still worth confirming in the keyframe apply callback `0x00253550` (not decompiled as a function) and `0x002F0260`. Group 7's anim 731 does translate other nodes (a prop or another skeleton?).
+- Root motion: does the fighter's position follow node 1's translation (saved at `+0x3FB0` on each new motion), or is the movement scripted (timeline ops 0x17-0x19)? Blade Cut's hips end 0.73 m forward, so something must carry that over (or the next motion blends back).
 - Opcodes 8, 9, 0x13, 0x15, 0x16, and `Action_Next`'s special negative ids (-3 picks one of actions 0x84-0x87 depending on the target).
 - The `.mtd` action records: who loads them and which 52 actions they fill.
 - Where flag 8 is set when a motion ends (the motion update), and what slot 0 holds in practice.

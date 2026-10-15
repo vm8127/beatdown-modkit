@@ -8,6 +8,7 @@ How sure: **read** = read from the game's code in `decomp/`; **checked** = verif
 
 1. [RenderWare streams](#renderware-streams)
 2. [Textures (Image chunks)](#textures-image-chunks)
+   - [PS2-native textures (0x15)](#ps2-native-textures-0x15)
 3. [Clumps: frames, geometry, materials](#clumps-frames-geometry-materials)
 4. [Skeleton and skinning](#skeleton-and-skinning)
 5. [Street models (walking around)](#street-models-walking-around)
@@ -58,6 +59,30 @@ How the game loads them (read): `Pack_Load` `0x0029E500` walks an entry's top-le
 
 **Names.** Textures are cached by name. `g_TexNames` `0x0059AE30` holds `{u32 ?, char *name}` for each of the 8276 DATA.XAF entries (checked), and `g_ArchiveTexNames` `0x004EC950` points each archive id at its name table: DATA and CDATA (and archive 5) use the same one, so a CDATA street-pack image takes a DATA id's name. Names follow `KIND_LNNVVV`: a 3-letter part kind (`SKI` skin, `HAI` hair, `PAL` pants, `WEL` wear (street), `WEA` wear/top (fight), `PAN` pants (fight), `LEG`, `ARM`, `HAN` hand, `BRE` breast, `ABD` abdomen, `BAC` back, `BRO` brow, `NOS` nose, `MOU` mouth, `EYE`, `ACS`/`ACB`/`ACW`/`ACN`/`ACH`... accessories), then a model code. **`*_A01AAA`-style names are placeholders** the meshes reference (`LEG_A01AAA`, `LEG_A01BAA` for the second leg material...); real textures have other codes (`LEG_B01AAA`).
 
+## PS2-native textures (0x15)
+
+The world textures (FSTAGE.XAF section 0 of every area pack, shared entries 55 and 56) and the texture dictionaries in CDATA.XAF 196-384 and FSCENE.XAF are **RenderWare PS2 "texture native" chunks**: ready-made GS upload packets. Decoded 2026-10-15 for the remake's M6 with `tools/ps2tex.py` (checked: all 36 subway textures look right as PNGs, and every texture in FSTAGE.XAF decodes; see the counts in the tool's docstring run below). Layout (seen on all of them):
+
+```
+0x16 TexDictionary  Struct {u16 count, u16 device 6}, then count x 0x15, then an empty Extension
+0x15 TextureNative
+  Struct (8)        char platform[4] "PS2\0", u32 filter/addressing (0x1102 seen)
+  String            name (ER03_W_D2...), String mask name (empty seen)
+  Struct
+    Struct (64)     raster info: u32 width, height, depth (4, 8 or 32), u32 raster format,
+                    u64 TEX0, u32 palette offset, u32 TEX1 low, u64 MIPTBP1, MIPTBP2,
+                    u32 pixel size, u32 palette size (each including its 0x50-byte GS header), u32 total GS size, u32 0xFF0
+    Struct          pixel packet, then palette packet
+  Extension         empty
+```
+
+- **Raster format**: low 16 bits 0x2504 (PAL8 + 8888 + texture), 0x4504 (PAL4) or 0x0504 (32-bit, no palette); high 16 bits 2 = the data has GS headers. Only these three, and **no mipmaps** (flag 0x8000 never set) anywhere in FSTAGE.XAF (seen: 4-bit is the bulk, then 8-bit, then a few dozen 32-bit).
+- **GS header** (0x50 bytes before the pixels and before the palette): a GIFtag (NLOOP 3, A+D) setting TRXPOS, **TRXREG** (u32 width, height at header `+0x20`) and TRXDIR, then the IMAGE GIFtag. There is no BITBLTBUF: the driver adds the destination at upload time.
+- **TEX0**: TBP0 and CBP are 0 (relative), TBW = width / 64 (at least 2 for 4/8-bit), PSM 0x13 (PSMT8), 0x14 (PSMT4) or 0 (PSMCT32), CPSM 0 (32-bit palette), CSM 0 (CSM1).
+- **Swizzle**: 4- and 8-bit pixels are uploaded as a **width/2 x height/2 rectangle** in another format, so the bytes are in GS-memory order, not row order. 8-bit: the rectangle is PSMCT32 (w x h bytes); 4-bit: PSMCT16 (w x h / 2 bytes; the format is not in the data, deduced from the size and confirmed by the decoded images). To decode, write the rectangle into emulated GS memory in that format with buffer width TBW / 2, then read the texture back as PSMT8 / PSMT4 with TBW (`ps2tex.unswizzle`, GS block/column tables). 32-bit textures are uploaded as themselves (linear rows).
+- **Palette**: 8-bit: 256 colours uploaded as a 16x16 PSMCT32 rectangle, so in CSM1 order (entries 8-15 and 16-23 of every 32 swapped, as for Image chunks). 4-bit: an 8x3 rectangle of which the first 16 entries are the palette (the rest is padding; seen). Alpha 0x80 = opaque (the tool doubles it to 0-255).
+- Texture names match the world's material texture names (section 1) one to one (checked on the subway: 19 textured materials, all found).
+
 ## Clumps: frames, geometry, materials
 
 All character geometry is **plain RenderWare geometry, not PS2-native** (no VIF packets; checked on all 486 DATA.XAF clumps and the street packs): the PS2 driver builds the GS data at load.
@@ -73,7 +98,7 @@ All character geometry is **plain RenderWare geometry, not PS2-native** (no VIF 
 
 ## Skeleton and skinning
 
-Recorded for M2 (skeleton and weights); only the bind pose is used so far.
+Used by the remake's rigged export (M2, 2026-10-15: `remake/tools/skeleton.py`, `conv_models.py`; rendered with the game's animations in Godot, poses right).
 
 - **Bones are frames with an HAnim plugin** `{u32 version 0x100, s32 node id, u32 count}`; the skeleton root frame (frame 1, node id 29) also has the hierarchy: `{u32 flags 0, u32 key frame size 36}` and `count` x `{s32 node id, s32 node index, u32 flags}` (flags 1 = pop, 2 = push, as in RpHAnim). Each bone frame also has user data `Softimage User Data = ["BONETAG=nn"]` with the same id (checked).
 - **The full skeleton has 22 nodes** (frames 1-22 of 23; frame 0 is the clump root). Node index → bone tag, from the body clump (DATA.XAF 2650, item 7) and street pack 96 (identical):
@@ -95,7 +120,9 @@ Recorded for M2 (skeleton and weights); only the bind pose is used so far.
 
   Sides aren't confirmed (left/right untested). The node index order is the hierarchy list order (depth first), which is what skin bone indices and `ItemDef.attach_node` use.
 - **Skin plugin** (non-native): `{u8 bones, u8 used bones, u8 max weights (4), u8 0}`, `u8 used[used bones]`, then per vertex `u8 bone[4]` and `f32 weight[4]`, then per bone a 4x4 **inverse bind matrix** (RwMatrix layout: right, up, at, pos rows with flags/padding in the 4th column), then 3 u32 (bone limit, meshes, RLE count; all 0 seen). **Skin bone k = HAnim node index k** of the clump's own hierarchy, and **inverse bind matrix k × the frame's world matrix = identity** exactly (checked on DATA 2650, 6858 and CDATA 96): the clump's stored frames are the bind pose, and skinned vertices are stored in bind-pose model space.
-- Skinned clothes (tops, pants) carry **their own partial skeleton** with the same bone tags (a top has 17 nodes, pants 9; the root is tag 29 again), so their bone indices must be remapped to the body's by tag (guess: the game probably matches by node id; not traced).
+- Skinned clothes (tops, pants) carry **their own partial skeleton** with the same bone tags (a top has 17 nodes, pants 9; the root is tag 29 again) and **exactly the body's bind pose** (world positions equal by tag, checked on Aaron's top 6858 and pants 6618). Remapping their bone indices to the body's by tag works (rendered animated, M2; `rwkit.skin_map`); whether the game matches by node id the same way is not traced.
+- Rigid items are bound with weight 1 to their attach node (rendered animated). The eyes item (item 5, mesh 2723) has its own 3-node skeleton with tags that aren't body tags (maybe eye or eyelid bones); the remake treats it as rigid on the head.
+- Joint names the remake uses (`skeleton.BONE_NAMES`): sides from the bind pose with the model facing +Z, so its right side is -X: nodes 2-4 right leg, 5-7 left leg, 11-15 right arm (hand 14), 16-20 left arm (hand 19). Not checked in-game.
 - The HAnim key frame size 36 is RenderWare's standard keyframe; the stored animations use the compressed one (docs/ANIMATION.md).
 
 ## Street models (walking around)
@@ -138,13 +165,14 @@ The game loads each item's model as a pack from **ARCHIVE.XAF entry item + 0x3A6
 - **CDATA.XAF 196-384** (189 entries, one per preset?): a texture dictionary of PS2-native textures (`0x15`, platform "PS2", 4 textures in 196) then a clump with the 23-frame skeleton. Not decoded further; maybe the talk-scene or menu models (open question).
 - **FSTAGE.XAF**: the area packs (texture dictionary, an RpWorld 0x0B with its sectors 0x09/0x0A, collision and door clumps, props): see docs/STAGES.md and `tools/stagekit.py`. Entries 57-127 (first words 0x1F-0x21) are a per-fighter format, not RenderWare.
 - **FSCENE.XAF**: 162 texture dictionary + clump entries next to the cutscene scripts.
-- PS2-native textures (`0x15`) are not decoded yet.
+- PS2-native textures (`0x15`): see [above](#ps2-native-textures-0x15), `tools/ps2tex.py`.
 
 ## Tools
 
 ```
 python tools/rwkit.py tree ISO/XAF/CDATA.XAF 96     # chunk tree of an entry (or a file)
 python tools/rwkit.py info ISO/XAF/DATA.XAF 2650    # frames, bones, geometries, materials, skin
+python tools/ps2tex.py list ISO/XAF/FSTAGE.XAF 5     # PS2-native textures of an area pack (png ... OUT writes them)
 python remake/tools/remake_assets.py ISO remake/godot/assets_ripped   # glTF for the remake
 ```
 
@@ -153,10 +181,10 @@ python remake/tools/remake_assets.py ISO remake/godot/assets_ripped   # glTF for
 ## Open questions
 
 - Alpha on clothes and skin: a gloss mask for the `SPECULAR` environment pass (guess)? Find the material/pipeline setup that uses texture 0 `SPECULAR`.
-- How skinned clothes with their own partial skeleton are bound to the body's skeleton (node id match?), and what the clothes' animation (`ItemDef +0x12`) does: cloth sway? (M2)
+- Skinned clothes: binding by tag works in the remake; not traced in the game. What the clothes' animation (`ItemDef +0x12`) does: cloth sway?
 - What the one-triangle marker geometries are for.
 - How `NpcSpawn_Step` attaches the street hair clump (head node 10 is assumed).
-- CDATA.XAF 196-384: what uses them; decode PS2-native textures (`0x15`).
+- CDATA.XAF 196-384: what uses them (their PS2-native textures now decode with `tools/ps2tex.py`).
 - Pack chunk types 0x23 and 0x0C (`0x00259980`, `0x0022B9A0`).
 - Left/right of the leg and arm chains; confirm by posing in M2.
 - Is the DATA.XAF clump of an item identical to its ARCHIVE.XAF item + 0x3A6 copy?
