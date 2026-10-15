@@ -1,0 +1,30 @@
+; Engine configuration file.
+; Beat Down remake. Open this folder in Godot 4.7.
+
+config_version=5
+
+[application]
+
+config/name="Beat Down Remake"
+config/description="Private hobby remake of Beat Down: Fists of Vengeance. Never distributed."
+run/main_scene="res://dev/dev_arena.tscn"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[autoload]
+
+Dev="*res://dev/dev.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[layer_names]
+
+3d_physics/layer_1="world"
+3d_physics/layer_2="bodies"
+3d_physics/layer_3="hurtboxes"
+
+[physics]
+
+common/physics_ticks_per_second=60

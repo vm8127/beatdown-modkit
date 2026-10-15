@@ -100,3 +100,4 @@ Each one ends with something playable or viewable. Do them roughly in this order
 
 - 2026-10-15: Plan written.
 - 2026-10-15: Moved to `remake/PLAN.md`; `remake/` holds everything remake-specific, `remake/MEMORY.md` is the session memory (Daniel asked for both). First-session questions asked.
+- 2026-10-15: **M0 built** (not yet played by Daniel): `remake/godot/` dev arena, fixed-frame fighter state machine, placeholder moves with cancel windows, 10-frame input buffer, sphere-vs-hurtbox hits with hitstop, hitstun, knockback, knockdown and guard, dummy AI modes, debug overlay, pause / step / slow-mo, and a smoke test (`-- --smoke`, passes: jab, jab, straight = 3-hit combo, 50 damage). GDScript, Godot 4.7.2. M1 started in its own session.
