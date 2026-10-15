@@ -17,7 +17,13 @@ Read this first, then `CLAUDE.md` and `README.md`. This file starts a new projec
 
 ## Rules
 
-- **Never commit game data or anything converted from it**: not in this repo, not in the Godot project's repo. Converted assets (glTF, PNG, animation files) go in a gitignored folder (e.g. `assets_ripped/`) and are regenerated from `ISO/` by a script. Same rules as `CLAUDE.md` for `ISO/`, `decomp/` and the ELF.
+- **Extracting assets from the disc is fine and expected.** Use the original models, textures, animations, stages, text and data tables as much as you like.
+- **But the repos hold only the tool, never its output.** Build one reproducible extraction tool, `tools/remake_assets.py` in this repo:
+  - `python tools/remake_assets.py ISO <godot project>/assets_ripped` rebuilds **every** game asset the remake uses from Daniel's `ISO/`, and nothing else is needed. A fresh clone plus his disc plus this one command gives a working project.
+  - Deterministic and re-runnable: same disc, same output; it overwrites its own output folder; it checks the disc's MD5s (README.md) first and stops on a mismatch.
+  - Every new asset type the remake needs is added to this tool, never copied by hand or exported once from Blender. Each converter (mesh, skeleton, animation, stage, text, tables) is a subcommand or module it calls.
+  - `assets_ripped/` (and Godot's `.godot/` import cache) are in the Godot project's `.gitignore`. Its README says to run the tool first.
+- **Never commit game data or anything converted from it**, in either repo: no glTF, PNG, animation or table dumps generated from the disc. Same rules as `CLAUDE.md` for `ISO/`, `decomp/` and the ELF. Data the remake needs from the ELF (move lists, stats, templates) is extracted by the tool too, not pasted into the Godot code.
 - Ripped assets from other games (e.g. Yakuza moves) are okay **only as private, uncommitted placeholders**. Prefer original or freely licensed assets for anything that might be shared.
 - The Godot project is its **own folder and git repo**. Suggested: `C:\Users\V\source\_personal\claude\BeatdownGodot`. Confirm with Daniel before creating it. Converters and format docs stay in **this** repo (`tools/`, `docs/`), so all the RE knowledge stays in one place.
 - Document every format you decode here (README.md's format sections, or a new `docs/FORMATS.md`), with symbols in `symbols/symbols.tsv` and `docs/CODEMAP.md`, like any other RE work.
@@ -61,7 +67,7 @@ Each one ends with something playable or viewable. Do them roughly in this order
 | # | Milestone | Done when | Teaches |
 |---|---|---|---|
 | M0 | Godot basics: capsule brawler | A capsule walks with a third-person camera, punches a dummy (hitbox on for a few frames), hitstop and knockback | Game loop, scene tree, input, physics, state machines |
-| M1 | Mesh + textures → glTF (converter in this repo) | One street person and one fighter render textured in Godot | Asset pipelines |
+| M1 | `tools/remake_assets.py` with its first converters: mesh + textures → glTF | Running the tool on a fresh clone puts one street person and one fighter in `assets_ripped/`, and they render textured in Godot | Asset pipelines |
 | M2 | Skeleton and weights | Aaron loads rigged and can be posed | Skinning |
 | M3 | Animation decoder | Aaron plays his stance, walk and his real Blade Cut | Animation playback, retargeting |
 | M4 | Fighter from the tables | Aaron's whole style works: command list → actions → clips with blend 8 → back to stance; damage from hit records and the MECHANICS formula | Move trees, input buffering, cancels |
