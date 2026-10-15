@@ -33,7 +33,7 @@ Controls and dev keys are listed on screen (Tab hides them). The F-keys: F1 hitb
 
 ## Model viewer
 
-Shows every model in `assets_ripped/models/` (run the asset tool first). Left/Right turn, Up/Down zoom, Space stops the turntable; `-- --shot=<file.png>` saves a screenshot and quits (`--dist=`, `--height=` move the camera).
+Shows every model in `assets_ripped/models/` (run the asset tool first) and plays the clips of `assets_ripped/anims/` on them (clips are named by anim id: `a34` = Blade Cut; Tab / P / Comma / Period browse, play, step; `--clip=a34 --frame=22`). Left/Right turn, Up/Down zoom, Space stops the turntable; `-- --shot=<file.png>` saves a screenshot and quits (`--dist=`, `--height=` move the camera).
 
 ```bash
 __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://dev/model_viewer.tscn
@@ -49,7 +49,7 @@ __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://d
 
 ## Smoke test
 
-Runs a scripted combo on Dummy 1 (exit code 0 = pass). With the assets extracted it's Aaron's Triple Snake Fang, →P P P (actions 1807, 1808, 1809): each chain must start on the previous move's cancel frame, all 3 hits must combo, and the damage must match the MECHANICS formula (60 + 70 + 150 = 280). Without them, the placeholder jab, jab, straight for 50 damage. `--headless` skips the window; drop it and add `--shot=<file.png>` for a screenshot.
+Runs a scripted combo on Dummy 1 (exit code 0 = pass). With the assets extracted it's Aaron's Triple Snake Fang, →P P P (actions 1807, 1808, 1809): each chain must start on the previous move's cancel frame, all 3 hits must combo, and the damage must match the MECHANICS formula (60 + 70 + 150 = 280). Without them, the placeholder jab, jab, straight for 50 damage. `--headless` skips the window; drop it and add `--shot=<file.png>` for a screenshot. `--press=P` instead plays one move on Dummy 1 (passes if it hits; prints the hit spheres; with `--shot=` a side view on the hit), `--shot-down=<file.png>` saves Dummy 1 knocked down after the combo.
 
 ```bash
 __external_tools/godot/Godot_v4.7.2-stable_win64_console.exe --headless --path remake/godot -- --smoke
@@ -68,3 +68,4 @@ The first run on a fresh clone needs `--import` once (`... --headless --path rem
 - **Input buffer.** `PlayerBrain` keeps presses for 10 frames, so a press slightly before the fighter is free still counts.
 - **Hits.** On active frames the attacker queries a sphere against hurtbox areas (exact on that frame), hits each target once per move, and both fighters freeze for the hitstop. Hitstun longer than the attacker's recovery makes a true combo; the overlay counts them.
 - **Brains.** The fighter asks its brain child for a direction, guard and presses. The player and the dummies use the same `Fighter` code; only the brain differs.
+- **Animated fighter (M4).** With the assets extracted, `Fighter` shows a rigged model (`model_name`, default Aaron's `fighter_aaron_078`; the dev arena's dummies use `street_089`) posed by `FighterModel` (`game/fighter/fighter_model.gd`) from `assets_ripped/anims/aaron.glb` + `.json` (`remake/tools/conv_anims.py`). Each game frame `_animate()` picks the clip for the state (stance, walk, guard, the move's clips at its speeds, the hit reaction the game would play, knockdown, lying, getup) and the model blends into it like the game (freeze the pose, blend over the clip's blend frames). The model only follows the state, so pause, frame step and slow motion work. Hit spheres sit on the attacking bones (`hit_spheres`), and F1 draws them. Without the assets the capsule and its fixed sphere stay. The stage test's `--view=aaron` takes a close screenshot.

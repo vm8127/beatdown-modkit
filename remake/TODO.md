@@ -6,6 +6,7 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 - [x] M2+M3: Aaron rigged and animated in Godot (done 2026-10-15, checked: Blade Cut screenshot)
 - [x] M6: abandoned subway station in Godot (done 2026-10-15, checked: walk test PASS, screenshot)
+- [x] M4: animated Aaron replaces the capsule (done 2026-10-15, checked: smoke PASS with bone hit spheres, walk PASS, no-assets smoke PASS, screenshots of Blade Cut landing, the knockdown and Aaron in the subway)
 - [x] M4a: Aaron's real moves on the capsule fighter (done 2026-10-15, checked: smoke test →P P P PASS, test_moves.py 862 checks PASS)
 
 ## Next, in order
@@ -20,6 +21,6 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 - [ ] **M4a follow-ups:** root motion pushes the capsule into the dummy (applied past body collision; seen in the smoke screenshot); hitstun / hitstop / knockback are placeholders (not in the hit records: find where the game keeps them); motion-input time limits (`g_InputPatterns`) and where ↑/↓ come from; grabs and context moves can't be input yet; command conditions, Pride and TIRED unused.
 
-- [ ] **M4 (running since 2026-10-15 as a background subagent of the main session; restart from this line if no M4 commit follows):** animated Aaron replaces the capsule: each move plays its clip (blend 8), hit spheres attached to the hitting body parts' bones.
+- [ ] **M4 follow-ups:** hitstun / knockdown lengths from the reaction animations (now known: docs/ANIMATION.md "Hit reactions") instead of the strength placeholders; reaction direction (behind / left / right) and set 1 cases beyond HP and counter; blocked-hit reaction; what `FUN_002FABC0` means (kinds 9/10); walk playback speed vs walk_speed (feet may slide) and the walk modes (`g_WalkModes`: side-steps, run, action 3 run when far); multi-clip moves end at the first clip (conv_moves.Timing covers only the first play op); the game's own root motion (`+0x3FB0`); a dummy in the subway stage.
 - [ ] **M6 follow-up (later):** the other areas and their doors (subway <-> Downtown is in M6 now). Battle spots and props inside the subway are fine to do sooner.
 - [ ] V plays M0 / M4 and gives feel feedback (timing, hitstop, camera).
