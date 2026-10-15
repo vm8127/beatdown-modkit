@@ -488,8 +488,8 @@
 002ae7a0	func	Ending_Task	ending sequence: credits, ClearCount_Inc, Criminal ending
 003937c0	func	Criminal_Rank	(1 Leadership, 2 Cash Flow, 3 Charisma) -> rank 0-6 from the score: 0-20, 21-60, 61-100, 101-140, 141-190, 191-240, 241-255	int (int which)
 002f9a80	func	Fighter_HeroId	(fighter) -> the hero template the fighter is (68 Aaron, 107 Raven, 108 Gina, 53 Jason G, 22 Lola, ...) from its person's preset	int (Fighter *fighter)
-002e7a50	func	Location_Current	-> the current location id (text 18000 + id: 4 GAS STATION, 7 HARBOR GATE, 17 PLATFORM, 31 HOTEL LOBBY, ...)	int (void)
-002fd630	func	Area_Current	-> the current area id (same numbering as Location_Current)	int (void)
+002e7a50	func	Location_Current	-> 0x006CBB04, the area id Area_ChangeTo last sent the player to (the one Area_Load loads; same numbering as Area_Current, g_AreaDefs index). Its name is AreaDef.name_text, NOT text 18000 + id (area 5 = ABANDONED SUBWAY STATION = text 18002; docs/STAGES.md)	int (void)
+002fd630	func	Area_Current	-> the current area id (area state +8; g_AreaDefs index, FSTAGE.XAF entry before variants; docs/STAGES.md)	int (void)
 00398ba0	func	Hero_CanMeet	(hero 22/53/68/107/108) 1 if that hero can be met here and now; docs/UNLOCKS.md	int (int hero)
 003964f0	func	Hero_StartEncounter	(hero) if Hero_CanMeet and not met yet, sets up the hero encounter at their location; docs/UNLOCKS.md	int (int hero)
 00398a60	func	Hero_HintState	(?, hero) 0-3: whether / how rumours point to a hero (Hero_CanMeet plus Jason G and Aaron specials)
@@ -511,7 +511,7 @@
 002e67c0	func	Area_BuildPeople	fills g_AreaPeople for the current area from g_PeoplePlacement: the base layer (0), a time/state layer (0-3), the story-stage layer (g_StageLayer), mission layers; then counts the people into g_AreaPeopleCount. Called by Area_Load	void *(void)
 002e6dc0	func	Area_PeopleBase	(entries) copies 7 placement entries into g_AreaPeople (type 1 only if Person_IsPresent)	void (AreaPerson *entries)
 002e7130	func	Area_PeopleLayer	(entries) overlays 7 placement entries: type 4/5 clears the slot, 2/3 copy, 1 copies a person if present, alive, not in the party and not an ally (allies only in their mission)	void (AreaPerson *entries)
-002fe3d0	func	Area_Load	loads an area (stage), calls Area_BuildPeople
+002fe3d0	func	Area_Load	(area, flags) step machine: Stage_LoadCommon, unload, pick the FSTAGE.XAF entry (area, or a random variant for 1, 7, 0x13, 0x2F), Xaf_ReadEntry, Area_LoadStage, copy g_AreaDefs[area] to state +0x1C, lights, Area_BuildPeople, far clip, sound banks, music (docs/STAGES.md)
 006cb920	data	g_AreaPeople	7 x 64-byte people/object slots of the current area	AreaPerson[7]
 005ffcf0	data	g_AreaPeopleCount	number of type 1 entries in g_AreaPeople	s32
 005febb8	data	g_PeoplePlacement	pointer to the placement data in RAM: s32 layer offsets[12], each layer an offset per area id (0 = none) to 7 AreaPerson entries; 0x01431EB0 in Daniel's chapter 2 save	u8 *
@@ -634,3 +634,40 @@
 002f4bf0	func	Fighter_AttachPart	(item, fighter, part slot, clump, ?) puts an outfit item's clump on the fighter: category 0 (body) becomes the fighter's main clump with the skeleton (HAnim hierarchy); any other item is hung on body skeleton node ItemDef.attach_node (part slot +0x5F0 = hierarchy nodeInfo[node].frame); category 7 (left shoe) also calls 0x002FA9F0	void (int item, Fighter *f, int slot, void *clump, int a5)
 004ec950	data	g_ArchiveTexNames	per XAF archive id, a pointer to its texture name table {u32 ?, char *name} per entry: DATA, FSTAGE?, CDATA all point at g_TexNames 0x0059AE30; GRAPH at 0x005AB0D0	void *[10]
 0059ae30	data	g_TexNames	{u32 ?, char *name} per DATA.XAF entry (8276): the texture cache key; outfit placeholders are names like LEG_A01AAA, real textures LEG_B01AAA (docs/FORMATS.md)	u32[8276][2]
+
+005170f0	data	g_AreaDefs	57 x 0x104-byte area definitions, index = area id (Area_Current): name text, sound banks, music, lights, battle spots, collision material kinds (docs/STAGES.md)	AreaDef[57]
+0031cfc0	func	Area_Def	(area) -> &g_AreaDefs[area]	AreaDef *(int area)
+0031cfa0	func	Area_DefFlag101	(area) -> AreaDef +0x101 (u8, meaning open)	u8 (int area)
+0031d020	func	Area_DefFlag100	(area) -> AreaDef +0x100 (u8); the door collision test skips a door whose destination area has this != 1 (when asked to)	u8 (int area)
+0031cfe0	func	Area_CurrentDef10	-> AreaDef +0x10 (float, 50 subway / 80 downtown) of the current area; used by 0x00307B50	u32 (void)
+0031d040	func	Area_MaterialKind	(area, collision material, which) -> AreaDef +0xC4[material] (which 0) or +0xE8[material] (which 1) & 0x1F; which 1 = the wall kind of the wall-collision material a fighter touches (fighter +0x34A)	u16 (int area, int material, int which)
+0031d080	func	Area_BattleSpotCount	(area) -> number of battle spots (AreaDef +0x14 list), 0 if none	int (int area)
+0031d0c0	func	Area_PickBattleSpot	(mode, area, pos) -> s16[4] {x, y, z, angle} in tenths: mode < 0 g_BattleSpotDefault[area], > 0 spot 0 (story fights), 0 the spot nearest pos among spots 1..n-1 (special cases for areas 0x13, 0x1E, 0x26)	s16 *(int mode, int area, float *pos)
+002d9ab0	func	Battle_PlaceFighters	at a field fight start: puts the player and the opponent at Area_PickBattleSpot's spot (opponent facing back, 180 degrees), or at g_FixedBattlePos[area] when the area has no spots; spot 0 for (area, story stage) pairs 0x36/11, 0x21/10, 0x25/10, 0x2D/9, 0xE/8, 5/7, 0x1A/6, 0x19/4, 0x33/3, 0xD/1	void (void)
+00509930	data	g_FixedBattlePos	u32 per area: pointer to two fighter positions {float x, y, z, angle} x 2, used by Battle_PlaceFighters when the area has no battle spots	void *[57]
+00516980	data	g_BattleSpotDefault	s16[4] per area {x, y, z, angle} in tenths: Area_PickBattleSpot mode -1	s16[57][4]
+00509700	data	g_AreaSpawnPoints	Area_ChangeTo's arrival points {float x, y, z, 0}: 0x509700 default, then 0x509710 area 0x2F, 0x509720 0x19, 0x509730 0x2A, 0x509740 0xC, 0x509750 0x15, 0x509760 0xF, 0x509770 7, 0x509780 0x1D, 0x509790/0x5097A0 area 1, 0x5097B0/0x5097C0 area 0x1A	float[13][4]
+002fe010	func	Area_LoadStage	(pack, ?, area state) Area_Load step 3: Stage_Parse the FSTAGE.XAF pack into the staging copy 0x00713B20, then copy 0x9C10 bytes to the area state (DAT_005FFDE0) and Stage_SetCurrent(+0x6230)	int (void *pack, int a1, void *area)
+00168100	func	Stage_Parse	(stage, pack, area) one section per call: 0 textures, 1 RpWorld (stage +0x18), 2-4 walls/camera/floor collision clumps (+0x44..+0x4C, atomics +0x50.., bounding boxes), 5+6 doors clump and its animation (Doors_Load), 7 props (Stage_LoadProps), 8 PB placements (Stage_PlacePB, Stage_PlaceExtra, Stage_PlaceObjects), 9 up to 16 animations; returns 1 when done	int (void *stage, int *pack, int area)
+001680a0	func	Stage_Clear	(stage) clears the 0x39C0-byte stage struct and its collision (+0x40) and props (+0x450) parts	void (void *stage)
+001679d0	func	Stage_SetCurrent	(stage) makes it the current stage (0x005FED8C) and its +0x40 the current collision (Collision_SetCurrent)	void *(void *stage)
+0015fb00	func	Collision_SetCurrent	(collision) sets 0x005FED80, returns the old one	void *(void *coll)
+002fd5f0	func	Area_Collision	-> the current area's collision (area state +0x6270 = stage +0x40): +0x04/+0x08/+0x0C walls, camera, floor clumps, +0x10.. their atomics, +0x70 door count, +0x80 doors (0x60 bytes each)	void *(void)
+00160190	func	Collision_Query	(collision, mesh 0 walls / 1 camera / 2 floor, query, result 0x40 bytes, flags) flags 1 test that mesh's atomic, 2 the props (+0x3F0 list), 4 the doors (zone first, then panel), 8 skip doors whose destination has Area_DefFlag100 != 1	int (void *coll, int mesh, void *query, float *result, u32 flags)
+00160610	func	Collision_FloorHeight	(collision, pos, result) vertical ray through the floor mesh between its bounding-box min and max y at pos x, z; result +4.. = the hit point (y = floor height)	int (void *coll, float *pos, float *result)
+00160790	func	Collision_SphereWalls	(radius, collision, pos, result, flags) sphere at pos against the wall mesh (and doors with flag 4); result +4.. pushed-out position, +0x10.. normal, hit type 1 world (material via Area_MaterialKind) or 2 object; fighters use radius 5.5 (Fighter wall slam, action 0x2ED), 11, 15, 40; off while debug switch 5 and L1+R1+L2+... are held	int (float radius, void *coll, float *pos, float *result, u32 flags)
+00160960	func	Collision_Segment	(collision, from, to, result, flags) segment against the camera mesh; used by the camera (0x00376AF0, 0x0037A400) with 0x0076B4A8 / 0x0076B4B8	int (void *coll, float *from, float *to, float *result, u32 flags)
+0015e430	func	Collision_FloorList	(collision, pos, ?, out) every floor under pos x, z: out {u32 count, then 0x40-byte hits with y at +8}; FloorList_Pick picks one	u32 (void *coll, float *pos, int a2, u32 *out)
+00160b40	func	FloorList_Pick	(y, tolerance, list) the highest floor hit at or below y + tolerance (callers use 5.0)	u32 *(float y, float tol, u32 *list)
+00351230	func	Doors_Load	(collision + 0x70, doors clump, doors animation) reads the doors clump (section 5) and its HAnim animation (section 6) and collects up to 9 doors with Doors_CollectAtomic	void (void *doors, void *clump, void *anim)
+003510b0	func	Doors_CollectAtomic	RpClumpForAllAtomics callback: the atomic on a frame under the hierarchy root is a door's zone (+0), the one on its child frame the panel (+4); the frame's BONETAG goes to +0x54 (destination area; negative tags -(area x 10 + entrance) are split into +0x54 area, +0x58 entrance), raw tag at +0x56	void *(void *atomic, int *doors)
+003515a0	func	Door_State	(door index) looks the door's raw tag up in g_AreaDoorFlags: story flag first_flag + index set -> 0 (and +0x50 = 0x00351280(flag)); else 0 if the destination is in the area's allowed list (or the special 0x30/0x33 pair), else 1. Meaning of 0/1 (locked/open) not confirmed	int (int door)
+0058bdb4	data	g_AreaDoorFlags	0x14 bytes per area: {u8 *allowed destinations (count, ids), s16 first story flag, s16 count, s16 *raw door tags}; read by Door_State	u8[57][0x14]
+00422850	data	g_AreaObjects	0x28 bytes per area: {s16 prop count, s16 extra count, fn init, 0x28-byte prop descriptors, fn extra placements, s8 prop ids x 4, u32 count, 0x24-byte object records placed per story stage (type 1 prop, 2 special, 3 weapon, 4 item)} (docs/STAGES.md)	u8[57][0x28]
+0015b5a0	func	Stage_LoadProps	(props, section 7, area, world) reads the area's prop clumps into 0x48-byte slots (+0x28 clump) and copies g_AreaObjects descriptors into them	void (void *props, int *data, int area, void *world)
+0015c680	func	Stage_PlacePB	(props, section 8) the 'PB' placements: s16 count, then {s32 prop (1-based), float x, y, z, quaternion x, y, z, w}	int (void *props, char *data)
+0015c190	func	Stage_PlaceExtra	(props) places the props listed by g_AreaObjects +0xC's function: s16[8] {prop, x, y, z, rot x, y, z} in tenths	int (void *props)
+0015b7e0	func	Stage_PlaceObjects	(type mask, props) places g_AreaObjects' records present in the current story stage (index = stage - 1, 11 in special mode), unless the record's story flag (6000-7499) is set: 4 items (0x002FF010 at floor height), 3 weapons (0x002FF390), 2 special (table 0x005B5840), 1 props	int (u32 mask, void *props)
+002ffa50	func	Stage_LoadCommon	loads FSTAGE.XAF entry 56 (shared textures and models) once into 0x0071D830; Area_Load step 0	int (void)
+001594e0	func	Xaf_ReadEntry	(archive, entry, callback, arg, flags, buffer) reads a whole XAF entry into memory (buffer or a new 64-aligned allocation) in the background; returns the 0x24-byte request {file, size, ?, data, archive, entry, flags, callback, arg}	void *(int archive, int entry, void *cb, void *arg, u32 flags, void *buf)
+0022ffd0	func	RpWorldStreamRead	RenderWare: reads a world (chunk 0x0B: struct, material list, plane sectors 0x0A and atomic sectors 0x09); Stage_Parse section 1	void *(void *stream)

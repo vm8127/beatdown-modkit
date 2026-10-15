@@ -30,6 +30,7 @@ typedef struct MissionReq MissionReq;
 typedef struct Mission Mission;
 typedef struct MissionMgr MissionMgr;
 typedef struct AreaPerson AreaPerson;
+typedef struct AreaDef AreaDef;
 
 /* one outfit slot: an item and the model parts it adds */
 struct OutfitSlot {
@@ -625,5 +626,53 @@ _Static_assert(__builtin_offsetof(AreaPerson, unk14) == 0x14, "AreaPerson.unk14"
 _Static_assert(__builtin_offsetof(AreaPerson, path_count) == 0x16, "AreaPerson.path_count");
 _Static_assert(__builtin_offsetof(AreaPerson, path) == 0x18, "AreaPerson.path");
 _Static_assert(sizeof(AreaPerson) == 0x40, "sizeof AreaPerson");
+
+/* g_AreaDefs entry, one per area id (Area_Def); read from the code and the table 2026-10-15 (docs/STAGES.md) */
+struct AreaDef {
+    u16 name_text;  /* +0x0 area name text id (CDATA.XAF 386: 18001 DOWNTOWN STREET, 18002 ABANDONED SUBWAY STATION...); Area_Name 0x002FD6D0 */
+    u16 short_text;  /* +0x2 short name text id (18200 + n) */
+    s16 sound_bank_a;  /* +0x4 SOUND.XAF bank through 0x004337D0, loaded by Area_Load as type 4 */
+    s16 sound_bank_b;  /* +0x6 same, type 3 */
+    u16 bgm;  /* +0x8 music track played on entering (0x0031D8B0) */
+    u16 ambience;  /* +0xa second channel's track */
+    u16 ambience_alt;  /* +0xc second channel's track while story flag 0xB is set */
+    u16 unk0E;  /* +0xe passed to 0x001D35F0 at the end of Area_Load */
+    f32 unk10;  /* +0x10 50 subway, 80 downtown (Area_CurrentDef10) */
+    void *battle_spots;  /* +0x14 {s32 count, s16[4] *spots}: {x, y, z, angle} in tenths, spot 0 for story fights (Area_PickBattleSpot) */
+    u8 _0018[0x24];
+    f32 ambient[0x3];  /* +0x3c ambient light colour (light 0) */
+    u8 _0048[0x10];
+    f32 light1_angles[0x3];  /* +0x58 directional light 1 rotation in degrees (x, y, z) */
+    f32 light1_color[0x3];  /* +0x64 */
+    u8 _0070[0x10];
+    f32 light2_angles[0x3];  /* +0x80 directional light 2 */
+    f32 light2_color[0x3];  /* +0x8c */
+    u8 _0098[0x2c];
+    u16 floor_kinds[0x12];  /* +0xc4 per floor-collision material (Area_MaterialKind which 0; low 5 bits; use not traced) */
+    u16 wall_kinds[0xc];  /* +0xe8 per wall-collision material (Area_MaterialKind which 1): the wall kind a fighter touching it gets (+0x34A) */
+    u8 flag100;  /* +0x100 Area_DefFlag100 (door test) */
+    u8 flag101;  /* +0x101 Area_DefFlag101 */
+    u8 _0102[0x2];
+};
+_Static_assert(__builtin_offsetof(AreaDef, name_text) == 0x0, "AreaDef.name_text");
+_Static_assert(__builtin_offsetof(AreaDef, short_text) == 0x2, "AreaDef.short_text");
+_Static_assert(__builtin_offsetof(AreaDef, sound_bank_a) == 0x4, "AreaDef.sound_bank_a");
+_Static_assert(__builtin_offsetof(AreaDef, sound_bank_b) == 0x6, "AreaDef.sound_bank_b");
+_Static_assert(__builtin_offsetof(AreaDef, bgm) == 0x8, "AreaDef.bgm");
+_Static_assert(__builtin_offsetof(AreaDef, ambience) == 0xa, "AreaDef.ambience");
+_Static_assert(__builtin_offsetof(AreaDef, ambience_alt) == 0xc, "AreaDef.ambience_alt");
+_Static_assert(__builtin_offsetof(AreaDef, unk0E) == 0xe, "AreaDef.unk0E");
+_Static_assert(__builtin_offsetof(AreaDef, unk10) == 0x10, "AreaDef.unk10");
+_Static_assert(__builtin_offsetof(AreaDef, battle_spots) == 0x14, "AreaDef.battle_spots");
+_Static_assert(__builtin_offsetof(AreaDef, ambient) == 0x3c, "AreaDef.ambient");
+_Static_assert(__builtin_offsetof(AreaDef, light1_angles) == 0x58, "AreaDef.light1_angles");
+_Static_assert(__builtin_offsetof(AreaDef, light1_color) == 0x64, "AreaDef.light1_color");
+_Static_assert(__builtin_offsetof(AreaDef, light2_angles) == 0x80, "AreaDef.light2_angles");
+_Static_assert(__builtin_offsetof(AreaDef, light2_color) == 0x8c, "AreaDef.light2_color");
+_Static_assert(__builtin_offsetof(AreaDef, floor_kinds) == 0xc4, "AreaDef.floor_kinds");
+_Static_assert(__builtin_offsetof(AreaDef, wall_kinds) == 0xe8, "AreaDef.wall_kinds");
+_Static_assert(__builtin_offsetof(AreaDef, flag100) == 0x100, "AreaDef.flag100");
+_Static_assert(__builtin_offsetof(AreaDef, flag101) == 0x101, "AreaDef.flag101");
+_Static_assert(sizeof(AreaDef) == 0x104, "sizeof AreaDef");
 
 #endif

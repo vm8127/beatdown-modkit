@@ -45,6 +45,21 @@ void Criminal_AddCashScore(int amount);  /* 0x0013df60 */
 void Blacklist_Set(int person_id);  /* 0x0013e7e0 */
 void SaveBlock369AC_Tick(void);  /* 0x0013ea40 */
 void Allies_ListByStatus(int reset, u8 mask);  /* 0x00142f90 */
+void *Xaf_ReadEntry(int archive, int entry, void *cb, void *arg, u32 flags, void *buf);  /* 0x001594e0 */
+void Stage_LoadProps(void *props, int *data, int area, void *world);  /* 0x0015b5a0 */
+int Stage_PlaceObjects(u32 mask, void *props);  /* 0x0015b7e0 */
+int Stage_PlaceExtra(void *props);  /* 0x0015c190 */
+int Stage_PlacePB(void *props, char *data);  /* 0x0015c680 */
+u32 Collision_FloorList(void *coll, float *pos, int a2, u32 *out);  /* 0x0015e430 */
+void *Collision_SetCurrent(void *coll);  /* 0x0015fb00 */
+int Collision_Query(void *coll, int mesh, void *query, float *result, u32 flags);  /* 0x00160190 */
+int Collision_FloorHeight(void *coll, float *pos, float *result);  /* 0x00160610 */
+int Collision_SphereWalls(float radius, void *coll, float *pos, float *result, u32 flags);  /* 0x00160790 */
+int Collision_Segment(void *coll, float *from, float *to, float *result, u32 flags);  /* 0x00160960 */
+u32 *FloorList_Pick(float y, float tol, u32 *list);  /* 0x00160b40 */
+void *Stage_SetCurrent(void *stage);  /* 0x001679d0 */
+void Stage_Clear(void *stage);  /* 0x001680a0 */
+int Stage_Parse(void *stage, int *pack, int area);  /* 0x00168100 */
 int StoryVar_Add(int index, int delta);  /* 0x00172bd0 */
 int StoryVar_Sub(int index);  /* 0x00172e10 */
 void *Street_RetextureMaterial(void *material, void *ctx);  /* 0x001754b0 */
@@ -85,6 +100,7 @@ int MemCard_ReadFile(int port, int file, void *buf, int offset, int size);  /* 0
 int MemCard_WriteFile(int port, int file, void *buf, int offset, int size);  /* 0x001e0f40 */
 int MemCard_CreateFile(int port, int file);  /* 0x001e1550 */
 int MemCard_CreateDataFile(int port, int file);  /* 0x001e18e0 */
+void *RpWorldStreamRead(void *stream);  /* 0x0022ffd0 */
 void *RpClumpStreamRead(void *stream);  /* 0x00231ee8 */
 void *RpClumpForAllAtomics(void *clump, void *cb, void *data);  /* 0x00232998 */
 void *RpGeometryForAllMaterials(void *geometry, void *cb, void *data);  /* 0x00235f50 */
@@ -110,6 +126,7 @@ void Battle_AddBonusExp(int n);  /* 0x002b2660 */
 void Jobs_ResetAll(void);  /* 0x002c8f40 */
 void Persons_ClearKind2(void);  /* 0x002d7cb0 */
 void Area_ChangeTo(int from, int to);  /* 0x002d9890 */
+void Battle_PlaceFighters(void);  /* 0x002d9ab0 */
 int Anim_IsLoaded(int slot);  /* 0x002dc2e0 */
 void *Anim_GetSlot(int slot);  /* 0x002dc300 */
 int Anim_UnloadGroup(int group);  /* 0x002dc790 */
@@ -148,7 +165,10 @@ void Fighter_ApplyDamage(Fighter *fighter, int damage);  /* 0x002fb880 */
 void Fighter_SubPride(Fighter *fighter, int amount);  /* 0x002fbae0 */
 void Allies_UpdateArrestFlag(void);  /* 0x002fd280 */
 Fighter *Fighter_FindByPerson(int person_id);  /* 0x002fd300 */
+void *Area_Collision(void);  /* 0x002fd5f0 */
 int Area_Current(void);  /* 0x002fd630 */
+int Area_LoadStage(void *pack, int a1, void *area);  /* 0x002fe010 */
+int Stage_LoadCommon(void);  /* 0x002ffa50 */
 void Fighter_Spawn(int slot, int target, int team);  /* 0x00304b60 */
 void Fighter_StartAction(Fighter *fighter, int action);  /* 0x00307e40 */
 void Combat_TakeHit(Fighter *fighter);  /* 0x0030dfd0 */
@@ -156,6 +176,13 @@ Command *Style_GetCommandList(int style);  /* 0x00317bc0 */
 Command *Style_GetWeaponCommandList(int weapon_kind);  /* 0x00317be0 */
 int MoveList_IsLearned(Fighter *fighter, int style, int line);  /* 0x00317e50 */
 void HpBar_Build(int side);  /* 0x0031b210 */
+u8 Area_DefFlag101(int area);  /* 0x0031cfa0 */
+AreaDef *Area_Def(int area);  /* 0x0031cfc0 */
+u32 Area_CurrentDef10(void);  /* 0x0031cfe0 */
+u8 Area_DefFlag100(int area);  /* 0x0031d020 */
+u16 Area_MaterialKind(int area, int material, int which);  /* 0x0031d040 */
+int Area_BattleSpotCount(int area);  /* 0x0031d080 */
+s16 *Area_PickBattleSpot(int mode, int area, float *pos);  /* 0x0031d0c0 */
 void Fighter_SetAction(Fighter *fighter, int action);  /* 0x0031f120 */
 int Action_Next(Fighter *fighter, int action);  /* 0x0031f650 */
 void Action_Step(Fighter *fighter);  /* 0x0031fae0 */
@@ -163,6 +190,9 @@ void Text_ToAscii(const char *text, char *out);  /* 0x0033a670 */
 int VsMode_MirrorId(int id, int side);  /* 0x00344470 */
 void VsMode_MakeFighters(void);  /* 0x00344550 */
 void *Appearance_FindItem(int code);  /* 0x00349b40 */
+void *Doors_CollectAtomic(void *atomic, int *doors);  /* 0x003510b0 */
+void Doors_Load(void *doors, void *clump, void *anim);  /* 0x00351230 */
+int Door_State(int door);  /* 0x003515a0 */
 void VsCustom_SetupLists(void);  /* 0x00371160 */
 const char *Text_Get(int text_id, int zero);  /* 0x00387980 */
 int Criminal_Rank(int which);  /* 0x003937c0 */
@@ -397,18 +427,24 @@ int ClearCount_Get(void);  /* 0x003df540 */
 extern ScriptOpInfo g_ScriptOpcodes[204];  /* 0x00411ac0 */
 extern PersonDef g_PersonDefs[602];  /* 0x00413130 */
 extern s16 g_StartAllies[5];  /* 0x0041db00 */
+extern u8[57] g_AreaObjects[0x28];  /* 0x00422850 */
 extern s16 g_StreetTextures[1890];  /* 0x00430c90 */
 extern u8 g_PresetFlagA[189];  /* 0x00431b60 */
 extern void *g_ArchiveTexNames[10];  /* 0x004ec950 */
 extern ItemDef g_ItemTable[488];  /* 0x004f2400 */
 extern AnimGroup g_AnimGroups[317];  /* 0x004fb4c0 */
+extern float[13] g_AreaSpawnPoints[4];  /* 0x00509700 */
+extern void *g_FixedBattlePos[57];  /* 0x00509930 */
 extern s32 g_StageLayer[12];  /* 0x00509aa0 */
 extern ClassRow g_ClassTable[51];  /* 0x0050d6a0 */
 extern Command *g_StyleCommands[37];  /* 0x00515c10 */
+extern s16[57] g_BattleSpotDefault[4];  /* 0x00516980 */
+extern AreaDef g_AreaDefs[57];  /* 0x005170f0 */
 extern HitRecord *g_ActionHits[2004];  /* 0x00580a40 */
 extern ActionScript g_ActionScripts[2001];  /* 0x005848e0 */
 extern TitleMenuElement g_TitleMenuElements[8];  /* 0x00589760 */
 extern s16 g_VsTempPersons[6];  /* 0x00589be8 */
+extern u8[57] g_AreaDoorFlags[0x14];  /* 0x0058bdb4 */
 extern u32 g_MissionFlagRanges[148];  /* 0x0059995c */
 extern void *g_MissionEventHandlers[10];  /* 0x00599bb0 */
 extern MissionReq g_MissionReq[147];  /* 0x0059a750 */

@@ -136,7 +136,7 @@ The game loads each item's model as a pack from **ARCHIVE.XAF entry item + 0x3A6
 ## Other model entries
 
 - **CDATA.XAF 196-384** (189 entries, one per preset?): a texture dictionary of PS2-native textures (`0x15`, platform "PS2", 4 textures in 196) then a clump with the 23-frame skeleton. Not decoded further; maybe the talk-scene or menu models (open question).
-- **FSTAGE.XAF**: texture dictionaries and clumps (fight arenas; M6), plus chunk types 0x09, 0x0A, 0x1F, 0x20, 0x21 not looked at.
+- **FSTAGE.XAF**: the area packs (texture dictionary, an RpWorld 0x0B with its sectors 0x09/0x0A, collision and door clumps, props): see docs/STAGES.md and `tools/stagekit.py`. Entries 57-127 (first words 0x1F-0x21) are a per-fighter format, not RenderWare.
 - **FSCENE.XAF**: 162 texture dictionary + clump entries next to the cutscene scripts.
 - PS2-native textures (`0x15`) are not decoded yet.
 

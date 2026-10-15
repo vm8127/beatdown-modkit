@@ -136,7 +136,7 @@ Appearance item 2553 (category 25, the RIGHT LEG part slot) sets flag `0x4CE`, w
 
 ## Location ids
 
-Text 18000 + id (CDATA.XAF 386), used by `Location_Current`, `Area_Current`, `EXF_MOVE_STAGE` and `EXF_CHECK_STAGE`:
+Text 18000 + id (CDATA.XAF 386). **Correction 2026-10-15 (read, docs/STAGES.md):** `Location_Current`, `Area_Current`, `Area_ChangeTo` and `EXF_MOVE_STAGE` use **area ids**, a different numbering (the index of `g_AreaDefs`, whose name text is `AreaDef +0`: area 5 = ABANDONED SUBWAY STATION = text 18002, area 46 = PLATFORM). This table is by text id; the hero locations above were named with it and need re-reading with the area table in docs/STAGES.md:
 
 | Id | Name | Id | Name | Id | Name |
 |---|---|---|---|---|---|

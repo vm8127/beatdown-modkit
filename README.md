@@ -54,6 +54,7 @@ All commands below are run from the top of the workspace.
 | `docs/MECHANICS.md` | **Game mechanics**: what the stats do and the formulas behind them (damage, Pride Gauge, EXP and levels, Stamina/Attack/Technique points, weapons, difficulty, Criminal Level and titles, records), plus a mod cheat sheet |
 | `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
 | `docs/FORMATS.md` | **Model and texture formats**: RenderWare chunks, clumps, skeleton and skinning, street models and fight models built from outfit slots (`tools/rwkit.py`) |
+| `docs/STAGES.md` | **Stages (areas)**: area ids, the FSTAGE.XAF area pack (RpWorld geometry, wall/camera/floor collision, doors and exits, props), battle spots, objects per story stage, lights and music (`tools/stagekit.py`) |
 | `tools/rwkit.py` | RenderWare decoder: chunk trees (`tree`), clump summaries (`info`), and the model assembly the remake's glTF export uses |
 | `docs/PARTS.md` | **Body and outfit parts reference**: what makes a character's look (fight and street), the ids found so far, how to view them (`bdkit.py tex`) |
 | `docs/SCRIPTS.md` | **Scripts, missions, side jobs, events and dialogue**: how missions start (job menu, area load, talking, story flags), their requirements and results, the 50 side jobs, the script file format, the event VM and all 204 commands, with a worked example and modding notes |
@@ -107,7 +108,7 @@ All commands below are run from the top of the workspace.
 | `XAF/ARCHIVE.XAF` | 1.0 GB | 5737 outfit and body parts for the character creator |
 | `XAF/FBGM.XAF` | 837 MB | 3131 music/voice streams (`XAU` format) |
 | `XAF/DATA.XAF` | 195 MB | 8276 entries: mostly textures, plus prop meshes and animations |
-| `XAF/FSTAGE.XAF` | 101 MB | 181 fight arena entries |
+| `XAF/FSTAGE.XAF` | 101 MB | 181 entries: the area packs 1-54 (geometry, collision, doors, props; docs/STAGES.md), texture dictionaries, per-fighter data |
 | `XAF/GRAPH.XAF` | 64 MB | 602 UI and menu graphics |
 | `XAF/CDATA.XAF` | 58 MB | 433 character entries: texture packs, models, per-model texture lists, localized text |
 | `XAF/STAGE.XAF` | 46 MB | 318 animation packs (the moves themselves) |

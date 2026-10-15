@@ -53,6 +53,21 @@
 0013EB30 Hero_ScaleToPlayer
 0013FC50 JobMenu_Open
 00142F90 Allies_ListByStatus
+001594E0 Xaf_ReadEntry
+0015B5A0 Stage_LoadProps
+0015B7E0 Stage_PlaceObjects
+0015C190 Stage_PlaceExtra
+0015C680 Stage_PlacePB
+0015E430 Collision_FloorList
+0015FB00 Collision_SetCurrent
+00160190 Collision_Query
+00160610 Collision_FloorHeight
+00160790 Collision_SphereWalls
+00160960 Collision_Segment
+00160B40 FloorList_Pick
+001679D0 Stage_SetCurrent
+001680A0 Stage_Clear
+00168100 Stage_Parse
 00172BD0 StoryVar_Add
 00172E10 StoryVar_Sub
 001754B0 Street_RetextureMaterial
@@ -111,6 +126,7 @@
 001E1550 MemCard_CreateFile
 001E18E0 MemCard_CreateDataFile
 00216538 Unused_DmaGsUpload
+0022FFD0 RpWorldStreamRead
 00231EE8 RpClumpStreamRead
 00232998 RpClumpForAllAtomics
 00235F50 RpGeometryForAllMaterials
@@ -147,6 +163,7 @@
 002C8F40 Jobs_ResetAll
 002D7CB0 Persons_ClearKind2
 002D9890 Area_ChangeTo
+002D9AB0 Battle_PlaceFighters
 002DC1E0 Anim_ResetAll
 002DC280 Anim_SetSlot
 002DC2E0 Anim_IsLoaded
@@ -206,8 +223,11 @@
 002FBAE0 Fighter_SubPride
 002FD280 Allies_UpdateArrestFlag
 002FD300 Fighter_FindByPerson
+002FD5F0 Area_Collision
 002FD630 Area_Current
+002FE010 Area_LoadStage
 002FE3D0 Area_Load
+002FFA50 Stage_LoadCommon
 00301CD0 Action_LoadMtd
 00301D80 Action_Register
 003020E0 Debug_PrintAt
@@ -222,6 +242,13 @@
 00317BE0 Style_GetWeaponCommandList
 00317E50 MoveList_IsLearned
 0031B210 HpBar_Build
+0031CFA0 Area_DefFlag101
+0031CFC0 Area_Def
+0031CFE0 Area_CurrentDef10
+0031D020 Area_DefFlag100
+0031D040 Area_MaterialKind
+0031D080 Area_BattleSpotCount
+0031D0C0 Area_PickBattleSpot
 0031F120 Fighter_SetAction
 0031F650 Action_Next
 0031FAE0 Action_Step
@@ -253,6 +280,9 @@
 0034C7C0 ZenFS_Close
 0034D2D0 ZenAudio_GetSoundStatus
 0034EA50 zenGetIOPReply
+003510B0 Doors_CollectAtomic
+00351230 Doors_Load
+003515A0 Door_State
 00370620 VsMode_SelectScreen
 00371160 VsCustom_SetupLists
 00387760 Text_LoadLanguage
@@ -514,6 +544,7 @@
 00413130 g_PersonDefs
 0041DA40 g_PresetBody
 0041DB00 g_StartAllies
+00422850 g_AreaObjects
 00430C90 g_StreetTextures
 00431B60 g_PresetFlagA
 00431C20 g_PresetValueB
@@ -521,6 +552,8 @@
 004F2400 g_ItemTable
 004FB4C0 g_AnimGroups
 00503514 g_EditorItems
+00509700 g_AreaSpawnPoints
+00509930 g_FixedBattlePos
 00509A20 g_MinHpByDifficulty
 00509AA0 g_StageLayer
 00509D90 g_OptionPages
@@ -529,6 +562,8 @@
 0050C230 g_ActionRemap_S
 0050D6A0 g_ClassTable
 00515C10 g_StyleCommands
+00516980 g_BattleSpotDefault
+005170F0 g_AreaDefs
 00580A40 g_ActionHits
 00582990 g_ActionEvents
 005848E0 g_ActionScripts
@@ -541,6 +576,7 @@
 00589A40 g_VsRoster
 00589AF0 g_CharTypeNames
 00589BE8 g_VsTempPersons
+0058BDB4 g_AreaDoorFlags
 00599000 g_DebugSwitches
 0059995C g_MissionFlagRanges
 00599BB0 g_MissionEventHandlers

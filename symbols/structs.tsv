@@ -260,3 +260,23 @@ AreaPerson	0x12	s16	unk12
 AreaPerson	0x14	s16	unk14	0-4
 AreaPerson	0x16	s16	path_count	number of path points that follow (0 = stands still)
 AreaPerson	0x18	s16[20]	path	path points (x, z pairs; -10000 to -10006 are markers)
+AreaDef	size	0x104		g_AreaDefs entry, one per area id (Area_Def); read from the code and the table 2026-10-15 (docs/STAGES.md)
+AreaDef	0x00	u16	name_text	area name text id (CDATA.XAF 386: 18001 DOWNTOWN STREET, 18002 ABANDONED SUBWAY STATION...); Area_Name 0x002FD6D0
+AreaDef	0x02	u16	short_text	short name text id (18200 + n)
+AreaDef	0x04	s16	sound_bank_a	SOUND.XAF bank through 0x004337D0, loaded by Area_Load as type 4
+AreaDef	0x06	s16	sound_bank_b	same, type 3
+AreaDef	0x08	u16	bgm	music track played on entering (0x0031D8B0)
+AreaDef	0x0A	u16	ambience	second channel's track
+AreaDef	0x0C	u16	ambience_alt	second channel's track while story flag 0xB is set
+AreaDef	0x0E	u16	unk0E	passed to 0x001D35F0 at the end of Area_Load
+AreaDef	0x10	f32	unk10	50 subway, 80 downtown (Area_CurrentDef10)
+AreaDef	0x14	void*	battle_spots	{s32 count, s16[4] *spots}: {x, y, z, angle} in tenths, spot 0 for story fights (Area_PickBattleSpot)
+AreaDef	0x3C	f32[3]	ambient	ambient light colour (light 0)
+AreaDef	0x58	f32[3]	light1_angles	directional light 1 rotation in degrees (x, y, z)
+AreaDef	0x64	f32[3]	light1_color
+AreaDef	0x80	f32[3]	light2_angles	directional light 2
+AreaDef	0x8C	f32[3]	light2_color
+AreaDef	0xC4	u16[18]	floor_kinds	per floor-collision material (Area_MaterialKind which 0; low 5 bits; use not traced)
+AreaDef	0xE8	u16[12]	wall_kinds	per wall-collision material (Area_MaterialKind which 1): the wall kind a fighter touching it gets (+0x34A)
+AreaDef	0x100	u8	flag100	Area_DefFlag100 (door test)
+AreaDef	0x101	u8	flag101	Area_DefFlag101
