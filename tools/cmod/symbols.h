@@ -477,6 +477,9 @@ extern u8 g_BodySpheres[0xB4];  /* 0x00515cc0 */
 extern u8 g_AttackSpheres[0xF0];  /* 0x00515d90 */
 extern u8 g_HurtSpheres[0x168];  /* 0x00515ea0 */
 extern u8 *g_SphereTables[3];  /* 0x00516050 */
+extern u32 g_ReactionSet0[22];  /* 0x005161c0 */
+extern u32 g_ReactionSet1[22];  /* 0x00516300 */
+extern u32[14] g_WalkModes[6];  /* 0x00516560 */
 extern s16[57] g_BattleSpotDefault[4];  /* 0x00516980 */
 extern AreaDef g_AreaDefs[57];  /* 0x005170f0 */
 extern HitRecord *g_ActionHits[2004];  /* 0x00580a40 */
@@ -494,6 +497,7 @@ extern u32 g_InputFallback[136];  /* 0x005cd9b0 */
 extern u32 g_PadLayouts[24];  /* 0x005cf7c0 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
+extern u32 g_HitSituationSet[6];  /* 0x005d0630 */
 extern s16 g_VsNormalIds[16];  /* 0x005da080 */
 extern ScriptOpHandler g_ScriptOpHandlers[204];  /* 0x005dacf0 */
 extern u8 g_PhoneOrderAllies[16];  /* 0x005db360 */
@@ -502,6 +506,7 @@ extern u32 g_JobListA[34];  /* 0x005db6d0 */
 extern u32 g_JobListB[16];  /* 0x005db760 */
 extern u8 g_AutoMissions[26];  /* 0x005dbd40 */
 extern u32 g_TalkMissions[2];  /* 0x005dbd60 */
+extern u32 g_ReactionSets[4];  /* 0x005fe260 */
 extern u8 *g_PeoplePlacement;  /* 0x005febb8 */
 extern Person *g_VsP2Persons;  /* 0x005febc8 */
 extern s16 g_Party[4];  /* 0x005febd0 */

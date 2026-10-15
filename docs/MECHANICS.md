@@ -154,7 +154,7 @@ Hit records are indexed by the timeline's op 0x30 (`+0x4570`), so a multi-hit mo
 
 **Aaron's counter**: in `Combat_ResolveHit`, a defender with style 0x13 whose current action is 0x24B-0x24D (Weaving / Sway Back, `→G ←G ↑G`) and who passes `Cmd_CheckCondition(0x005CFBA0)` turns a **mid** hit (level 4) into his counter (remapped action 0x1EA): the move list's "Breezethrough (COUNTER MID-LEVEL MOVE)". Style 0x10 has the same rule for actions 0x24C, 0x24D and 0x664.
 
-The remake (`remake/godot/game/fighter/fighter.gd`, `damage_from`) uses this formula with placeholder stats (attack rank 1, 100 %, defense 1.0, 3000 HP) and treats "damage state" as hitstun or airborne after a knockdown, with the combo count = hits taken so far in the combo (0 for the first). Hitstun, hitstop and knockback aren't in these records (they come from the reaction animations): the remake derives placeholders from the strength byte.
+The remake (`remake/godot/game/fighter/fighter.gd`, `damage_from`) uses this formula with placeholder stats (attack rank 1, 100 %, defense 1.0, 3000 HP) and treats "damage state" as hitstun or airborne after a knockdown, with the combo count = hits taken so far in the combo (0 for the first). Hitstun, hitstop and knockback aren't in these records: hitstun is the length of the reaction animation `Combat_TakeHit` picks (docs/ANIMATION.md, "Hit reactions, guard and locomotion": 34 frames for the plain high stagger, anim 521), knockdowns last until the getup animation ends. The remake plays those animations (M4) but still times hitstun, hitstop and knockback with placeholders from the strength byte.
 
 ## Pride Gauge and negotiation
 

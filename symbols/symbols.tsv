@@ -719,3 +719,8 @@
 002ffa50	func	Stage_LoadCommon	loads FSTAGE.XAF entry 56 (shared textures and models) once into 0x0071D830; Area_Load step 0	int (void)
 001594e0	func	Xaf_ReadEntry	(archive, entry, callback, arg, flags, buffer) reads a whole XAF entry into memory (buffer or a new 64-aligned allocation) in the background; returns the 0x24-byte request {file, size, ?, data, archive, entry, flags, callback, arg}	void *(int archive, int entry, void *cb, void *arg, u32 flags, void *buf)
 0022ffd0	func	RpWorldStreamRead	RenderWare: reads a world (chunk 0x0B: struct, material list, plane sectors 0x0A and atomic sectors 0x09); Stage_Parse section 1	void *(void *stream)
+005fe260	data	g_ReactionSets	hit reaction sets used by Combat_TakeHit: [0] 0x5161C0 normal, [1] 0x516300 heavy (low HP, counter hit, held); fighter +0x4554 picks; each = 0x16 kinds -> 4 x {s16 action, s16 angle} (behind, front, left, right); docs/ANIMATION.md "Hit reactions"	u32[4]
+005161c0	data	g_ReactionSet0	normal hit reactions: 0x16 pointers (one per reaction kind) to 4 x {s16 action, s16 angle}; kind 0 front = action 703	u32[22]
+00516300	data	g_ReactionSet1	heavier hit reactions (set 1), same layout as g_ReactionSet0; kind 0 front = action 643	u32[22]
+005d0630	data	g_HitSituationSet	reaction set per hit situation, returned by Combat_SituationFactor: normal 0, HP<1000 1, HP<300 1, counter 1, reeling 0, held 1	u32[6]
+00516560	data	g_WalkModes	walk task (0x30CA90) locomotion modes: 14 rows of 6 pointers, [mode*6+i] = s16 actions for 8 directions, [mode*6+3+i] = f32 speeds (units per frame); i probably body size	u32[14][6]

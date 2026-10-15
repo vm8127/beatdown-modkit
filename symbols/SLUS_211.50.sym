@@ -605,6 +605,9 @@
 00515D90 g_AttackSpheres
 00515EA0 g_HurtSpheres
 00516050 g_SphereTables
+005161C0 g_ReactionSet0
+00516300 g_ReactionSet1
+00516560 g_WalkModes
 00516980 g_BattleSpotDefault
 005170F0 g_AreaDefs
 00580A40 g_ActionHits
@@ -635,6 +638,7 @@
 005CF7C0 g_PadLayouts
 005D04D0 g_AttackRankMul
 005D04F0 g_EnemyDamageByDifficulty
+005D0630 g_HitSituationSet
 005D0650 g_HitSituation
 005D4250 g_StylePrideMul
 005D7890 g_TitleMenuJump
@@ -649,6 +653,7 @@
 005DBD60 g_TalkMissions
 005FB170 g_AbilityPointsPerLevel
 005FB1A8 g_AbilityThresholds
+005FE260 g_ReactionSets
 005FEA70 g_AttackLevelToRank
 005FEBB8 g_PeoplePlacement
 005FEBC8 g_VsP2Persons

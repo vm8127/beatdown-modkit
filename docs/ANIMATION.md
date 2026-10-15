@@ -10,11 +10,12 @@ How a fighter's moves become animations, read from the Ghidra pseudocode and che
 4. [Playing a motion](#playing-a-motion)
 5. [Animation file format](#animation-file-format)
 6. [Frame data: the action timeline](#frame-data-the-action-timeline)
-7. [Body sizes and the action remap tables](#body-sizes-and-the-action-remap-tables)
-8. [What this means for moveset mods](#what-this-means-for-moveset-mods)
-9. [Tools](#tools)
-10. [Fighter fields](#fighter-fields)
-11. [Open leads](#open-leads)
+7. [Hit reactions, guard and locomotion](#hit-reactions-guard-and-locomotion)
+8. [Body sizes and the action remap tables](#body-sizes-and-the-action-remap-tables)
+9. [What this means for moveset mods](#what-this-means-for-moveset-mods)
+10. [Tools](#tools)
+11. [Fighter fields](#fighter-fields)
+12. [Open leads](#open-leads)
 
 ## The chain in one picture
 
@@ -156,7 +157,7 @@ Every frame, after `Action_Step`, `Action_Timeline` runs the action's second str
 | `0x1A` | 2 | turn/track timer `+0x43E8` = n / 60 s |
 | `0x0B`, `0x0D`, `0x0E`, `0x10`, `0x13`, `0x17`-`0x19`, `0x1C`, `0x1D`, ... | | sub-commands (a 9-entry jump table at `0x005D4640`), effects (`0x0031DE90`), weapon effects, movement, voice (0x1C picks by HP: > 80 %, > 40 %, else), camera; not traced |
 
-Attack spheres: `g_SphereTables` `0x00516050` = {body `0x00515CC0` (9), **attack `0x00515D90` (12)**, hurt `0x00515EA0` (18)}, each `{s8 skeleton node, f32 offset[3] in the node's space, f32 radius}`; attack spheres count with radius x 2. Attack parts: 0/1 nodes 14/19, 2/3 nodes 4/7, 4/5 nodes 13/18, 6/7 nodes 3/6, 8/9 nodes 11/16, 10 node 10, 11 node 1 (which limb is which is for M2 to name; pairs are probably left/right). Bit 12 is the held weapon.
+Attack spheres: `g_SphereTables` `0x00516050` = {body `0x00515CC0` (9), **attack `0x00515D90` (12)**, hurt `0x00515EA0` (18)}, each `{s8 skeleton node, f32 offset[3] in the node's space, f32 radius}`; attack spheres count with radius x 2. Attack parts: 0/1 nodes 14/19, 2/3 nodes 4/7, 4/5 nodes 13/18, 6/7 nodes 3/6, 8/9 nodes 11/16, 10 node 10, 11 node 1 (bone names: [Hit reactions, guard and locomotion](#hit-reactions-guard-and-locomotion); pairs are right/left). Bit 12 is the held weapon.
 
 Aaron's (style 0x13) first moves, `python tools/codemap.py framedata ISO/SLUS_211.50 0x13` (animation frames; game frames in brackets, from the speed ops):
 
@@ -185,6 +186,36 @@ Read from `Cmd_MatchSequence` `0x002A6720`, `Cmd_MatchSingle` `0x002A68B0`, `Act
 
 **Timing in game frames** (the remake's converter, `remake/tools/conv_moves.py`): step the animation frame by the current speed every game frame (exact fractions) and fire each timeline op on the first game frame whose whole animation frame reaches its wait, with speed ops taking effect from the next step. Blade Cut (action 1805, speed 1.4 then 1.0 at 26): active animation frames 19-25 = game frames 14-18, cancel 24 = game frame 18, end 50 = game frame 43. `codemap.py framedata`'s "game" column assumes the speed switches at the exact frame, so moves with several speed changes (Weaving 587-589, Triple Snake Fang) differ by 1-2 game frames; which order the game runs the timeline and the motion update in within a frame isn't traced.
 
+## Hit reactions, guard and locomotion
+
+Read from `Combat_TakeHit` `0x0030DFD0`, `Combat_SituationFactor` `0x00314D30`, `Fighter_HandleCommand` `0x002A4DB0` and the walk task `0x0030CA90`, and the tables in the ELF, 2026-10-15, for the remake's M4 (`remake/tools/conv_anims.py` exports these animations; the remake plays them). Not tested in-game.
+
+**Which reaction a hit plays.** `Combat_TakeHit` picks an action from `g_ReactionSets` `0x005FE260` (u32[4]; only the first two are used here): `set = Combat_SituationFactor(...)`'s return value, `g_HitSituationSet` `0x005D0630`[situation] = {normal 0, HP < 1000 1, HP < 300 1, counter hit (defender attacking) 1, reeling 0, held 1}, kept at fighter `+0x4554`. A set is 0x16 pointers (one per reaction kind) to 4 x `{s16 action, s16 angle}` in the order **from behind (180), front (0), left (-90), right (90)**; the direction is chosen from where the attacker stands. Set 0 is `0x005161C0`, set 1 (heavier staggers: 643/646/654 instead of 703/669/679) `0x00516300`. The kind, in the code's order:
+
+| Condition (record +8 reaction = R, record +6 level = L, record +4 detail = D; L and D read as those fields from how they are tested) | Kind | Set 0 front action (anim) | Then |
+|---|---|---|---|
+| `FUN_002FABC0(defender)` (probably already down or airborne; it also makes the situation factor 1.0) | 9 / 10 by facing | 119 (114) / 708 (614) | lying 20 / 19 |
+| R & 0x800 | 0x14 | 1682 (1647) | 20 |
+| R & 0x1000 | 0x15 | 1687 (1646) | 20 |
+| R & 0x100 | 8 | 726 (632) | 20 |
+| R & 0x10 | 0xE | 340 (317) | 20 |
+| R & 0x200 | 0xD | 393 (279) | 20 |
+| R & 0x400 | 0xF | 753 (662) | 20 |
+| L & 4 (mid) | 3 | 722 (628) | stance |
+| L & 8 (low) | 0xB | 710 (616); the detail bits 0x10 / 0x20 turn the direction | stance |
+| D & 0x10 / 0x20 / 8 / 4 | 1 / 2 / 0x10 / 0x11 | 679 (593) / 669 (585) / 687 (597) / 689 (599) | stance |
+| otherwise | 0 | 703 (521, 34 frames) | stance |
+
+A few special cases set the kind to 4, 5, 6, 7, 0xC, 0x12, 0x13 (same target, status bits `+0x4390`, holds, a low-HP variant from `0x005FE268`) and 999 / 0x3E3-0x3E6 (action 0x290, or the class row's remap entries 0xF0 / 0xEF / 0xEE / 0x50). Every reaction action's script is one `play` then `goto 1` (stance: the reaction's length is the hitstun) or `goto 20` / `goto 19` (knocked down). **Lying**: action 20 loops anim 22 (face up), action 19 anim 9 (face down); each is a `loop -1` whose `goto` names the **getup**: 20 -> 22 (anim 24, 54 frames), 19 -> 21 (anim 23, 72 frames). So hitstun and knockdown lengths come from these animations, not from the hit records (MECHANICS.md said so; now the animations are known). Medium-high confidence (code and tables read; the meaning of `FUN_002FABC0` and the exact direction rule are not traced).
+
+**Guard.** The guard-type input codes 0x40-0x46 (`Fighter_HandleCommand`, the branch after the command table lookup) start `Fighter_RemapAction(fighter, 10)`: action 10 = `play 13 [0-36, blend 8]` (group 15, which Aaron loads), a raised-forearms pose (render checked in the remake). Medium confidence that this is the guard (from the code path, not seen in-game). Blocked hits' own reaction isn't traced.
+
+**Locomotion.** The walk task reads `g_WalkModes` `0x00516560`: 14 rows of 6 pointers, `[mode * 6 + i]` = actions for 8 directions (front, back, left, right, and diagonals), `[mode * 6 + 3 + i]` = speeds in units per frame (scaled by frame time / (1/60)); `i` = `FUN_002F8D60(fighter)` (probably the body size). Mode 0 = actions 797-804 at 0.48 (run of style group 210), mode 2 = 674-678, 683-685 at 0.30 / 0.16 (anim 588: a jog), mode 5 = 444-451, 6 = 353-360 at 0.14. The default case moves at 11.5 units/s with actions 0x249 / 0x25A; action 3 (anim 515, group 159) is the run used when the fighter is far from its target (`0x0030D970`, distance > 13). Low-medium confidence: the mode numbers aren't named.
+
+**Attack sphere bones** (`g_AttackSpheres`, with the M2 bone names): part 0 hand_r, 1 hand_l, 2 foot_r, 3 foot_l, 4 forearm_r, 5 forearm_l, 6 shin_r, 7 shin_l, 8 shoulder_r, 9 shoulder_l, 10 head, 11 hips; offsets 0.4-1.8 units along the bone, radii (x 2 when attacking) 1.6 (hands) to 4.4 units (hips). Blade Cut's parts 1 and 5 are Aaron's **left** hand and forearm; rendered in the remake, the spheres sit on the extended left fist when it lands (side names from the bind pose; high confidence for the nodes, medium for left/right).
+
+**Blending and root motion as the remake plays them** (M4, remake choices where the game isn't traced): a new motion freezes the current pose and blends to the new clip linearly over its blend frames (counted in game frames); blend 0 snaps (most reactions use 0, knockdowns and most moves 8, a few moves 4). The body moves by the move's hip travel (node 1 forward), and the drawn model pins the hips' forward travel to the body, so collision decides the position and the animation never pulls the model through a wall or an opponent; sideways and vertical hip motion stay in the animation. The game's own handling (node 1's start translation saved at `+0x3FB0`) is still open.
+
 ## Body sizes and the action remap tables
 
 Command lists hold positive action ids, which play as they are. Generic actions (stance, walk, guard, damage, grabs started by the system) are often started with a **negative** id, which `Fighter_RemapActionNeg` `0x002F8A60` and `Fighter_StartAction` look up in the class row's `+8` table (`g_ActionRemap_S/M/L` `0x50C230/0x50B990/0x50BDE0`, one s16 per generic action, at most 0x225). That's how the same "walk" request plays a small, medium or large body's animation. A class row's body groups (S `164,165`, M `160,161`, L `162,163`) hold those per-body animations, so a fighter must keep the groups that match its remap table: that's why `swap-moveset --keep-body` keeps A's body groups.
@@ -210,7 +241,7 @@ python tools/codemap.py framedata ISO/SLUS_211.50 1805        # one action's tim
 python tools/animkit.py list ISO/SLUS_211.50 --group 184      # a group's animations: frames, bones, keys
 python tools/animkit.py dump ISO/SLUS_211.50 34 --group 184   # one animation's keys per bone (--json, --bone N, --sample 60)
 python tools/animkit.py check ISO/SLUS_211.50                 # decode everything: unit quaternions, key links
-python remake/tools/remake_assets.py ISO remake/godot/assets_ripped --only models,anims   # glTF clips (remake/tools/conv_anims.py)
+python remake/tools/remake_assets.py ISO remake/godot/assets_ripped   # every asset; anims/aaron.glb (clips "a<anim id>") + aaron.json (conv_anims.py)
 ```
 
 `animkit.py` (standard library) is also a module: `Library(elf).anim(id, group)` returns an `Anim` with `tracks()` (per bone: time, quaternion, translation) and `sample(t)`, for the remake's converter. An anim id can be in several groups with different data; pass the group the fighter loads (Aaron's style group is 184).
@@ -255,4 +286,5 @@ In PCSX2, the developer overlay (README, cut content switch 5) shows `TASK` (cur
 - Opcodes 8, 9, 0x13, 0x15, 0x16, and `Action_Next`'s special negative ids (-3 picks one of actions 0x84-0x87 depending on the target).
 - Input: where the ↑ / ↓ codes come from when `Pad_ReadCommand` converts the stick relative to the target (it clears up/down), the motion pattern table `g_InputPatterns` `0x004FC580` (time limits for →→, ↓→, →↓→), and the order of the timeline and the motion update within a frame (decides ±1 game frame for the cancel point).
 - The `.mtd` action records: who loads them and which 52 actions they fill.
+- Reactions: what `FUN_002FABC0` tests (kinds 9/10), the direction rule (angle vs the attacker), the blocked-hit reaction, and the walk modes' meaning (`g_WalkModes` rows 0-13).
 - Where flag 8 is set when a motion ends (the motion update), and what slot 0 holds in practice.
