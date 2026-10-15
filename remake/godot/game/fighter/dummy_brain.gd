@@ -29,14 +29,17 @@ func think(f: Fighter) -> void:
 				_timer = 0
 		Mode.FIGHT:
 			if d < 1.6 and _timer >= 50 and f.state == Fighter.State.IDLE:
-				_queue = ["P", "P", "P"]   # jab, jab, straight
+				_queue = ["P", "P", "P"]   # jab, jab, straight (Aaron: Blade Cut, Blade Hook, Uppercut Combo)
 				_timer = 0
 
 
-func take_press(buttons: Array) -> String:
-	if _queue.size() > 0 and _queue[0] in buttons:
-		return _queue.pop_front()
-	return ""
+## Input codes like the player's ("P", "→P"); P P P is a real combo in every style so far.
+## One at a time: the next only once the fighter has used the last (a press during a move
+## replaces the one before it, as in the game).
+func take_input(f: Fighter) -> String:
+	if _queue.is_empty() or f.last_input != "":
+		return ""
+	return _queue.pop_front()
 
 
 func move_dir(f: Fighter) -> Vector3:
