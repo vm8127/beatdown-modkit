@@ -63,7 +63,7 @@ SYMBOLS = os.path.join(ROOT, "symbols", "symbols.tsv")
 INCLUDE = os.path.join(HERE, "cmod")
 PNACH = os.path.join(ROOT, "mods", "SLUS-21150_C9F6EF9A.pnach")
 PCSX2_PNACH = r"C:\Games\Emu\PCSX2\cheats\SLUS-21150_C9F6EF9A.pnach"
-AUTHOR = "Claude for Daniel"
+AUTHOR = "Claude for V"
 
 CFLAGS = ["-O2", "-G0", "-mabi=eabi", "-mlong32", "-mno-abicalls", "-fno-pic", "-mno-gpopt", "-ffreestanding", "-fno-builtin",
           "-fno-common", "-fno-toplevel-reorder", "-fno-asynchronous-unwind-tables", "-fno-unwind-tables",

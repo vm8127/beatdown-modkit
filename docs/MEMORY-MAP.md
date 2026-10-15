@@ -12,7 +12,7 @@ It prints every section's address ranges and every pair of sections that write t
 
 ## Free RAM: the mod areas
 
-The game never uses EE RAM below its own program (it loads at `0x00100000`) above `0x00096000`, and its heap (which starts at `0x00788180`, is grown to about `0x01EF7000` once at boot by `Boot_LoadModules` and then trimmed) stays under `0x01E00000`. `python tools/pcsx2.py freeram` checks this in save states: in all four of Daniel's (2023-01 to 2026-10, title screen to street fights) both areas below are zero, the heap top (`sbrk` break at `0x0040C274`) was between `0x01BB2000` and `0x01D78000`, and no instruction in the ELF builds an address in `0x000A0000`-`0x000FFFFF`.
+The game never uses EE RAM below its own program (it loads at `0x00100000`) above `0x00096000`, and its heap (which starts at `0x00788180`, is grown to about `0x01EF7000` once at boot by `Boot_LoadModules` and then trimmed) stays under `0x01E00000`. `python tools/pcsx2.py freeram` checks this in save states: in all four of V's (2023-01 to 2026-10, title screen to street fights) both areas below are zero, the heap top (`sbrk` break at `0x0040C274`) was between `0x01BB2000` and `0x01D78000`, and no instruction in the ELF builds an address in `0x000A0000`-`0x000FFFFF`.
 
 | Area | Size | Use |
 |---|---|---|

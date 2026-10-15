@@ -1,13 +1,13 @@
 gametitle=Beat Down - Fists of Vengeance (USA) [SLUS-21150]
 
 [Aaron uses Raven's moveset]
-author=Claude for Daniel
+author=Claude for V
 description=Points Aaron's character class (row 33 of the class table at 0x0050D6A0) at Raven's fighting style 0x11 and Raven's animation groups. Aaron keeps his own model.
 patch=1,EE,2050D8B4,extended,00000011
 patch=1,EE,2050D8BC,extended,0050D150
 
 [Aaron uses Jason G's moveset]
-author=Claude for Daniel
+author=Claude for V
 description=Aaron fights with Jason G's style 0x12. Aaron is medium and Jason G is large, so Aaron keeps his medium body animations: his own group list at 0x0050D100 gets Jason G's move group 183 in place of 184, plus Jason G's group 209. Turn on only one Aaron cheat at a time, and restart the game after switching.
 patch=1,EE,2050D8B4,extended,00000012
 patch=1,EE,2050D8BC,extended,0050D100
@@ -16,7 +16,7 @@ patch=1,EE,2050D144,extended,000000D1
 patch=1,EE,2050D148,extended,0000270F
 
 [Aaron uses Ignacy's moveset and Chester's model]
-author=Claude for Daniel
+author=Claude for V
 description=Aaron fights with Ignacy's style 0x0C and Ignacy's animation groups (all medium bodies, so a plain swap). For the model, a small hook at 0x003E0130 makes fighter init (0x0013B54C and 0x0013B55C) load Chester's outfit preset 23 whenever it builds Aaron (presets 78, 79, 153). Aaron keeps his own preset number, so the game still recognises him as Aaron (HP bar name). Turn on only one Aaron cheat at a time, and restart the game after switching.
 patch=1,EE,2050D8B4,extended,0000000C
 patch=1,EE,2050D8BC,extended,0050D290
@@ -38,42 +38,42 @@ patch=1,EE,2013B54C,extended,0C0F804C
 patch=1,EE,2013B55C,extended,0C0F804C
 
 [Cut content: DEBUG on the title screen (replaces VS MODE CUSTOM)]
-author=Claude for Daniel
+author=Claude for V
 description=Brings back the cut DEBUG item on the title menu. The third menu slot (VS MODE CUSTOM) gets action 5, which opens the developer menu at 0x00340220 (SCENE PLAYER, LANGUAGE, EXIT), and its label is switched to the leftover "DEBUG" string. VS MODE NORMAL still works. See docs/CUTCONTENT.md.
 patch=1,EE,2058969C,extended,00000005
 patch=1,EE,205897D0,extended,00000007
 
 [Cut content: all six languages in the debug LANGUAGE menu]
-author=Claude for Daniel
+author=Claude for V
 description=The debug LANGUAGE screen (0x003B7400) only lets you pick JAPANESE or ENGLISH. This lets the cursor reach FRANCE, GERMANY, SPAIN and ITALY too; the disc has all six text banks. Use it together with the DEBUG title cheat.
 patch=1,EE,203B75F0,extended,28420006
 patch=1,EE,203B75D0,extended,24020005
 
 [Cut content: developer debug mode (switch 5)]
-author=Claude for Daniel
+author=Claude for V
 description=Turns on developer debug switch 5 in the unused switch table at 0x00599000. In a fight or in free roam, hold L2 and press R2 to show or hide the developer fighter overlay, and hold L2 and click L3 to page through its 10 pages (action and motion IDs, HP, damage, injuries, attack/defence, states, loaded animations). Tested in PCSX2. The code also has a hold-R1 speed-up while walking, but R1 is grab, so it can't be used. See docs/CUTCONTENT.md.
 patch=1,EE,20599014,extended,00000001
 
 [Cut content: DIFFICULTY in the pause menu options]
-author=Claude for Daniel
+author=Claude for V
 description=Adds the DIFFICULTY option (record 0x00509D90) to the pause menu's OPTIONS, CONFIG. page (byte +27). Without the cheat it is only in the title-screen OPTIONS. Tested in PCSX2. 1 = EASY, 2 = NORMAL, 3 = HARD.
 patch=1,EE,20509DA8,extended,01010100
 
 [Aaron uses the cut TESTER moveset (one Aaron cheat at a time)]
-author=Claude for Daniel
+author=Claude for V
 description=Gives Aaron style 0x09, the developers' TESTER style: 67 commands mixing moves from many styles, with no MOVE LIST entry, and TESTER_M's animation groups (both medium bodies, so a plain swap). Turn on only one Aaron cheat at a time, and restart the game after switching.
 patch=1,EE,2050D8B4,extended,00000009
 patch=1,EE,2050D8BC,extended,0050D2E0
 
 [Cut content: boxers use the short boxer style 0x1C]
-author=Claude for Daniel
+author=Claude for V
 description=Points BOXER_S, BOXER_M and BOXER_L at style 0x1C, one of eight short versions of the generic styles that no class row uses (Jab, Boxer Step, Punch Combo, Left Hook Combo, Uppercut Combo). They keep the boxer animation group 166, which has those moves.
 patch=1,EE,2050D6A4,extended,0000001C
 patch=1,EE,2050D6B4,extended,0000001C
 patch=1,EE,2050D6C4,extended,0000001C
 
 [Story roster: Aaron is Chester with Ignacy's moves]
-author=Claude for Daniel
+author=Claude for V
 description=AARON looks like CHESTER (preset 23); AARON's HP bar says CHESTER's name (text 11021); AARON fights as IGNACY. Built by bdkit roster; turn off other cheats that write these heroes.
 patch=1,EE,2050D8B4,extended,0000000C
 patch=1,EE,2050D8BC,extended,0050D290
@@ -128,7 +128,7 @@ patch=1,EE,202166C4,extended,FFFFFFFF
 patch=1,EE,2031B3E4,extended,0C08598E
 
 [Negotiation menu on knockout (test v2)]
-author=Claude for Daniel
+author=Claude for V
 description=When you knock out a non-boss enemy in story mode, the game normally plays a short after-KO talk (Battle_StartTalk kind 1). This turns it into the threaten talk (kind 0), so the RECRUIT/ROB/INTERROGATE/BEATDOWN/CANCEL menu opens, but only when that enemy shows a Pride bar (Battle_PrideHudShown 0x002E3A20, which also rules out group fights). The knocked-out enemy's Pride is set to 0 first. v2: CANCEL on a knocked-out enemy (0 HP) gives the normal after-KO ending (kind 1, step 1600); on a living enemy (manual threaten) it stays vanilla. Triangle now jumps to CANCEL in this menu. Hooks at 0x002DE478 and 0x002DEF70, caves 0x003E0168-0x003E017C and 0x00218F00-0x00218F40 (end of the unused library function the roster uses the start of). v1 and v2 tested in PCSX2 2026-10-13. See docs/mods/PLAN-auto-negotiation.md.
 patch=1,EE,203E0168,extended,03E0882D
 patch=1,EE,203E016C,extended,0C0B8E88
@@ -163,7 +163,7 @@ patch=1,EE,202DEF74,extended,00000000
 patch=1,EE,205990FC,extended,00000004
 
 [Aaron keeps his moves but grapples like Jason G (one Aaron cheat at a time)]
-author=Claude for Daniel
+author=Claude for V
 description=Mixed moveset made by bdkit.py mix-moveset AARON JASON_G --take grab. Aaron's command list (style 0x13) is rebuilt at 0x00217000 with all his own strikes, kicks and specials, but every grab comes from Jason G: Neck Throw, Stunner (grab up P), Power Bomb (grab down P), Belly to Belly Suplex (grab left/right P), Scissors Kick, Position Change (grab G), Giant Swing, Back Drop and Spine Buster. Jason G's animation groups 183 and 209 are loaded next to Aaron's. The MOVE LIST screen shows the mix too: small hooks at 0x00217A00 on the four move list functions (0x1C5BA0, 0x1C5BF0, 0x1C5C30, 0x1C5C70) swap Aaron's six grab lines for Jason G's eleven, and the copied unlock conditions point at the new lines. Turn on only one Aaron cheat at a time, and restart the game after switching.
 patch=1,EE,2050D8B4,extended,00000013
 patch=1,EE,2050D8BC,extended,0050D100
@@ -459,7 +459,7 @@ patch=1,EE,2050D148,extended,000000D1
 patch=1,EE,2050D14C,extended,0000270F
 
 [Aaron uses Ignacy's moveset and Chester's model (C version, one Aaron cheat at a time)]
-author=Claude for Daniel
+author=Claude for V
 description=The C rewrite of "Aaron uses Ignacy's moveset and Chester's model", built by tools/cmod.py. Aaron fights with Ignacy's style 0x0C and animation groups; fighter init loads Chester's outfit preset 23 whenever it builds Aaron (presets 78, 79, 153). Turn on only one Aaron cheat at a time, and restart the game after switching.
 patch=1,EE,20216738,extended,2482FFB2
 patch=1,EE,2021673C,extended,2C420002
@@ -479,7 +479,7 @@ patch=1,EE,2013B54C,extended,0C0859CE
 patch=1,EE,2013B55C,extended,0C0859CE
 
 [C mod test: the player takes no damage (hook, mod area, globals)]
-author=Claude for Daniel
+author=Claude for V
 description=Test for tools/cmod.py's @hook, the mod area 0x000A0000 and @bss globals. Hits on the player (fighter slot 0) do no damage; how many hits and how much damage were blocked are added up at 0x000E0000 and 0x000E0004 (read them with tools/pcsx2.py r32 0x000E0000 2). Can be on with any other cheat.
 patch=1,EE,200A0000,extended,3C02006D
 patch=1,EE,200A0004,extended,00052C00
@@ -509,7 +509,7 @@ patch=1,EE,202FB880,extended,08028000
 patch=1,EE,202FB884,extended,00000000
 
 [New characters: Eggusz (person 51) in the subway, chapter 2]
-author=Claude for Daniel
+author=Claude for V
 description=Adds brand-new characters to story mode (docs/mods/PLAN-new-characters.md). Eggusz (person and template 51, a slot left over from a cut character editor): bald, black mustache, red leather jacket, jeans, black sneakers; Jason G's fighting style; level 12, 3000 HP, Pride 200, attack x1.0, $1000. He stands around in the ABANDONED SUBWAY STATION (area 5) during chapter 2 (story stage 6) like any street person: walk up, fight him, RECRUIT him. Everything about a character is one row of the tables in mods/c/new_characters.c.
 patch=1,EE,200A1000,extended,24020033
 patch=1,EE,200A1004,extended,14820004

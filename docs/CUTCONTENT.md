@@ -38,7 +38,7 @@ Confidence words: **confirmed** = read in the code or data; **probably** = infer
 
 ## Test results (2026-10-13)
 
-Claude ran every cut-content cheat in PCSX2 v2.9 on Daniel's PC, in a separate copy of the emulator folder (Daniel's settings, memory cards and save states were never touched), sending key presses by script and reading memory through PCSX2's PINE interface. The switch 5 overlay shows each fighter's current action ID (its `TASK` line), which made the move checks exact.
+Claude ran every cut-content cheat in PCSX2 v2.9 on V's PC, in a separate copy of the emulator folder (V's settings, memory cards and save states were never touched), sending key presses by script and reading memory through PCSX2's PINE interface. The switch 5 overlay shows each fighter's current action ID (its `TASK` line), which made the move checks exact.
 
 | Cheat | Result |
 |---|---|

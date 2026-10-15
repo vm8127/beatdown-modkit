@@ -1,6 +1,6 @@
 {
   "name": "Story roster: Aaron is Chester with Ignacy's moves",
-  "author": "Claude for Daniel",
+  "author": "Claude for V",
   "heroes": {
     "AARON": {"model": "CHESTER", "moves": "IGNACY"}
   }

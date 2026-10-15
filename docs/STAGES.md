@@ -174,7 +174,7 @@ From `AreaDef` (symbols/structs.tsv):
 - The prop descriptors (0x28 bytes): which props break, which can be picked up or used.
 - FSTAGE.XAF 57-127 and 122-180.
 - `AreaDef +0x0E`, `+0x10`, `+0x18`, `+0x1C` (bytes 8, 8, 8), `+0x20` (0.8), `+0xA0` (20.0), `+0x100`, `+0x101`.
-- Where `g_PeoplePlacement` (RAM `0x01431EB0` in Daniel's chapter-2 save) is loaded from.
+- Where `g_PeoplePlacement` (RAM `0x01431EB0` in V's chapter-2 save) is loaded from.
 - Test in the sandbox: the area ids (teleport to 5 and 46), and a fighter against the subway's walls (done in the remake's stage test, not in the game).
 - Where the game turns on additive blending for glow props (sparks, light covers), and how bright prelit colours are on the PS2 (x 2 assumed).
 - Props 12-15 of the subway (drums): placed by `g_AreaObjects`? When, and can they be broken or picked up?

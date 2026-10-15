@@ -2,7 +2,7 @@
 
 How Beat Down's character models are stored and put together, decoded 2026-10-15 for the Godot remake (milestone M1, `remake/`). The archive layout (XAF) is in README.md, "XAF archive format"; animations are in docs/ANIMATION.md. Tools: `tools/rwkit.py` (decoder, chunk dumps, model assembly) and `remake/tools/remake_assets.py` (glTF export).
 
-How sure: **read** = read from the game's code in `decomp/`; **checked** = verified on the data (all entries, or the ones named); **rendered** = the converted model looks right in Godot (2026-10-15: preset 89's street model and Aaron's fight model, preset 78; screenshot checked by Claude, not yet by Daniel); **guess** = inferred, not confirmed.
+How sure: **read** = read from the game's code in `decomp/`; **checked** = verified on the data (all entries, or the ones named); **rendered** = the converted model looks right in Godot (2026-10-15: preset 89's street model and Aaron's fight model, preset 78; screenshot checked by Claude, not yet by V); **guess** = inferred, not confirmed.
 
 ## Contents
 

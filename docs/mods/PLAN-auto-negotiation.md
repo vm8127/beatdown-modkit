@@ -1,6 +1,6 @@
 # Mod plan: negotiation menu on knockout
 
-Status: **done**. v1 and v2 were tested in PCSX2 on 2026-10-13, and Daniel tested v2 himself the same day: works as intended. The pnach section is `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). Not tried yet: a boss fight and a group fight (the code should leave both alone). Plan first written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
+Status: **done**. v1 and v2 were tested in PCSX2 on 2026-10-13, and V tested v2 himself the same day: works as intended. The pnach section is `Negotiation menu on knockout (test v2)` (v1 plus the CANCEL fix). Not tried yet: a boss fight and a group fight (the code should leave both alone). Plan first written 2026-10-13 from README.md, docs/MECHANICS.md, docs/CODEMAP.md, docs/CUTCONTENT.md and a short look at the ELF. Addresses marked **probably** were found while writing this and are not traced fully.
 
 ## What the mod would do
 
@@ -30,14 +30,14 @@ Cancelling is the way to get a plain knockout. Enemies you can't negotiate with 
 
 Max Pride is **not** the filter: 488 of the 602 person templates have 100 Pride and only one has 0 (dumps/persons.txt), so almost everyone has a gauge. Whether you may negotiate is decided by the fight (story bosses, scripted mission fights, VS mode, tournament), not the person. The mod must reuse the game's own "can I threaten this enemy now?" check, so it opens the menu exactly where the threaten button would work. Finding that check is the first job.
 
-## Choices for Daniel
+## Choices for V
 
 Defaults marked; each is a small switch in the patch.
 
-1. **Does Pride still matter?** Settled: the default (Daniel, 2026-10-13).
+1. **Does Pride still matter?** Settled: the default (V, 2026-10-13).
    - **Default: a knockout counts as breaking Pride**, so the menu opens on every negotiable knockout. Simple and always works.
    - Strict: the menu opens only if Pride was already 0 when they went down; otherwise they just lose. Keeps the Pride mechanic, but the mod will trigger less often because Pride refills.
-2. **Group fights.** Settled: Daniel says you can't threaten in group fights (up to 3 enemies). Because the mod reuses the game's own threaten check, group-fight knockouts stay normal knockouts. Confirm this when the check is traced.
+2. **Group fights.** Settled: V says you can't threaten in group fights (up to 3 enemies). Because the mod reuses the game's own threaten check, group-fight knockouts stay normal knockouts. Confirm this when the check is traced.
 3. **Failed negotiation** ("TRY AGAIN?"). **Default: keep the vanilla retry**; answering NO (or cancelling) gives the normal knockout, same as CANCEL. Alternative: a fail goes straight to the normal knockout.
 
 ## What the code does (traced 2026-10-13)
@@ -48,7 +48,7 @@ Read from the ELF; not run yet. `g_Battle` is the battle context pointer at `gp-
 - **After a knockout** (state 2): if the player lost with Pride at 0 the game starts the beg scene. Otherwise, if `Battle_CanTalkAfterKO` `0x002E38D0` passes (story mode, the loser is not a boss and not one of 8 ally people), it calls `Battle_StartTalk(1)` at `0x002DE478`: a short after-KO talk that ends the fight.
 - **The threaten button** goes through `Battle_RequestTalk` `0x002DE540` (called from the fighter input code at `0x0032482C`): it works when your target is DOWN or GUARDING, or during a threaten grab, and ends in `Battle_StartTalk(0)`.
 - **The talk scene** `Talk_Update` `0x002DE850` runs both. Kind 0 opens the menu (`Talk_OpenMenu` `0x002E0150`, menu descriptor at `0x005990F0`) and branches on the choice (measured in PCSX2): RECRUIT 0 and ROB 1 -> step 1000, INTERROGATE 2 -> 1150, BEATDOWN 3 -> 1200, CANCEL 4 -> 1250. INTERROGATE and BEATDOWN check `Fighter_HasPride` `0x002FB120` on the target (1300/1350 and 1500/1550). CANCEL (step 1250) returns outcome 5, which resumes the fight (`g_Battle +0x9C` bit 0); with a knocked-out enemy that just reopens the menu. Kind 1 skips the menu and goes 1600, 1601, 800.
-- **Pride bar shown** `Battle_PrideHudShown` `0x002E3A20`: not VS mode, game flag `0x0076EA90` bit 9 clear, the target's person record `+0x388` bit 31 clear, and battle type `0x0076EAA0` not 3 (probably group fights; Daniel says you can't threaten there).
+- **Pride bar shown** `Battle_PrideHudShown` `0x002E3A20`: not VS mode, game flag `0x0076EA90` bit 9 clear, the target's person record `+0x388` bit 31 clear, and battle type `0x0076EAA0` not 3 (probably group fights; V says you can't threaten there).
 
 ## Test v1 (built)
 
@@ -76,7 +76,7 @@ What to check in PCSX2 (story mode, a 1-on-1 street fight with a Pride bar):
 
 ## Test v1 results (PCSX2, 2026-10-13)
 
-Story mode, 1-on-1 street fight with Miles (Pride bar shown), from Daniel's save state. The knockout was forced by setting Miles to 1 HP and refilling Aaron's HP in memory.
+Story mode, 1-on-1 street fight with Miles (Pride bar shown), from V's save state. The knockout was forced by setting Miles to 1 HP and refilling Aaron's HP in memory.
 
 1. Knockout opens the NEGOTIATION menu: **yes**. Items are RECRUIT / ROB / INTERROGATE / BEATDOWN / CANCEL, with Miles lying KO'd.
 2. RECRUIT: normal recruit scene, then "Add Miles to the party / Keep on call"; Miles joined the party. ROB: "Hand over your money!", haul only $3 (maybe the empty-Pride branch, maybe Miles is poor). INTERROGATE: an info note (the wharf crane). These three end with the normal BATTLE RESULT screen (EXP 12).

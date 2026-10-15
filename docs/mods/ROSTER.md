@@ -24,7 +24,7 @@ The roster keeps each slot's fighter ID, preset number and class row, so all sto
 ```json
 {
   "name": "Story roster: Aaron is Chester with Ignacy's moves",
-  "author": "Claude for Daniel",
+  "author": "Claude for V",
   "heroes": {
     "AARON": {"model": "CHESTER", "moves": "IGNACY"},
     "LOLA":  {"model": "FATIMA", "moves": "GREGOLIO", "name": "keep", "stats": "GREGOLIO"}

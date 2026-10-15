@@ -1,6 +1,6 @@
 # Body and outfit parts reference
 
-What a character's look is made of, and the part ids found so far, for building new characters (docs/mods/PLAN-new-characters.md, `mods/c/new_characters.c`). Started 2026-10-15 while building Eggusz; **add to it as parts get identified** (Daniel: no need to scan everything at once). Ids were found by viewing the textures with the tool below and by testing in the sandbox unless marked otherwise.
+What a character's look is made of, and the part ids found so far, for building new characters (docs/mods/PLAN-new-characters.md, `mods/c/new_characters.c`). Started 2026-10-15 while building Eggusz; **add to it as parts get identified** (V: no need to scan everything at once). Ids were found by viewing the textures with the tool below and by testing in the sandbox unless marked otherwise.
 
 ## Viewing parts
 

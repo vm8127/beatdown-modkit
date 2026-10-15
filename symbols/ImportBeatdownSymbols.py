@@ -638,7 +638,7 @@ SYMS = [
     (0x005FB170, 'data', 'g_AbilityPointsPerLevel', 'byte per player level: 3 points for levels 2-50'),
     (0x005FB1A8, 'data', 'g_AbilityThresholds', '{6,12,17,23,25} points spent for ability level 1-5'),
     (0x005FEA70, 'data', 'g_AttackLevelToRank', '{1,2,3,4,5,6}: Attack ability level -> attack rank'),
-    (0x005FEBB8, 'data', 'g_PeoplePlacement', "pointer to the placement data in RAM: s32 layer offsets[12], each layer an offset per area id (0 = none) to 7 AreaPerson entries; 0x01431EB0 in Daniel's chapter 2 save"),
+    (0x005FEBB8, 'data', 'g_PeoplePlacement', "pointer to the placement data in RAM: s32 layer offsets[12], each layer an offset per area id (0 = none) to 7 AreaPerson entries; 0x01431EB0 in V's chapter 2 save"),
     (0x005FEBC8, 'data', 'g_VsP2Persons', "VS CUSTOM: pointer to player 2's save's 210 person records"),
     (0x005FEBD0, 'data', 'g_Party', 's16 person IDs of the party (saved, 8 bytes)'),
     (0x005FEDDC, 'data', 'g_NpcSpawnState', "NpcSpawn_Step's step (1 pick the model, 2 load, 3 done)"),

@@ -522,7 +522,7 @@
 002fe3d0	func	Area_Load	(area, flags) step machine: Stage_LoadCommon, unload, pick the FSTAGE.XAF entry (area, or a random variant for 1, 7, 0x13, 0x2F), Xaf_ReadEntry, Area_LoadStage, copy g_AreaDefs[area] to state +0x1C, lights, Area_BuildPeople, far clip, sound banks, music (docs/STAGES.md)
 006cb920	data	g_AreaPeople	7 x 64-byte people/object slots of the current area	AreaPerson[7]
 005ffcf0	data	g_AreaPeopleCount	number of type 1 entries in g_AreaPeople	s32
-005febb8	data	g_PeoplePlacement	pointer to the placement data in RAM: s32 layer offsets[12], each layer an offset per area id (0 = none) to 7 AreaPerson entries; 0x01431EB0 in Daniel's chapter 2 save	u8 *
+005febb8	data	g_PeoplePlacement	pointer to the placement data in RAM: s32 layer offsets[12], each layer an offset per area id (0 = none) to 7 AreaPerson entries; 0x01431EB0 in V's chapter 2 save	u8 *
 00509aa0	data	g_StageLayer	s32[12]: the placement layer of each story stage (stages 1-5 -> 5, which is empty; 6-10 -> 6-10)	s32[12]
 0075b330	data	g_AppearanceItems	s32 count (485), then 0x70-byte records: +0 code (what g_Appearance holds), +4 description text 17xxx, +8 name text 16xxx, +0xC price, +0x48 one value per colour variant	s32
 00349b40	func	Appearance_FindItem	(code) -> the g_AppearanceItems record with that code, or 0	void *(int code)
