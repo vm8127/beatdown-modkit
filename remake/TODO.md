@@ -2,10 +2,10 @@
 
 Work queued for when a running task finishes (running work is in [MEMORY.md](MEMORY.md), "Now"). Start at most one or two at a time: parallel work hits the usage limit and risks file conflicts. Each item becomes its own session or subagent with a fresh context.
 
-## Running
+## Done recently
 
-- [ ] M2+M3: Aaron rigged and animated in Godot (session `m2m3-aaron-anim`)
-- [ ] M6: abandoned subway station in Godot (session `m6-subway-export`)
+- [x] M2+M3: Aaron rigged and animated in Godot (done 2026-10-15, checked: Blade Cut screenshot)
+- [x] M6: abandoned subway station in Godot (done 2026-10-15, checked: walk test PASS, screenshot)
 - [x] M4a: Aaron's real moves on the capsule fighter (done 2026-10-15, checked: smoke test →P P P PASS, test_moves.py 862 checks PASS)
 
 ## Next, in order
@@ -18,6 +18,6 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 - [ ] **M4a follow-ups:** root motion pushes the capsule into the dummy (applied past body collision; seen in the smoke screenshot); hitstun / hitstop / knockback are placeholders (not in the hit records: find where the game keeps them); motion-input time limits (`g_InputPatterns`) and where ↑/↓ come from; grabs and context moves can't be input yet; command conditions, Pride and TIRED unused.
 
-- [ ] **M4:** animated Aaron replaces the capsule: each move plays its clip (blend 8), hit spheres attached to the hitting body parts' bones.
+- [ ] **M4 (unblocked now):** animated Aaron replaces the capsule: each move plays its clip (blend 8), hit spheres attached to the hitting body parts' bones.
 - [ ] **M6 follow-up:** doors as exits between areas (Downtown <-> subway), battle spots, props.
 - [ ] Daniel plays M0 / M4 and gives feel feedback (timing, hitstop, camera).
