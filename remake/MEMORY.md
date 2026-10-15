@@ -6,6 +6,8 @@ Read this first in every remake session, and update it before stopping (or whene
 
 - **M0 (capsule brawler): built, smoke test passes, not yet played by Daniel.** Dev arena with fighter state machine, 6 placeholder moves with combos, input buffer, hitstop, knockback, knockdown, guard, dummy AI modes, debug overlay, pause / frame step / slow-mo. remake/README.md explains the code.
 - **M1 (mesh format + `remake_assets.py`): running in its own session** "M1: mesh format + remake_assets.py" (name `m1-mesh-extract`, shares this checkout). Check its MEMORY entry/commits before redoing anything.
+- **M3 research (animation format + frame data): running as a background subagent** of the main remake session, started 2026-10-15. Writes `docs/ANIMATION.md`, a new `tools/animkit.py`. If it was interrupted (no "M3 research" line in the Session log, no animkit.py commit), restart it from the brief: decode STAGE.XAF animations (`Xaf_LoadAnimPack` 0x29ED70, chunk 0x1B loader 0x29CD10, `Fighter_PlayMotion` 0x2F0900) and the frame data (cancel windows / active frames: action second stream fighter +0x3FD8, `g_ActionEvents` 0x582990).
+- **M6 research (stage geometry + collision): running as a background subagent**, started 2026-10-15. Writes a new `docs/STAGES.md` and `tools/stagekit.py`. If interrupted (no `docs/STAGES.md` in git), restart: area loader by location id, which XAF entries make an area (start with the abandoned subway station), collision, triggers, spawn points.
 - **Next step:** Daniel plays M0 and says how it feels (timing, hitstop, camera); tune. Then M2 (skeleton) after M1 lands.
 - **Waiting on Daniel:** feedback on M0.
 
@@ -18,7 +20,8 @@ Read this first in every remake session, and update it before stopping (or whene
 | 2026-10-15 | GDScript (Daniel likes C# but left it to Claude; GDScript: no .NET SDK, hot reload, most tutorials). | Claude, Daniel OK |
 | 2026-10-15 | Claude writes the gameplay code ("I want to see what you're capable of"); Daniel reads and plays. | Daniel |
 | 2026-10-15 | Godot 4.7.2 stable (standard build) installed in `__external_tools/godot/`, SHA512 checked. | Daniel allowed |
-| 2026-10-15 | Big independent tasks go to separate sessions (fresh context), e.g. M1. | Daniel |
+| 2026-10-15 | Big independent tasks go to separate sessions or subagents (fresh context), e.g. M1 (session), M3/M6 research (subagents: the app refused to start more sessions from that turn). Each writes its own docs/tool files; shared files (symbols.tsv, CODEMAP.md, this file) only by small edits. | Daniel |
+| 2026-10-15 | Keep this file current at every step (Daniel: "keep your thinking cache"), so an interrupted session restarts from here, not from scratch. | Daniel |
 | 2026-10-15 | Incremental development with a developer scene (`remake/godot/dev/`); every feature lands there first (PLAN.md, "Incremental development"). | Daniel |
 
 ## Open questions for Daniel
@@ -38,3 +41,4 @@ Newest last. One or two lines per session: what was done, where it stopped.
 
 - 2026-10-15: Created `remake/` (README, PLAN moved from `docs/PLAN-godot-remake.md`, this file, `.gitignore`). Added the developer-scene idea to the plan. Asked the first-session questions. Stopped before M0/M1.
 - 2026-10-15 (same session): Daniel chose: Claude writes the code, GDScript, sub-tasks in separate sessions. Installed Godot 4.7.2. Built M0 in `remake/godot/` (dev arena, fighter, brains, camera, overlay, smoke test: PASS, screenshot checked). Started the M1 session.
+- 2026-10-15 (same session): Daniel asked for more RE meanwhile; started M3 animation research and M6 stage research as background subagents. Waiting on them, on the M1 session, and on Daniel's M0 feedback.
