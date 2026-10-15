@@ -572,3 +572,32 @@
 0076a970	data	g_VsCustomIds	VS CUSTOM's list: every template 1-199 with a blacklist number, in template order (built by VsMode_SelectScreen)	s16[200]
 005da080	data	g_VsNormalIds	VS NORMAL's 16 fighters (heroes and bosses)	s16[16]
 00589be8	data	g_VsTempPersons	the 6 temporary persons VS fighters are copied into (134, 136, 137, 142, 145, 146)	s16[6]
+0013b840	func	Person_Reset	(slot, template) refills a record's stats, money, class row and start entries from the template (not the outfit); Persons_ResetAll calls it for 0-199	void (int slot, int person_def)
+0013bac0	func	Persons_ResetAll	Person_Reset(i, i) for persons 0-199, then Persons_SetStartAllies	void (void)
+0013bb10	func	Persons_InitAll	Person_Init(i, i, 0) for persons 0-199	void (void)
+0013bed0	func	Persons_InitAllWithAllies	Person_Init(i, i, 0) for persons 0-199, then Persons_SetStartAllies	void (void)
+0013bb60	func	Persons_SetStartAllies	sets ally_flags 1 and 2 and blist_info 0xFFFF for the ids in g_StartAllies	void (void)
+0041db00	data	g_StartAllies	s16 person ids that start as allies (4 read, -1 ends)	s16[5]
+0013bd00	func	Allies_Count	number of persons 0-199 with ally bit 0, plus the player; 4 when flag 9 is set	s16 (void)
+0013bda0	func	Allies_Strongest	the ally (1-199) with the highest Person +0x3AC	s16 (void)
+0013ac70	func	Persons_RestoreCarry	probably new game plus: restores the player's money and, for persons 0-199, blist_info and ally bit 1 from g_CarryBlistInfo / g_CarryAllyFlags	void (void)
+0013ad20	func	Persons_StoreCarry	probably new game plus: stores the player's money and, for persons 0-199, blist_info and ally bit 1	void (void)
+0060b480	data	g_CarryAllyFlags	u8 per person 0-199: ally bit 1 kept by Persons_StoreCarry	u8[200]
+0060b550	data	g_CarryBlistInfo	u16 per person 0-199: blist_info kept by Persons_StoreCarry	u16[200]
+00142f90	func	Allies_ListByStatus	(reset, status mask) lists the allies 0-199 whose status has a bit of the mask (menu list at gp -0x5FB8)	void (int reset, u8 mask)
+002fd280	func	Allies_UpdateArrestFlag	flag 0x40 = some ally (1-199) is arrested (status bit 3)	void (void)
+003a0510	func	Allies_Arrested	(n, get) number of arrested allies 1-199, or with get the n-th one's id	int (int n, int get)
+001c44a0	func	Allies_FirstFree	(exclude) first ally 0-199 that isn't the player, party slot 1 or 2, or exclude; -1 if none	int (s16 exclude)
+002d7cb0	func	Persons_ClearKind2	persons 0-199 with kind 2 get kind 0	void (void)
+0013ea40	func	SaveBlock369AC_Tick	counts every non-zero byte of g_SaveBlock_369AC (per person 0-199) down by one	void (void)
+0060bbb0	data	g_PersonAbsent	u8 per person or template id (600): non-zero = not placed in areas (Person_IsPresent); counted down by PersonAbsent_Tick	u8[600]
+0013da60	func	PersonAbsent_Set	(id) sets g_PersonAbsent[id] to 3, or 0 for 22 listed story ids; does nothing when 0x0060C960 bit 1 is set	void (s16 person_id)
+0013dbc0	func	PersonAbsent_ClearAll	clears g_PersonAbsent (600)	void (void)
+0013dc80	func	PersonAbsent_Clear	(id) g_PersonAbsent[id] = 0	void (int person_id)
+0013dca0	func	PersonAbsent_Tick	counts every g_PersonAbsent byte down by one	void (void)
+0060d1ad	data	g_PersonLocState	u8 per person 0-199 (saved, in the 0x60CA90 block): ally assignment state, 3 = assigned to a location (Person_IsState3), 4, 5-8	u8[200]
+0060d275	data	g_PersonLocation	u8 per person 0-199 (saved): the location an assigned ally is at	u8[200]
+0013d8e0	func	Blacklist_IsSet	(person) the person's bit in g_SystemData +0x54 (600 bits): beaten, so offered in VS mode	int (int person_id)
+0013e7e0	func	Blacklist_Set	(person) sets the person's bit in g_SystemData +0x54 (and a few special bits at +0x4C-+0x52)	void (int person_id)
+003b2700	func	VsSelect_DrawPortrait	(sprite, person, ?) VS select portrait: a hard-coded person -> atlas cell chain (0x80 = "?"), cell xy from g_VsPortraitCells; returns 0 for "?"	s16 (s16 sprite, int person_id, int arg)
+005b81f0	data	g_VsPortraitCells	s16 x, y per portrait atlas cell (0-0x80) for VsSelect_DrawPortrait; BList_DetailPanel uses a similar table at 0x005B8150	s16[258]

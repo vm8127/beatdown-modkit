@@ -55,6 +55,7 @@ All commands below are run from the top of the workspace.
 | `docs/CUTCONTENT.md` | **Cut content**: the hidden DEBUG title item and debug menu (scene player, language select), developer debug switches, hidden options, unused styles and classes (TESTER, short styles), leftover text and assets, with cheats to restore them |
 | `docs/ROSTER.md` | **Story roster**: recast the five story heroes (model, moves, HP bar name, starting stats) from one file, `mods/roster.json`, with `bdkit.py roster` |
 | `docs/PLAN-new-characters.md` | **New characters** (Eggusz built and tested in the sandbox): spec, how area people, models and recruiting work, progress log |
+| `docs/NATIVE-CHARACTERS.md` | Inventory for making new characters native (ids 602+, every table and limit to extend) |
 | `docs/PARTS.md` | **Body and outfit parts reference**: what makes a character's look (fight and street), the ids found so far, how to view them (`bdkit.py tex`) |
 | `docs/PLAN-auto-negotiation.md` | **Negotiation on knockout** (built, tested): the plan, the battle and talk-scene code it hooks, and the test runs |
 | `docs/SCRIPTS.md` | **Scripts, missions, side jobs, events and dialogue**: how missions start (job menu, area load, talking, story flags), their requirements and results, the 50 side jobs, the script file format, the event VM and all 204 commands, with a worked example and modding notes |

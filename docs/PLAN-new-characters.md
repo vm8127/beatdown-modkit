@@ -103,3 +103,15 @@ Sandbox tips learned: `pcsx2.py resume` (new) unpauses; face a person by pressin
 - Not checked: VS NORMAL (unchanged: 16 fixed fighters, he isn't one).
 
 **Open:** B.LIST portrait for new characters; `BList_Percent` (ending completion %) still counts places 1-110 only (on purpose); VS NORMAL doesn't offer new characters (its 16 ids are fixed, `g_VsNormalIds`).
+
+### 2026-10-15, native characters: inventory (Claude, read from the decomp)
+
+Daniel asked whether new characters could work like the game's own instead of through per-character hooks. The inventory is **docs/NATIVE-CHARACTERS.md**: every table indexed by person id, template id or preset, every hard-coded limit and the code touching them. Main findings:
+- Person ids are shared with template ids: 0-199 are saved people, **200-601 are street-enemy templates** (temporary records 200-209 hold them, found by `Person.id`). So beyond persons 51/52, new characters need **ids 602+**, not 200+.
+- About 45 functions to replace or patch: `Person_Get` plus 6 functions with the lookup inlined, 6 that index `g_Persons` directly, ~25 loops over persons 0-199 (allies, new game, arrests, locations, VS list), ~5 `id < 200` "saved person" checks, ~20 accessors of per-person byte tables (`g_PersonAbsent` u8[600], `g_PersonLocState`/`g_PersonLocation` u8[200], the blacklist bits). `g_PersonDefs` has to move to a bigger copy (140 references, mechanical).
+- Research still needed: saving the new records (a third memory card file, or ~7 characters in the unused records 51/52), portraits (hard-coded person -> atlas cell chains, `VsSelect_DrawPortrait` `0x003B2700`), dialogue scripts above 999, whether text ids 11603+ are free (names are `Text_Get(11001 + id)`; proposal: a "mod text bank" in the `Text_Get` hook).
+- Each area has 7 people slots: a new character needs a free slot in his area and stage.
+- New tool: `codemap.py const-uses decomp/all.c 199 200 0xd2` lists functions comparing with given constants.
+
+Not started: the native module itself. Proposed order in NATIVE-CHARACTERS.md ("Proposed design").
+

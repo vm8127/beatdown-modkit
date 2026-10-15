@@ -175,6 +175,8 @@ Money (**confirmed**): `Person_AddMoney` `0x0013CDC0` (id, delta) and `Person_Se
 
 **Free character slots**: templates and persons **51 and 52** are blank placeholders (preset 0, 1 HP, level 1, class row 1) that no mission script and no `Person_Get` constant in the code refers to (checked 2026-10-15). Persons 0-199 are saved and one per template, so these two are the natural slots for new characters (a recruitable person must be 0-199). Persons 200-209 are temporary street enemies (ids from templates 200+, looked up through `+0x3E`).
 
+**Id space** (read from the code 2026-10-15): person ids and template ids are the same numbers. 0-199 have saved records; 200-601 are templates only (street enemies, story extras), copied into the temporary records 200-209 when they appear. `Person_Get`'s lookup is also inlined in 6 functions. Per-person tables outside the record: `g_PersonAbsent` `0x0060BBB0` (u8[600]), `g_SaveBlock_369AC` `0x0060BAE0`, `g_PersonLocState` `0x0060D1AD`, `g_PersonLocation` `0x0060D275` (u8[200] each, saved), `g_CarryAllyFlags` / `g_CarryBlistInfo`, the blacklist bits. Full list, with every loop over 0-199: docs/NATIVE-CHARACTERS.md.
+
 Template fields not listed above: `+8` u8, `+0x0B` s8, `+0x0C` s8, `+0x0D` kind (2 and 5 are tested), `+0x16` s16, `+0x30` s32, `+0x46` u16. `dumps/persons.txt` lists every template's preset, class row, level, HP, guard, rank and money.
 
 ## Fighter struct

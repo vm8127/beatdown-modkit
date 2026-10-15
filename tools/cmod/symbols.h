@@ -14,7 +14,16 @@ void Flag_Clear(int n);  /* 0x00138ec0 */
 int Area_SpawnPeople(int phase, AreaPerson *list);  /* 0x00139e50 */
 void SaveData_Pack(void *buf);  /* 0x0013a950 */
 void SaveData_Unpack(void *buf);  /* 0x0013aab0 */
+void Persons_RestoreCarry(void);  /* 0x0013ac70 */
+void Persons_StoreCarry(void);  /* 0x0013ad20 */
 void Person_Init(int slot, int person_def, int temp);  /* 0x0013b490 */
+void Person_Reset(int slot, int person_def);  /* 0x0013b840 */
+void Persons_ResetAll(void);  /* 0x0013bac0 */
+void Persons_InitAll(void);  /* 0x0013bb10 */
+void Persons_SetStartAllies(void);  /* 0x0013bb60 */
+s16 Allies_Count(void);  /* 0x0013bd00 */
+s16 Allies_Strongest(void);  /* 0x0013bda0 */
+void Persons_InitAllWithAllies(void);  /* 0x0013bed0 */
 void Person_HealForFight(s16 person);  /* 0x0013bf20 */
 int Team_GetMember(int side, int i);  /* 0x0013c5c0 */
 Person *Person_Get(int person_id);  /* 0x0013c960 */
@@ -23,11 +32,19 @@ const char *Fighter_DisplayName(int person_id);  /* 0x0013ca80 */
 void Person_SetMoney(int person_id, int value);  /* 0x0013cc70 */
 void Person_AddMoney(int person_id, int delta);  /* 0x0013cdc0 */
 void Inventory_InitForHero(void);  /* 0x0013d000 */
+int Blacklist_IsSet(int person_id);  /* 0x0013d8e0 */
 int Person_IsPresent(int person_id);  /* 0x0013da30 */
+void PersonAbsent_Set(s16 person_id);  /* 0x0013da60 */
+void PersonAbsent_ClearAll(void);  /* 0x0013dbc0 */
+void PersonAbsent_Clear(int person_id);  /* 0x0013dc80 */
+void PersonAbsent_Tick(void);  /* 0x0013dca0 */
 void Criminal_AddLeadership(int n);  /* 0x0013df00 */
 void Criminal_AddCash(int n);  /* 0x0013df20 */
 void Criminal_AddCharisma(int n);  /* 0x0013df40 */
 void Criminal_AddCashScore(int amount);  /* 0x0013df60 */
+void Blacklist_Set(int person_id);  /* 0x0013e7e0 */
+void SaveBlock369AC_Tick(void);  /* 0x0013ea40 */
+void Allies_ListByStatus(int reset, u8 mask);  /* 0x00142f90 */
 int StoryVar_Add(int index, int delta);  /* 0x00172bd0 */
 int StoryVar_Sub(int index);  /* 0x00172e10 */
 int Fighter_FindNpcSlot(int person_id);  /* 0x00176130 */
@@ -43,6 +60,7 @@ s16 *BList_GetList(s16 which);  /* 0x0018ec00 */
 void BList_SetList(s16 *ids, s16 count);  /* 0x0018ec80 */
 s16 BList_IndexOf(s16 which, s16 person);  /* 0x0018ede0 */
 int Person_IsState3(s16 person);  /* 0x001c3dd0 */
+int Allies_FirstFree(s16 exclude);  /* 0x001c44a0 */
 s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
 const char *MoveList_NameText(int unused, int style, int line);  /* 0x001c5bf0 */
 const char *MoveList_InputText(int unused, int style, int line);  /* 0x001c5c30 */
@@ -61,6 +79,7 @@ void Fighter_AssignPerson(int slot, int person_id);  /* 0x002a89d0 */
 void Person_RecalcMaxHP(int person_id);  /* 0x002afd60 */
 void Battle_AddBonusExp(int n);  /* 0x002b2660 */
 void Jobs_ResetAll(void);  /* 0x002c8f40 */
+void Persons_ClearKind2(void);  /* 0x002d7cb0 */
 void Area_ChangeTo(int from, int to);  /* 0x002d9890 */
 int Anim_IsLoaded(int slot);  /* 0x002dc2e0 */
 void *Anim_GetSlot(int slot);  /* 0x002dc300 */
@@ -97,6 +116,7 @@ int Fighter_HasPride(Fighter *fighter);  /* 0x002fb120 */
 void Fighter_SetGuard(Fighter *fighter, int max, f32 value);  /* 0x002fb780 */
 void Fighter_ApplyDamage(Fighter *fighter, int damage);  /* 0x002fb880 */
 void Fighter_SubPride(Fighter *fighter, int amount);  /* 0x002fbae0 */
+void Allies_UpdateArrestFlag(void);  /* 0x002fd280 */
 Fighter *Fighter_FindByPerson(int person_id);  /* 0x002fd300 */
 int Area_Current(void);  /* 0x002fd630 */
 void Fighter_Spawn(int slot, int target, int team);  /* 0x00304b60 */
@@ -212,6 +232,7 @@ int ScrOp_EXF_CAM_POS_END(ScriptVM *vm);  /* 0x003a02e0 */
 int ScrOp_EXF_CAM_TRGPOS_START(ScriptVM *vm);  /* 0x003a0340 */
 int ScrOp_EXF_CAM_TRGPOS_END(ScriptVM *vm);  /* 0x003a0370 */
 int ScrOp_EXF_NPC_ROT(ScriptVM *vm);  /* 0x003a03d0 */
+int Allies_Arrested(int n, int get);  /* 0x003a0510 */
 int ScrOp_EXF_CHECK_ARREST(ScriptVM *vm);  /* 0x003a05e0 */
 int ScrOp_EXF_REMOVE(ScriptVM *vm);  /* 0x003a0820 */
 int ScrOp_EXF_EVSTAGE(ScriptVM *vm);  /* 0x003a08a0 */
@@ -340,10 +361,12 @@ int Mission_IsJob(int mission);  /* 0x003a4a30 */
 int Jobs_PercentCleared(void);  /* 0x003a4a70 */
 int Battle_ScriptResult(void);  /* 0x003a5350 */
 int Mission_Unavailable(int mission, int chapter, int percent);  /* 0x003b02c0 */
+s16 VsSelect_DrawPortrait(s16 sprite, int person_id, int arg);  /* 0x003b2700 */
 void ClearCount_Inc(void);  /* 0x003df520 */
 int ClearCount_Get(void);  /* 0x003df540 */
 extern ScriptOpInfo g_ScriptOpcodes[204];  /* 0x00411ac0 */
 extern PersonDef g_PersonDefs[602];  /* 0x00413130 */
+extern s16 g_StartAllies[5];  /* 0x0041db00 */
 extern s16 g_StreetTextures[1890];  /* 0x00430c90 */
 extern ItemDef g_ItemTable[488];  /* 0x004f2400 */
 extern AnimGroup g_AnimGroups[317];  /* 0x004fb4c0 */
@@ -358,6 +381,7 @@ extern u32 g_MissionFlagRanges[148];  /* 0x0059995c */
 extern void *g_MissionEventHandlers[10];  /* 0x00599bb0 */
 extern MissionReq g_MissionReq[147];  /* 0x0059a750 */
 extern void *g_AutoMissionChecks[26];  /* 0x0059a9a0 */
+extern s16 g_VsPortraitCells[258];  /* 0x005b81f0 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
 extern s16 g_VsNormalIds[16];  /* 0x005da080 */
@@ -385,12 +409,17 @@ extern u16 g_VsSaveHero[2];  /* 0x006000d0 */
 extern s32 g_VsCustom;  /* 0x006000d4 */
 extern u8 *g_VsSelect;  /* 0x006005f4 */
 extern u8 g_EventFlags[1024];  /* 0x0060a680 */
+extern u8 g_CarryAllyFlags[200];  /* 0x0060b480 */
+extern u16 g_CarryBlistInfo[200];  /* 0x0060b550 */
 extern s32 g_ClearCount;  /* 0x0060badc */
+extern u8 g_PersonAbsent[600];  /* 0x0060bbb0 */
 extern s32 g_StoryChapter;  /* 0x0060be10 */
 extern Inventory g_Inventory;  /* 0x0060bef0 */
 extern SystemData g_SystemData;  /* 0x0060c700 */
 extern s16 g_StoryVars[128];  /* 0x0060c990 */
 extern s32 g_TotalMoneyEarned;  /* 0x0060d19c */
+extern u8 g_PersonLocState[200];  /* 0x0060d1ad */
+extern u8 g_PersonLocation[200];  /* 0x0060d275 */
 extern Person g_Persons[210];  /* 0x0060d360 */
 extern s32 g_PlayerMoney;  /* 0x0060d3a0 */
 extern s32 g_NpcSpawnTextures[10];  /* 0x00645b20 */

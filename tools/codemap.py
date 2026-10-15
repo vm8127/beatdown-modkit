@@ -15,6 +15,7 @@ Python 3 standard library only. Needs bdkit.py in the same folder.
   python tools/codemap.py persons   ISO/SLUS_211.50 > dumps/persons.txt
   python tools/codemap.py addr-refs ISO/SLUS_211.50 6614A0 661580     # code that builds an address in a range
   python tools/codemap.py addr-refs ISO/SLUS_211.50 6614A0 661580 --move E1C00  # ... as @word lines moving it
+  python tools/codemap.py const-uses decomp/all.c 199 200 0xd2   # functions comparing with these (hard-coded limits)
   python tools/codemap.py infer-types decomp/all.c symbols/inferred_types.tsv  # struct pointer params for Ghidra
 
 Symbols live in symbols/symbols.tsv (tab separated: addr, kind, name, comment, optional C type) and
@@ -657,6 +658,26 @@ def cmd_persons(a):
         print(f"{i:3}  0x{b:08X}  {preset:5} {row:3}  {t:<14} {lvl:4} {hp:5} {guard:6}  {r:<9} {money:6}")
 
 
+def cmd_const_uses(a):
+    """Functions in decomp/all.c that compare with any of the given constants (finds hard-coded limits)."""
+    src = open(a.all_c, encoding="utf-8", errors="replace").read()
+    syms = {}
+    if os.path.exists(SYMBOLS_TSV):
+        for line in open(SYMBOLS_TSV, encoding="utf-8"):
+            f = line.rstrip("\n").split("\t")
+            if len(f) >= 3 and not line.startswith("#"):
+                syms[f[0].upper().rjust(8, "0")] = f[2]
+    alts = "|".join(re.escape(c) for c in a.consts)
+    cmp_re = re.compile(r"(?:[<>]=?|[=!]=)\s*(" + alts + r")\b|\b(" + alts + r")\s*(?:<=?|>=?)\s*\w")
+    for part in re.split(r"\n(?=// \S+ @ 0x[0-9A-F]{8}, \d+ bytes\n)", src):
+        m = re.match(r"// (\S+) @ 0x([0-9A-F]{8})", part)
+        if not m:
+            continue
+        found = sorted({g.group(1) or g.group(2) for g in cmp_re.finditer(part)})
+        if found:
+            print(f"0x{m.group(2)}  {syms.get(m.group(2), m.group(1)):<28} {' '.join(found)}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     s = ap.add_subparsers(dest="cmd", required=True)
@@ -673,6 +694,8 @@ def main():
     x = s.add_parser("addr-refs"); x.add_argument("elf"); x.add_argument("lo"); x.add_argument("hi")
     x.add_argument("--move", help="print cmod @word lines that point the references at this address instead")
     x.set_defaults(fn=cmd_addr_refs)
+    x = s.add_parser("const-uses"); x.add_argument("all_c"); x.add_argument("consts", nargs="+")
+    x.set_defaults(fn=cmd_const_uses)
     a = ap.parse_args()
     a.fn(a)
 
