@@ -26,6 +26,14 @@ extends CharacterBody3D
 ##
 ## The body, limbs, hurtbox and debug views are nodes in fighter.tscn; this script only
 ## moves and colours them.
+##
+## Animated look (M4): when the assets are extracted, `model_name` and `anim_set` load a rigged
+## model and its clips (FighterModel); the capsule body and box limbs hide, the collision capsule
+## and the hurtbox stay. Every game frame the state picks the clip and its animation frame
+## (`_animate`): stance when idle, walk when moving, guard, each move's clips in order at its
+## speeds with its blend frames, the game's hit reaction for the hit taken, knockdown, lying and
+## getting up. Hit spheres then sit on the bones of each hit window's attack parts (MoveHit.parts,
+## g_AttackSpheres); the capsule's fixed sphere is the fallback.
 
 enum State { IDLE, MOVE, ATTACK, GUARD, HITSTUN, BLOCKSTUN, KNOCKDOWN, GETUP }
 
@@ -50,6 +58,8 @@ const ATTACK_RANK_MUL := [0.5, 1.0, 1.3, 1.6, 1.8, 1.9, 2.0]
 @export var max_hp := 300
 @export var walk_speed := 4.5
 @export var turn_speed := 14.0
+@export var model_name := "fighter_aaron_078"   ## assets_ripped/models/<name>.glb ("" = capsule)
+@export var anim_set := "aaron"                  ## assets_ripped/anims/<set>.glb + .json
 
 @export_group("Stats (placeholders with the real style)")
 @export var ripped_hp := 3000       ## max HP when the real style loads (template 77, Wendel: 3000)
@@ -86,6 +96,12 @@ var _leftover := ""                  ## a press from the end of the last move
 var _leftover_frame := 0
 var _flash := 0
 var _flash_color := Color.WHITE
+var model: FighterModel              ## the animated look, null with the capsule
+var _react_action := 0               ## hit reaction action being played (Combat_TakeHit's choice)
+var _react_count := 0                ## hits taken so far (a new hit restarts the reaction)
+var _down_action := 20               ## lying action the knockdown continues with (19 or 20)
+var _getup_frames := GETUP_FRAMES
+var _hit_views: Array[MeshInstance3D] = []
 
 @onready var _pivot: Node3D = $Pivot
 @onready var _arms: Array[Node3D] = [$Pivot/ArmR, $Pivot/ArmL]
@@ -107,6 +123,23 @@ func _ready() -> void:
 	for child in get_children():
 		if child.has_method("take_input"):
 			brain = child
+	_setup_model()
+
+
+## Loads the animated model when the assets exist; otherwise the capsule stays.
+func _setup_model() -> void:
+	if not FighterModel.available(model_name, anim_set):
+		return
+	var m := FighterModel.new()
+	m.name = "Model"
+	_pivot.add_child(m)
+	if not m.setup(model_name, anim_set):
+		m.queue_free()
+		return
+	model = m
+	for n in ["Body", "Visor", "ArmR", "ArmL", "Leg"]:
+		(_pivot.get_node(n) as Node3D).visible = false
+	_animate()
 
 
 ## True when the real style from the disc is loaded (the damage formula applies).
@@ -152,6 +185,7 @@ func _physics_process(_delta: float) -> void:
 
 	velocity.y -= GRAVITY * DT
 	move_and_slide()
+	_animate()
 
 
 func _enter(new_state: State) -> void:
@@ -241,6 +275,7 @@ func _read_inputs() -> void:
 
 func _tick_attack() -> void:
 	var f := state_frame
+	_animate()   # this frame's pose first: the hit spheres sit on its bones
 	if move.root_z.size() > 1:
 		# Root motion: the hips' forward travel in the animation moves the capsule.
 		var v := forward() * move.root_step(f) / DT
@@ -294,7 +329,7 @@ func _tick_knockdown() -> void:
 
 func _tick_getup() -> void:
 	_apply_friction(WALK_FRICTION)
-	if state_frame >= GETUP_FRAMES:
+	if state_frame >= _getup_frames:
 		_set_invulnerable(false)
 		combo_taken = 0
 		_enter(State.IDLE)
@@ -302,8 +337,7 @@ func _tick_getup() -> void:
 
 # --- Hits ----------------------------------------------------------------------------
 
-## Centre of a hit window's sphere: a fixed distance in front of the capsule. The animated
-## fighter will put it on the bone of the window's attack parts (MoveHit.parts) instead.
+## Centre of a hit window's capsule sphere: a fixed distance in front of the body (the fallback).
 func hitbox_center(h: MoveHit = null) -> Vector3:
 	if h == null:
 		h = move.get_hits()[0]
@@ -314,21 +348,41 @@ func _hit_radius(h: MoveHit) -> float:
 	return maxf(h.radius, 0.3)   # the real hand spheres are 0.16-0.18 m: too small for a capsule
 
 
+## The hit window's spheres as [centre, radius] pairs: with the animated model, one per attack part
+## on its bone (g_AttackSpheres: node, offset, radius x 2, as Fighter_AttackCollide uses them); else
+## the capsule's one fixed sphere.
+func hit_spheres(h: MoveHit) -> Array:
+	var out := []
+	if model:
+		for part in h.parts:
+			var sp := model.part_sphere(part)
+			if not sp.is_empty():
+				out.append(sp)
+	if out.is_empty():
+		out.append([hitbox_center(h), _hit_radius(h)])
+	return out
+
+
 ## Checks the hit sphere against every hurtbox this frame. A direct shape query is
 ## exact on the frame it runs (an Area3D's overlaps lag one physics frame behind).
 func _do_hits(index: int, h: MoveHit) -> void:
-	_hit_shape.radius = _hit_radius(h)
-	var q := PhysicsShapeQueryParameters3D.new()
-	q.shape = _hit_shape
-	q.transform = Transform3D(Basis(), hitbox_center(h))
-	q.collide_with_areas = true
-	q.collide_with_bodies = false
-	q.collision_mask = LAYER_HURTBOXES
-	q.exclude = [_hurtbox.get_rid()]
+	var found := []
+	for sp in hit_spheres(h):
+		_hit_shape.radius = sp[1]
+		var q := PhysicsShapeQueryParameters3D.new()
+		q.shape = _hit_shape
+		q.transform = Transform3D(Basis(), sp[0])
+		q.collide_with_areas = true
+		q.collide_with_bodies = false
+		q.collision_mask = LAYER_HURTBOXES
+		q.exclude = [_hurtbox.get_rid()]
+		for r in get_world_3d().direct_space_state.intersect_shape(q, 8):
+			var o := (r["collider"] as Node).get_parent() as Fighter
+			if o and not o in found:
+				found.append(o)
 	var done: Array = _hit_done.get(index, [])
-	for r in get_world_3d().direct_space_state.intersect_shape(q, 8):
-		var other := (r["collider"] as Node).get_parent() as Fighter
-		if other == null or other == self or other in done:
+	for other: Fighter in found:
+		if other == self or other in done:
 			continue
 		done.append(other)   # one hit per window and target
 		_hit_done[index] = done
@@ -399,12 +453,14 @@ func take_hit(attacker: Fighter, h: MoveHit) -> String:
 		return "blocked"
 
 	var combo := _in_damage_state()
+	var heavy := hp < 1000 or state == State.ATTACK   # before the damage, like Combat_SituationFactor
 	hp -= dmg
 	last_damage = dmg
 	combo_taken += 1
 	_face_now(to_attacker)
 	hitstop = h.get_hitstop()
 	_start_flash(Color.WHITE)
+	_pick_reaction(h, heavy, h.knockdown or hp <= 0)
 	if h.knockdown or hp <= 0:
 		stun = 0
 		pending_knockback = push * h.get_knockback() + Vector3.UP * h.launch
@@ -504,7 +560,7 @@ func debug_text() -> String:
 
 func _process(delta: float) -> void:
 	# Lie down after a knockdown, stand up during getup.
-	var down := PI / 2 if state == State.KNOCKDOWN else 0.0
+	var down := PI / 2 if state == State.KNOCKDOWN and model == null else 0.0
 	_pivot.rotation.x = lerpf(_pivot.rotation.x, down, 1.0 - exp(-12.0 * delta))
 
 	# Limbs: pull back in startup, extend on active frames, retract in recovery.
@@ -513,10 +569,12 @@ func _process(delta: float) -> void:
 	_pose_limb(_leg, 0.0, 0.7)
 	_leg.visible = false
 	var live: MoveHit = null
+	var lives := []
 	if state == State.ATTACK:
 		for h in move.get_hits():
 			if (h as MoveHit).is_active(state_frame):
 				live = h
+				lives.append(h)
 		var f := float(state_frame)
 		var a0 := float(move.active_start)
 		var a1 := float(move.active_end)
@@ -530,20 +588,127 @@ func _process(delta: float) -> void:
 		var h0: MoveHit = live if live else (move.get_hits()[0] if move.get_hits().size() > 0 else null)
 		var limb: Node3D = _leg if move.limb == "leg" else _arms[move.side]
 		_pose_limb(limb, ext, move.hit_height(h0) if h0 else move.height)
-		_leg.visible = move.limb == "leg"
+		_leg.visible = move.limb == "leg" and model == null
 
 	_shield.visible = state in [State.GUARD, State.BLOCKSTUN]
 	_mat.albedo_color = _flash_color if _flash > 0 else color
 
-	_hitbox_view.visible = Dev.show_boxes and live != null
-	if live:
-		_hitbox_view.global_position = hitbox_center(live)
-		_hitbox_view.scale = Vector3.ONE * _hit_radius(live) * 2.0
-	_hurtbox_view.visible = Dev.show_boxes and _hurtbox.collision_layer != 0
+	_show_hit_spheres(lives)
+	_hurtbox_view.visible = Dev.show_boxes and Dev.show_hurtboxes and _hurtbox.collision_layer != 0
 	_hp_label.text = "%s\n%d" % [display_name, hp]
+
+
+## Draws every live hit sphere (F1 toggles), one view per sphere.
+func _show_hit_spheres(lives: Array) -> void:
+	var spheres := []
+	if Dev.show_boxes:
+		for h in lives:
+			spheres.append_array(hit_spheres(h))
+	while _hit_views.size() < spheres.size():
+		var v := _hitbox_view.duplicate() as MeshInstance3D
+		add_child(v)
+		_hit_views.append(v)
+	_hitbox_view.visible = false
+	for i in _hit_views.size():
+		var on := i < spheres.size()
+		_hit_views[i].visible = on
+		if on:
+			_hit_views[i].global_position = spheres[i][0]
+			_hit_views[i].scale = Vector3.ONE * float(spheres[i][1]) * 2.0
 
 
 func _pose_limb(limb: Node3D, ext: float, height: float) -> void:
 	limb.position.y = height
 	limb.position.z = 0.25 * -minf(ext, 0.0)
 	limb.scale.z = lerpf(0.35, 1.2, maxf(ext, 0.0))
+
+
+# --- Animation (M4): which clip the state shows -------------------------------------
+
+## Reaction kind for a hit, in Combat_TakeHit 0x0030DFD0's order (docs/ANIMATION.md, "Hit reactions"):
+## the big reaction bits first, then a knockdown, then the hit level, then the stagger detail bits.
+static func reaction_kind(h: MoveHit, knocked_down: bool) -> int:
+	for pair in [[0x800, 0x14], [0x1000, 0x15], [0x100, 8], [0x10, 0xE], [0x200, 0xD], [0x400, 0xF]]:
+		if h.reaction & pair[0]:
+			return pair[1]
+	if knocked_down:
+		return 9
+	if h.level & 4:
+		return 3
+	if h.level & 8:
+		return 0xB
+	for pair in [[0x10, 1], [0x20, 2], [8, 0x10], [4, 0x11]]:
+		if h.reaction_detail & pair[0]:
+			return pair[1]
+	return 0
+
+
+## Picks the reaction action (set 1 when the victim was below 1000 HP or attacking: the set is
+## Combat_SituationFactor's return value) and, for a knockdown, the lying action it continues with.
+func _pick_reaction(h: MoveHit, heavy: bool, knocked_down: bool) -> void:
+	_react_count += 1
+	if model == null:
+		return
+	_react_action = model.reaction_action(1 if heavy else 0, reaction_kind(h, knocked_down))
+	var then := int(model.action_info(_react_action).get("then", 1))
+	_down_action = then if then in [19, 20] else 20
+	var getup := int(model.action_info(_down_action).get("then", 22))
+	var frames := model.clip_frames(model.clip_for_action(getup))
+	_getup_frames = frames if frames > 0 else GETUP_FRAMES
+
+
+## Poses the model for the current state and frame (every game frame, and before the hit checks of
+## an attack frame). Animation frames advance with the game frames, at the move's speeds.
+func _animate() -> void:
+	if model == null:
+		return
+	var generic: Dictionary = model.meta.get("generic", {})
+	match state:
+		State.IDLE:
+			_show_action(int(generic.get("stance", 1)), "stance", state_frame)
+		State.MOVE:
+			_show_action(int(generic.get("walk", 2)), "walk", state_frame)
+		State.GUARD, State.BLOCKSTUN:
+			# Action 10 plays frames 0-36 of its anim; the remake holds the last one while guarding.
+			_show_action(int(generic.get("guard", 10)), "guard", mini(state_frame, 36))
+		State.ATTACK:
+			_show_move()
+		State.HITSTUN:
+			_show_action(_react_action, "hit%d" % _react_count, state_frame)
+		State.KNOCKDOWN:
+			var n := model.clip_frames(model.clip_for_action(_react_action))
+			if state_frame < n:
+				_show_action(_react_action, "hit%d" % _react_count, state_frame)
+			else:
+				_show_action(_down_action, "down%d" % _react_count, state_frame - n)
+		State.GETUP:
+			_show_action(int(model.action_info(_down_action).get("then", 22)), "getup%d" % _react_count, state_frame)
+
+
+## Shows an action's first clip (stance, walk, a reaction...) with that action's blend.
+func _show_action(action: int, key: String, frame: int) -> void:
+	var clip := model.clip_for_action(action)
+	if clip == "":
+		clip = model.clip_for_action(1)
+	var blend := int(model.action_info(action).get("blend", 8))
+	model.show_clip(key, clip, frame, blend)
+
+
+## A move's clips in order (its motion script's play ops): the animation frame runs at the
+## timeline's speeds; each clip covers [start, end] (end -1 or past the clip = its length) and
+## blends in with its own blend frames.
+func _show_move() -> void:
+	if move.clips.is_empty():
+		_show_action(1, "stance", state_frame)
+		return
+	var a := move.anim_frame_at(state_frame)
+	for i in move.clips.size():
+		var c: PackedInt32Array = move.clips[i]
+		var clip := "a%d" % c[0]
+		var n := model.clip_frames(clip)
+		var end := float(n if c[2] < 0 or c[2] > n else c[2])
+		var length := maxf(end - c[1], 1.0)
+		if a < length or i == move.clips.size() - 1:
+			model.show_clip("%s:%d" % [move_id, i], clip, c[1] + minf(a, length), c[3])
+			return
+		a -= length

@@ -8,7 +8,7 @@ extends Node3D
 ##
 ## Keys: as the dev arena (WASD / stick, mouse camera); F7 resets; Tab hides the text.
 ## Command line (after `--`): `--area=N` (default 5), `--shot=<file.png>` saves a screenshot after a moment and
-## quits, `--view=overview|player|stairs` picks the screenshot camera, `--walk` walks into the walls and prints
+## quits, `--view=overview|player|stairs|aaron` picks the screenshot camera, `--walk` walks into the walls and prints
 ## where the player stops (exit code 1 if it falls through the floor or walks out of the walls).
 
 const LAYER_WORLD := 1        ## walls, floor, door panels: fighters and the camera collide with them
@@ -179,7 +179,11 @@ func _check_inside() -> bool:
 
 
 func _take_shot() -> void:
+	Dev.show_hurtboxes = false   # the model shows the fighter
 	match _view:
+		"aaron":
+			var p := player.global_position
+			_shot_camera(p + Vector3(1.6, 1.5, 2.2), p + Vector3(0, 0.95, 0))
 		"overview":
 			_shot_camera(Vector3(2.5, 17, 25), Vector3(2.5, 0, 5))
 		"stairs":

@@ -54,6 +54,7 @@ extends Resource
 @export var notes := PackedStringArray()
 
 var _legacy_hits: Array = []
+var _anim_frames := PackedFloat32Array()
 
 
 ## The hit windows: `hits`, or one built from the placeholder fields.
@@ -101,6 +102,21 @@ func control_frame() -> int:
 ## Height of the capsule's hit sphere for a window.
 func hit_height(h: MoveHit) -> float:
 	return h.height() if hits.size() > 0 else height
+
+
+## Animation frame shown on game frame `f` of the move: the timeline's speed ops (`speeds`) step it
+## like conv_moves.Timing (a speed op at animation frame n applies once the whole frame reaches n).
+func anim_frame_at(f: int) -> float:
+	if _anim_frames.is_empty():
+		var a := 0.0
+		var sp := 1.0
+		for g in frames + 1:
+			_anim_frames.append(a)
+			for s in speeds:
+				if s.x <= floorf(a + 1e-6):
+					sp = s.y
+			a += sp
+	return _anim_frames[clampi(f, 0, _anim_frames.size() - 1)]
 
 
 ## Forward root motion between two frames (metres); 0 for placeholder moves.

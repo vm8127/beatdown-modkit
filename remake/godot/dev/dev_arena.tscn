@@ -270,6 +270,7 @@ camera = NodePath("../../Camera")
 [node name="Dummy1" parent="." instance=ExtResource("2_fighter")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 1)
 display_name = "Dummy 1"
+model_name = "street_089"
 color = Color(0.3, 0.5, 0.85, 1)
 
 [node name="Brain" type="Node" parent="Dummy1"]
@@ -278,6 +279,7 @@ script = ExtResource("4_dummy_brain")
 [node name="Dummy2" parent="." instance=ExtResource("2_fighter")]
 transform = Transform3D(-0.894427, 0, -0.447214, 0, 1, 0, 0.447214, 0, -0.894427, 3, 0, -1)
 display_name = "Dummy 2"
+model_name = "street_089"
 color = Color(0.3, 0.5, 0.85, 1)
 
 [node name="Brain" type="Node" parent="Dummy2"]
@@ -286,6 +288,7 @@ script = ExtResource("4_dummy_brain")
 [node name="Dummy3" parent="." instance=ExtResource("2_fighter")]
 transform = Transform3D(-0.894427, 0, 0.447214, 0, 1, 0, -0.447214, 0, -0.894427, -3, 0, -1)
 display_name = "Dummy 3"
+model_name = "street_089"
 color = Color(0.3, 0.5, 0.85, 1)
 
 [node name="Brain" type="Node" parent="Dummy3"]

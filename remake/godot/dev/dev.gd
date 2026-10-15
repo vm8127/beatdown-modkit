@@ -14,6 +14,7 @@ var frame := 0            ## game frames run so far
 var paused := false
 var time_scale := 1.0
 var show_boxes := true
+var show_hurtboxes := true  ## screenshots of the model turn these off (the hit spheres stay)
 
 var _step := false
 var _acc := 0.0

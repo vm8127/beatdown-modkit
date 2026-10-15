@@ -47,6 +47,7 @@ func _spawn_dummy(pos: Vector3) -> Fighter:
 	var f: Fighter = FIGHTER_SCENE.instantiate()
 	f.name = "Dummy%d" % _dummies
 	f.display_name = "Dummy %d" % _dummies
+	f.model_name = "street_089"   # preset 89's street look (Aaron's clips play on it: same skeleton)
 	f.color = Color(0.3, 0.5, 0.85)
 	var brain := DummyBrain.new()
 	brain.name = "Brain"

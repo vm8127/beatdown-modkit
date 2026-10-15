@@ -10,6 +10,10 @@ extends Node
 ## - Without it (fresh clone, placeholder style): P P P = jab, jab, straight for 50 damage.
 ##
 ## `--shot=<file.png>` also saves a screenshot during the last hit's hitstop.
+## `--press=<code>` (with Aaron's style) presses one input code instead ("P" Blade Cut, "→K"...) and
+## passes when it hits Dummy 1; with `--shot=` the screenshot is taken on the hit's first hitstop
+## frame, or on frame `--shot-frame=N` of the move. Prints where each hit sphere was.
+## `--shot-down=<file.png>` (the combo) saves a side view of Dummy 1 knocked down.
 
 const AARON := [["→", "P", "a1807"], ["", "P", "a1808"], ["", "P", "a1809"]]
 
@@ -21,6 +25,9 @@ var _shot_taken := false
 var _step := 0          # Aaron: presses made so far
 var _chains: Array[String] = []
 var _errors: Array[String] = []
+var _press := ""
+var _shot_down := ""
+var _shot_frame := -1
 
 
 func _ready() -> void:
@@ -28,6 +35,12 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--shot="):
 			_shot = a.substr(7)
+		elif a.begins_with("--shot-down="):
+			_shot_down = a.substr(12)
+		elif a.begins_with("--press="):
+			_press = a.substr(8)
+		elif a.begins_with("--shot-frame="):
+			_shot_frame = int(a.substr(13))
 
 
 func _physics_process(_delta: float) -> void:
@@ -41,6 +54,9 @@ func _physics_process(_delta: float) -> void:
 		p.global_position = Vector3(0, 0, 2.2)
 		p.rotation.y = 0.0
 		print("style: %s" % p.move_set.style_name)
+	if real and _press != "":
+		_one_move(p, d)
+		return
 	if real:
 		_drive_aaron(p)
 	elif _frame in [20, 30, 42]:
@@ -59,6 +75,12 @@ func _physics_process(_delta: float) -> void:
 		await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_png(_shot)
 		print("screenshot saved: %s" % _shot)
+	if _shot_down != "" and _frame == 2:
+		_side_camera()
+	if _shot_down != "" and d.state == Fighter.State.KNOCKDOWN and d.state_frame == 50:
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(_shot_down)
+		print("screenshot saved: %s" % _shot_down)
 	if _frame == 260:
 		var ok := false
 		if real:
@@ -98,6 +120,49 @@ func _drive_aaron(p: Fighter) -> void:
 		_prev_id = p.move_id
 		_prev_frame = p.state_frame
 		_prev_cancel = p.move.cancel_start
+
+
+## `--press=`: one move on Dummy 1, screenshot on its hit (or a given frame of the move).
+func _one_move(p: Fighter, d: Fighter) -> void:
+	if _frame == 1 and _shot != "":
+		_side_camera()
+	if _frame == 20:
+		var dir := ""
+		var b := _press
+		if _press.length() > 1:
+			dir = _press.substr(0, _press.length() - 1)
+			b = _press.substr(_press.length() - 1)
+		(p.brain as PlayerBrain).press(b, dir)
+		print("frame %d: press %s" % [Dev.frame, _press])
+	if p.state == Fighter.State.ATTACK and p.move.is_active(p.state_frame):
+		for h in p.move.get_hits():
+			if (h as MoveHit).is_active(p.state_frame):
+				for sp in p.hit_spheres(h):
+					print("frame %d: %s f%d parts %s sphere at %s r %.2f (dummy at %s)" % [Dev.frame, p.move.move_name,
+						p.state_frame, h.parts, sp[0], sp[1], d.global_position])
+	var want_shot := _shot != "" and not _shot_taken and p.state == Fighter.State.ATTACK and (
+		(p.state_frame == _shot_frame) if _shot_frame >= 0 else p.hitstop > 0)
+	if want_shot:
+		_shot_taken = true
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(_shot)
+		print("screenshot saved: %s" % _shot)
+	if _frame == 160:
+		var ok := d.hp < d.max_hp
+		print("RESULT %s: dummy hp %d/%d -> %s" % [_press, d.hp, d.max_hp, "PASS" if ok else "FAIL"])
+		get_tree().quit(0 if ok else 1)
+
+
+## Screenshots of one move: a camera from the side, no hurtboxes, no overlay.
+func _side_camera() -> void:
+	Dev.show_hurtboxes = false
+	if arena.get("overlay"):
+		arena.overlay.visible = false
+	var cam := Camera3D.new()
+	arena.add_child(cam)
+	cam.global_position = Vector3(2.2, 1.5, 1.8)
+	cam.look_at(Vector3(0, 1.1, 1.6))
+	cam.current = true
 
 
 var _prev_id := ""
