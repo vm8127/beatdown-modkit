@@ -81,3 +81,8 @@ Sandbox tips learned: `pcsx2.py resume` (new) unpauses; face a person by pressin
 - Parts found while building him are in docs/PARTS.md.
 
 **Next:** test VS mode and a fresh boot (ask Daniel whether to do it together); extend B.LIST past 110; then the second character (person 52; for more than two see "Where new characters live").
+
+### 2026-10-15, Daniel's test in his own PCSX2
+
+- **Eggusz is not in VS mode** (Daniel). Cause (read from code): the VS character select (`0x00371160`) does not use `g_VsRoster`; it takes its two lists from the same 110-entry blacklist list as B.LIST (`0x0018EC80`, `0x0018EC00(0/1)`) and greys out people whose blacklist bit is clear (`0x0013D8E0`). So VS mode needs the B.LIST extension; the `g_VsRoster` `@word` probably does nothing (who reads `g_VsRoster`, maybe only the cut select in `VsMode_Main`, is open). Handed to the B.LIST session.
+- Also noted: `VsMode_Main` overwrites the class row of persons 51/52 from the cut editor's tables (`0x00589BC8` / `0x00589BD8`, by body params); if that path runs, Eggusz would lose Jason G's style in VS mode.
