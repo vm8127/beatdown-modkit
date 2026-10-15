@@ -10,6 +10,7 @@ Converters (one module each, run in this order; --only picks some):
   models   character models, rigged -> models/*.glb (conv_models.py)
   anims    fighter animations on the body skeleton -> anims/*.glb (conv_anims.py)
   stages   areas: render world + props, collision, doors/spots -> stages/area_NN* (conv_stages.py)
+  moves    fighting styles: commands, frame data, hit records -> moves/*.tres (conv_moves.py)
 """
 import argparse
 import hashlib
@@ -23,9 +24,11 @@ sys.path.insert(0, os.path.join(HERE, "..", "..", "tools"))   # bdkit.py, rwkit.
 
 import conv_anims  # noqa: E402
 import conv_models  # noqa: E402
+import conv_moves  # noqa: E402
 import conv_stages  # noqa: E402
 
-CONVERTERS = {"models": conv_models.convert, "anims": conv_anims.convert, "stages": conv_stages.convert}
+CONVERTERS = {"models": conv_models.convert, "anims": conv_anims.convert, "stages": conv_stages.convert,
+              "moves": conv_moves.convert}
 
 # README.md, "Before you start": the files the converters read, with their sizes and MD5s
 DISC = {
