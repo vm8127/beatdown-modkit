@@ -34,7 +34,12 @@ s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
 const char *MoveList_NameText(int unused, int style, int line);  /* 0x001c5bf0 */
 const char *MoveList_InputText(int unused, int style, int line);  /* 0x001c5c30 */
 int MoveList_Color(int style, int line);  /* 0x001c5c70 */
+int Tex_Release(void *tex);  /* 0x0026eac0 */
 int Xaf_QueueLoad(int archive, int entry, int mode);  /* 0x0029bc40 */
+void Xaf_Service(void);  /* 0x0029c190 */
+void *Tex_Request(int archive, int entry, int *slot, int mode);  /* 0x0029c420 */
+void *Tex_Collect(int slot);  /* 0x0029c810 */
+int Pack_Load(int phase, int archive, int entry, void *request);  /* 0x0029e500 */
 int Cmd_CheckCondition(Fighter *fighter, u8 *condition);  /* 0x002a63a0 */
 s16 Cmd_MatchSequence(Fighter *fighter, int *history, Command *list);  /* 0x002a6720 */
 s16 Cmd_MatchSingle(Fighter *fighter, int code, Command *list, int *out);  /* 0x002a68b0 */

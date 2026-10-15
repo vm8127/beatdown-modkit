@@ -34,6 +34,9 @@ Rules the build enforces:
     data that changes. Use const tables, or zero-initialized globals with @bss.
   - The game's code saves s0-s7 as 128-bit values, this compiler only 64 bits, so mods never use
     s0-s7 or fp (-ffixed-...). Leaf code, calls and hooks work normally.
+  - The game's code also needs a 16-byte aligned sp (sq/lq); this compiler's EABI aligns frames to 8, so the
+    build rounds every frame up to a multiple of 16. Functions with more than 8 integer arguments (stack
+    arguments) aren't supported.
   - Calls use the game's convention (EABI with 32-bit long and pointers): int and pointer arguments in
     a0-a7, float arguments in f12-f19, counted separately, so floats can be passed and returned.
 
@@ -231,7 +234,18 @@ def build(elf_path, c_path, asm=False):
         link_script(lds, d["org"], d["bss"])
         with open(hsrc, "w") as f:
             f.write(hook_asm)
-        run([tool("gcc")] + CFLAGS + ["-I", INCLUDE, "-c", c_path, "-o", obj])
+        # Compile to assembly and round every stack frame up to a multiple of 16: the game's functions save
+        # registers with 128-bit sq/lq, which need a 16-byte aligned sp, and this compiler's EABI only keeps 8.
+        # A 24-byte frame in a mod function that calls game code made PCSX2 stop on an address error.
+        sfile = os.path.join(tmp, "mod.s")
+        run([tool("gcc")] + CFLAGS + ["-I", INCLUDE, "-S", c_path, "-o", sfile])
+        with open(sfile, encoding="utf-8") as f:
+            asm_src = f.read()
+        asm_src = re.sub(r"(\taddiu\t\$sp,\$sp,)(-?)(\d+)\b",
+                         lambda m: m.group(1) + m.group(2) + str((int(m.group(3)) + 15) & ~15), asm_src)
+        with open(sfile, "w", encoding="utf-8") as f:
+            f.write(asm_src)
+        run([tool("gcc")] + CFLAGS + ["-c", sfile, "-o", obj])
         run([tool("gcc")] + CFLAGS + ["-c", hsrc, "-o", hobj])
         run([tool("ld"), "-m", "elf32lr5900", "-e", "0", "-T", lds, "-o", out, obj, hobj])
         secs = elf_sections(out)

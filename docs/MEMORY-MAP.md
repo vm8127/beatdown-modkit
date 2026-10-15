@@ -27,6 +27,8 @@ Claimed ranges in the mod areas:
 |---|---|
 | `0x000DF000`-`0x000DFFFF` | sandbox-only debug cheats in `tools/debug/` (`teleport.c` at `0x000DF000`); never installed in the real pnach |
 | `0x000A0000`-`0x000A00FF` | "C mod test: the player takes no damage" (`mods/c/test_no_damage.c`, 96 bytes used of 0x100) |
+| `0x000A1000`-`0x000A1FFF` | "New characters" (`mods/c/new_characters.c`, 2,940 bytes used of 0x1000) |
+| `0x000E1000`-`0x000E1FFF` | its globals: built presets and the texture preload state (1,236 bytes used) |
 | `0x000E0000`-`0x000E000F` | its globals (8 bytes used of 0x10) |
 
 ## Extended RAM: 95 MB more in PCSX2 (optional)
@@ -87,6 +89,7 @@ Because mix-moveset always writes the same addresses and its move list table has
 | Aaron uses the cut TESTER moveset | `0x0050D8B4`, `0x0050D8BC` | class row |
 | Aaron keeps his moves but grapples like Jason G | `0x0050D8B4`, `0x0050D8BC`; `0x0050D100`-`0x0050D14F`; `0x00515C5C`; `0x001C5BA0`, `0x001C5BF0`, `0x001C5C30`, `0x001C5C70` (8 bytes each); `0x00217000`-`0x00218EFF` (parts) | class row; Aaron's whole group list; `g_StyleCommands[0x13]`; the four MOVE LIST functions' first two instructions; mix area |
 | Aaron uses Ignacy's moveset and Chester's model (C version) | `0x0050D8B4`, `0x0050D8BC`; `0x0013B54C`, `0x0013B55C`; `0x00216738`-`0x00216767` | class row; both `jal Preset_Get` in fighter init, now `jal Mod_PresetGet`; the C code |
+| New characters: Eggusz (person 51) in the subway, chapter 2 | `0x000A1000`-`0x000A1B7B`; `0x0013B490`, `0x00178700`, `0x002A8720`, `0x002E67C0`, `0x00387980` (8 bytes each); `0x00589AE8` | the C code; `@hook`s on Person_Init, NpcSpawn_Step, Area_BuildPeople, Text_Get, and a `@jump` replacing Preset_Get; `g_VsRoster` entries 84-85 (51, -999). At run time it also writes `g_PersonDefs[51]` and `g_StreetTextures[87]` |
 | C mod test: the player takes no damage (hook, mod area, globals) | `0x000A0000`-`0x000A005F`; `0x002FB880`-`0x002FB887` | the C code; `Fighter_ApplyDamage`'s first two instructions (`@hook`). Its globals at `0x000E0000` are not written by the cheat |
 | Negotiation menu on knockout (test v2) | `0x002DE478`-`0x002DE48B`; `0x002DEF70`-`0x002DEF77`; `0x003E0168`-`0x003E017F`; `0x00218F00`-`0x00218F43`; `0x005990FC` | after-KO talk hook; CANCEL hook; two caves; negotiation menu descriptor (Triangle → CANCEL) |
 | Cut content: DEBUG on the title screen | `0x0058969C`, `0x005897D0` | title menu item action and label |
@@ -102,6 +105,7 @@ All 426 writes are 32-bit (`patch=1,EE,2...`) and `patch=1`, so PCSX2 rewrites t
 From `pnach-map`'s overlap list:
 
 - **The seven Aaron cheats** (Raven, Jason G, Ignacy + Chester and its C version, roster, TESTER, Jason G grabs) all write Aaron's class row, so only one may be on. The roster and both Ignacy + Chester cheats also share the fighter init hooks.
+- "New characters" replaces `Preset_Get` itself; cheats that redirect its calls in fighter init (the Aaron model cheats, the roster) still work on top, since they call it.
 - Everything else writes separate addresses, so the negotiation cheat, the five cut content cheats and any one Aaron cheat can be on together.
 - The roster cheat writes every hero it recasts; once it recasts other heroes, it also conflicts with any cheat for those heroes.
 

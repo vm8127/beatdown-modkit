@@ -8,6 +8,10 @@
 // @hook Person_Init NC_PersonInit
 // @hook Area_BuildPeople NC_BuildPeople
 // @hook NpcSpawn_Step NC_NpcSpawnStep
+//
+// VS mode: g_VsRoster (84 ids, -999) has room for two more before the name table; Eggusz is added at the end.
+// He can be picked once his blacklist bit is set (beating him in story mode does that).
+// @word 0x00589AE8 0xFC190033
 
 #include "game.h"
 
@@ -44,10 +48,10 @@ typedef struct {
     const char *name;     /* full-width UTF-8, like the game's own text */
     const NewSlot *outfit;  /* the look in fights and VS mode (persons 51/52 are built from these slots) */
     int outfit_count;
-    s16 street_model;     /* the look walking around: the low-poly street model of this preset (CDATA.XAF
-                             entry street_model + 7)... */
-    s16 street_tex[10];   /* ...with these DATA.XAF textures (g_StreetTextures layout: 3 shared, then skin,
-                             face and body, pants, top, hair, -1, 0) */
+    s16 street_model;     /* the look walking around: this preset's street pack (CDATA.XAF street_model + 7,
+                             mesh and 8 textures; -1 = keep the preset's own)... */
+    s16 street_tex[10];   /* ...with these DATA.XAF textures instead of the pack's (g_StreetTextures layout:
+                             3 shared, skin, face and body, pants, top, hair, -1, 0) */
 } NewChar;
 
 /* Eggusz: preset 56's large body and head (light skin, black mustache), preset 89's red leather jacket and
@@ -71,7 +75,7 @@ static const NewChar new_chars[] = {
     { 51, 87, 83, 56, 37, 12, 0, 3000, 200, 1, 1000,
       "\xEF\xBC\xA5\xEF\xBD\x87\xEF\xBD\x87\xEF\xBD\x95\xEF\xBD\x93\xEF\xBD\x9A",   /* Ｅｇｇｕｓｚ */
       eggusz_outfit, sizeof eggusz_outfit / sizeof eggusz_outfit[0],
-      -1, { 3561, 4529, 4729, 1629, 7567, 4535, 5236, 1650, -1, 0 } },   /* override off: pauses PCSX2, see the plan */
+      89, { 3561, 4529, 4729, 1629, 7567, 4535, 5236, 1650, -1, 0 } },
 };
 #define NEW_CHAR_COUNT (int)(sizeof new_chars / sizeof new_chars[0])
 
@@ -108,7 +112,7 @@ static const NewChar *by_person(int person)
 /* Write the template into g_PersonDefs (it lives in the program's data, so this lasts until a reboot). */
 static void install_templates(void)
 {
-    int i;
+    int i, j;
     for (i = 0; i < NEW_CHAR_COUNT; i++) {
         const NewChar *c = &new_chars[i];
         PersonDef *d = &g_PersonDefs[c->person];
@@ -124,7 +128,13 @@ static void install_templates(void)
         d->pride = c->pride;
         d->attack_rank = c->attack_rank;
         d->money = c->money;
+        d->blacklist_no = 0;   /* B.LIST has 110 fixed places, all taken; 0 = not listed (yet) */
         memset(d->start_entries, 0, sizeof d->start_entries);   /* no starting weapon */
+        /* The street model's textures: NpcSpawn_Step copies them per spawn, but 0x002F7290 (head and hair)
+         * reads g_StreetTextures[preset] itself, so the new preset's row is written too. */
+        if (c->street_model >= 0)
+            for (j = 0; j < 10; j++)
+                g_StreetTextures[c->preset * 10 + j] = c->street_tex[j];
     }
 }
 
@@ -184,19 +194,72 @@ void NC_PersonInit(int slot, int person_def, int temp)
     orig_Person_Init(slot, person_def, temp);
 }
 
-/* Street model: the spawn step 1 (g_NpcSpawnState 1) picks the model and textures from the person's preset;
- * the load starts in step 2, so they can be replaced in between. */
+/* Street look. Walking around, a person is the CDATA.XAF pack preset + 7: 8 texture chunks and a mesh. Pack_Load
+ * takes each chunk's cache key from g_NpcSpawnTextures (copied from g_StreetTextures[preset]) and reuses a
+ * texture already loaded under that key instead of the chunk's pixels. So the new look is: the pack of
+ * street_model (its mesh and the textures we keep), plus our DATA.XAF textures loaded first under their own
+ * ids (same keys), which the pack load then picks up. NpcSpawn_Step is held in its step 1 until they are in. */
+#define MAX_PRELOAD 8
+static void *preload_tex[MAX_PRELOAD];   /* @bss */
+static int preload_slot, preload_busy, preload_n, preload_i, preload_person;
+
+/* Load the character's street textures that differ from street_model's pack; 1 when all are in. */
+static int preload(const NewChar *c)
+{
+    if (preload_person != c->person) {
+        preload_person = c->person;
+        preload_n = preload_i = preload_busy = 0;
+    }
+    for (; preload_i < 8; preload_i++) {
+        int id = c->street_tex[preload_i];
+        void *t;
+        if (id == g_StreetTextures[c->street_model * 10 + preload_i] || preload_n >= MAX_PRELOAD)
+            continue;                     /* the pack's own texture */
+        if (!preload_busy) {
+            t = Tex_Request(0, id, &preload_slot, 1);
+            if (t) {
+                preload_tex[preload_n++] = t;
+                continue;
+            }
+            preload_busy = 1;
+        }
+        Xaf_Service();
+        t = Tex_Collect(preload_slot);
+        if (!t)
+            return 0;
+        preload_tex[preload_n++] = t;
+        preload_busy = 0;
+    }
+    return 1;
+}
+
+static void preload_done(void)
+{
+    int i;
+    for (i = 0; i < preload_n; i++)
+        if (preload_tex[i])
+            Tex_Release(preload_tex[i]);   /* the spawned person keeps its own reference */
+    preload_n = 0;
+    preload_person = -1;
+}
+
 int NC_NpcSpawnStep(int phase, s16 *request)
 {
-    int state = g_NpcSpawnState;
-    int r = orig_NpcSpawn_Step(phase, request);
-    const NewChar *c;
-    int i;
-    if (phase != 0 && state == 1 && (c = by_person(request[1])) != NULL && c->street_model >= 0) {
-        g_NpcSpawnModel = c->street_model + 7;
-        for (i = 0; i < 10; i++)
-            g_NpcSpawnTextures[i] = c->street_tex[i];
+    const NewChar *c = NULL;
+    int state = g_NpcSpawnState, r;
+    install_templates();
+    if (phase != 0 && (state == 1 || state == 2)) {
+        c = by_person(request[1]);
+        if (c && c->street_model < 0)
+            c = NULL;
     }
+    if (c && state == 1 && !preload(c))
+        return 0;                        /* wait for our textures */
+    r = orig_NpcSpawn_Step(phase, request);
+    if (c && state == 1)
+        g_NpcSpawnModel = c->street_model + 7;   /* the pack is queued in step 2 */
+    if (c && g_NpcSpawnState == 3)
+        preload_done();
     return r;
 }
 
@@ -207,7 +270,9 @@ static int in_party(int person)
 
 void *NC_BuildPeople(void)
 {
-    void *r = orig_Area_BuildPeople();
+    void *r;
+    install_templates();
+    r = orig_Area_BuildPeople();
     int area = Area_Current();
     int stage = g_StoryChapter;
     int i, n;

@@ -41,6 +41,7 @@ PersonDef	0x18	s32	money
 PersonDef	0x28	s32	weapon_break_mod	added to the weapon loss chance (heroes -20 to 0)
 PersonDef	0x30	u32	skills	copied to Person.skills (+0x388) by Person_Init
 PersonDef	0x34	u8[16]	start_entries	two entries applied at spawn, probably weapons (copied to person +0x390)
+PersonDef	0x44	s16	blacklist_no	place 1-110 in the pause menu's B.LIST (0x0018D250 fills its 110 entries from templates 1-200 by this number; all 110 are used); 0 = not listed
 PersonDef	0x46	u16	unk46	copied to person +0x430 (Person_Init)
 
 Person	size	0x43C		person record, g_Persons (210 records; 0 = the player; 0-199 are saved); Person_Get

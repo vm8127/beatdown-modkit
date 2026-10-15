@@ -90,7 +90,7 @@ struct PersonDef {
     u8 _002C[0x4];
     u32 skills;  /* +0x30 copied to Person.skills (+0x388) by Person_Init */
     u8 start_entries[0x10];  /* +0x34 two entries applied at spawn, probably weapons (copied to person +0x390) */
-    u8 _0044[0x2];
+    s16 blacklist_no;  /* +0x44 place 1-110 in the pause menu's B.LIST (0x0018D250 fills its 110 entries from templates 1-200 by this number; all 110 are used); 0 = not listed */
     u16 unk46;  /* +0x46 copied to person +0x430 (Person_Init) */
 };
 _Static_assert(__builtin_offsetof(PersonDef, unk00) == 0x0, "PersonDef.unk00");
@@ -111,6 +111,7 @@ _Static_assert(__builtin_offsetof(PersonDef, money) == 0x18, "PersonDef.money");
 _Static_assert(__builtin_offsetof(PersonDef, weapon_break_mod) == 0x28, "PersonDef.weapon_break_mod");
 _Static_assert(__builtin_offsetof(PersonDef, skills) == 0x30, "PersonDef.skills");
 _Static_assert(__builtin_offsetof(PersonDef, start_entries) == 0x34, "PersonDef.start_entries");
+_Static_assert(__builtin_offsetof(PersonDef, blacklist_no) == 0x44, "PersonDef.blacklist_no");
 _Static_assert(__builtin_offsetof(PersonDef, unk46) == 0x46, "PersonDef.unk46");
 _Static_assert(sizeof(PersonDef) == 0x48, "sizeof PersonDef");
 

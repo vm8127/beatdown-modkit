@@ -1,6 +1,6 @@
 # Plan: new characters you can meet, fight and recruit
 
-Started 2026-10-15. Goal: add brand-new characters to story mode: they appear somewhere, you fight them, you can recruit them, and they show up in the blacklist and VS mode. The first one is **Eggusz**. Status: **in progress (2026-10-15): Eggusz stands in the subway in chapter 2, talks, and fights (tested by Claude in the sandbox); his look, RECRUIT, VS and the install are not done yet.** See "Progress log" at the end. Update this file as the work goes (what was found, what was tested, by whom).
+Started 2026-10-15. Goal: add brand-new characters to story mode: they appear somewhere, you fight them, you can recruit them, and they show up in the blacklist and VS mode. The first one is **Eggusz**. Status (2026-10-15): **Eggusz is built and installed** (`mods/c/new_characters.c`, cheat "New characters: Eggusz (person 51) in the subway, chapter 2"). Tested by Claude in the sandbox: free-roam look, fight look, name, Jason G's moves, RECRUIT, joining the party, blacklist bit. **Open:** B.LIST entry (110 fixed places), VS mode test, a fresh boot with a memory card save, Daniel's test. See "Progress log" at the end. Update this file as the work goes (what was found, what was tested, by whom).
 
 ## Eggusz (the first new character)
 
@@ -48,7 +48,7 @@ Sandbox PCSX2 (`tools/pcsx2.py`, README "Testing in a sandbox PCSX2"): Daniel's 
 - `Preset_Get` is replaced (`@jump`; it starts with a branch so it can't take `@hook`): preset 87 returns a preset image built in `@bss` from the table's slot list plus the body params of `body_preset`.
 - `Text_Get` hook: text 11001 + 51 (person 51's name, was "edit1p") returns "Ｅｇｇｕｓｚ" (full-width UTF-8 like the game's text).
 - `Area_BuildPeople` hook: after the game fills the area's 7 people slots, adds Eggusz's entry in the subway in stage 6 if that slot is empty and he passes the game's own checks (present, HP > 0, not in the party, not an ally); a save made before the mod gets person 51 rebuilt from the template there.
-- `NpcSpawn_Step` hook (street model override): **pauses PCSX2** during the subway load, even with values identical to the game's, so it is switched off (`street_model = -1`) until understood. The pause happens while the spawn of person 177 (the first slot) is in step 2.
+- `NpcSpawn_Step` hook (street look): the first version **paused PCSX2**. Cause: cmod built 24-byte stack frames, and the game's code saves registers with 128-bit `sq`, which needs a 16-byte aligned sp. Fixed in `tools/cmod.py` (frames rounded up to 16); this matters for every C mod that calls game code. (Superseded below.)
 
 **Tested (sandbox, Claude):** Eggusz appears in the ABANDONED SUBWAY STATION in stage 6, at person 128's spot (-27.6, 11.8). Walking up and pressing Cross talks to him: the HP bar says "Eggusz", he plays dialogue 67 ("Hey, there. How ya doin'?") and offers NEGOTIATION (Circle) / BATTLE (Square). BATTLE starts "Raven VS Eggusz", a 1-on-1 street fight; in it he is fighter slot 1, person 51, HP 3000/3000, class row 37 (Jason G's style). Not yet tried: winning, RECRUIT, his moves in action, VS mode.
 
@@ -69,3 +69,15 @@ Sandbox PCSX2 (`tools/pcsx2.py`, README "Testing in a sandbox PCSX2"): Daniel's 
 **Next:** (1) find why the street-model override pauses PCSX2; (2) see the composed look in a fight and in free roam, show Daniel; (3) win the fight and RECRUIT (or negotiate); (4) VS roster slot + blacklist bit; (5) install, README "Mods so far", MEMORY-MAP ranges, docs.
 
 Sandbox tips learned: `pcsx2.py resume` (new) unpauses; face a person by pressing the stick briefly toward them (camera-relative) before Cross; the fighter's facing angle is `+0x2D0` (degrees); `pcsx2.py cheats --trace` now leaves out functions that enabled cheats already hook.
+
+### 2026-10-15, later (Claude, sandbox; Daniel's save slot 10 = chapter 2 in the subway with the mod on)
+
+- **Street look done**: the street pack is CDATA.XAF preset + 7 (texture chunks + mesh), not a model with free textures. `NpcSpawn_Step` is held in step 1 until Eggusz's own DATA.XAF textures (face 7567, jeans 4535, scalp 1650) are loaded with `Tex_Request` (cache key = id); then preset 89's pack is loaded with those ids as keys, so it reuses them; the extra references are released after the spawn. The row `g_StreetTextures[87]` is written too. Result in free roam: bald, black mustache, red leather jacket, blue jeans, black shoes.
+- **Fight look done** (persons 51/52 are built from the outfit slots): bald, mustache, red leather jacket, jeans, black sneakers, Jason G's stance. He beat Raven once (Jason G's style, rank x1.0 and 3000 HP is strong against Raven at level 4).
+- **RECRUIT works**: knockout, negotiation menu (RECRUIT, ROB, INTERROGATE, BEATDOWN, CANCEL; with only the no-damage test cheat on, not the negotiation-on-KO cheat), RECRUIT, "OK, I'll do what you say.", battle result, "Add Eggusz to the party / Keep on call", then he is in the party (`g_Party` = {0, 51}), person `+0x3A8` = 3, blacklist bit set (`0x0060C75A` bit 3). Once he is an ally he is no longer placed in the subway (the hook skips allies).
+- **B.LIST**: the pause menu blacklist (`0x0018D250`) has **110 fixed places**; each person's place is template `+0x44` (`PersonDef.blacklist_no`), and all 110 are used. Eggusz is not listed yet (place 0). Adding new characters there means a longer list: 110 (`0x6E`) is hard-coded in that function and its neighbours, and the list buffer `0x006614A0` is 0xDC bytes. Next step.
+- **VS roster**: `g_VsRoster` had room for two more ids after its -999 (then the name table at `0x00589AF0`), so Eggusz is entry 84 (`@word 0x00589AE8`). VS mode only offers people whose blacklist bit is set. The VS code has special cases for persons 51/52 (it reads their saved record). Not tested yet.
+- Robustness: the templates (and the street row) are installed from every hook, so a memory card load straight into the subway works without a `Person_Init` first (not tested).
+- Parts found while building him are in docs/PARTS.md.
+
+**Next:** test VS mode and a fresh boot (ask Daniel whether to do it together); extend B.LIST past 110; then the second character (person 52; for more than two see "Where new characters live").

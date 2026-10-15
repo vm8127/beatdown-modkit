@@ -286,3 +286,13 @@ Untested starting points. RAM values are rewritten by the game, so a pnach cheat
 
 Traced 2026-10-13 for the negotiation-on-knockout mod; full notes in docs/PLAN-auto-negotiation.md. `g_Battle` (`gp-20356`, `0x005FFC6C`; gp is `0x00604BF0`) points at the battle context. `Battle_Update` `0x002DD500` is the battle state machine (state at `+0x10`), `Battle_OnFighterDown` `0x002E2F60` records a knockout, `Battle_RequestTalk` `0x002DE540` is the threaten button, `Battle_StartTalk` `0x002DE6E0` starts a talk scene (kind 0 threaten menu, 1 after a knockout, 3 beg for your life) and `Talk_Update` `0x002DE850` runs it. `Battle_PrideHudShown` `0x002E3A20` decides whether Pride bars are shown.
 
+
+## Area people, street looks and fight models
+
+Found 2026-10-15 for the new characters (docs/PLAN-new-characters.md, docs/PARTS.md); tested in the sandbox.
+
+- **Who stands in an area**: `Area_Load` `0x002FE3D0` calls `Area_BuildPeople` `0x002E67C0`, which fills `g_AreaPeople` `0x006CB920` (7 `AreaPerson` slots of 64 bytes) from `g_PeoplePlacement` (pointer at `0x005FEBB8`): s32 layer offsets, each layer an offset per area id to 7 entries. Layer 0 = base, 0-3 by time/state, the story stage's layer from `g_StageLayer` `0x00509AA0` (stages 6-10 use layers 6-10; 1-5 use 5, which is empty), plus mission layers. `Area_PeopleBase` `0x002E6DC0` and `Area_PeopleLayer` `0x002E7130` apply them (type 1 person, 2/3 copied, 4/5 clear). `Area_SpawnPeople` `0x00139E50` spawns them, one `NpcSpawn_Step` `0x00178700` per person. `AreaPerson +6` is the dialogue script played when you talk to them.
+- **Area ids**: `Area_Current()` returns 5 in the ABANDONED SUBWAY STATION and 1 on DOWNTOWN STREET; docs/UNLOCKS.md's location table says the subway is 2. Which numbering `Area_ChangeTo` and the text ids use needs checking.
+- **Street look**: `NpcSpawn_Step` loads CDATA.XAF entry preset + 7 (8 texture chunks + mesh) with `Pack_Load` `0x0029E500`, using `g_StreetTextures[preset]` `0x00430C90` as the textures' cache keys. Texture cache: `Tex_Request` `0x0029C420`, `Xaf_Service` `0x0029C190`, `Tex_Collect` `0x0029C810`, `Tex_Release` `0x0026EAC0`; DATA.XAF and CDATA.XAF share the name table `0x0059AE30`.
+- **Fight model**: `Fighter_LoadModel` `0x002F53A0` loads the prebuilt ARCHIVE.XAF entry = preset number when `Fighter_UsesPresetModel` `0x002F52C0` says the outfit matches the preset; that function always says no for persons 51 and 52 (the cut character editor's "edit1p"/"edit2p"), whose model is built from their outfit slots.
+- **B.LIST**: `0x0018D250` builds the pause menu's 110-entry list at `0x006614A0` from templates 1-200 by `PersonDef.blacklist_no` (`+0x44`).

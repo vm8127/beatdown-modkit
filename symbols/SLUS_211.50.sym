@@ -54,10 +54,14 @@
 001DD1F0 Load_ApplyGameFile
 001DD370 MemCard_PrintVersion
 00216538 Unused_DmaGsUpload
+0026EAC0 Tex_Release
 0029BA10 Xaf_OpenAll
 0029BC40 Xaf_QueueLoad
-0029C420 Xaf_LoadDataTexture
+0029C190 Xaf_Service
+0029C420 Tex_Request
+0029C810 Tex_Collect
 0029CD10 Xaf_LoadAnimation
+0029E500 Pack_Load
 0029ED70 Xaf_LoadAnimPack
 002A5B80 Fighter_PickWeaponMove
 002A63A0 Cmd_CheckCondition

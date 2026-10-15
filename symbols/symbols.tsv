@@ -528,7 +528,10 @@
 00430c90	data	g_StreetTextures	s16[189][10]: per outfit preset, the DATA.XAF textures of its street model: 3 shared (3561, 4529, 4729), skin, face and body atlas, pants, top, hair, -1, 0	s16[1890]
 002f52c0	func	Fighter_UsesPresetModel	(fighter) 1 if the fighter's outfit slots equal its preset's, so the fight model is the prebuilt ARCHIVE.XAF entry = preset number; always 0 for persons 51 and 52 (the cut character editor's slots), whose model is built from the slots	int (Fighter *fighter)
 002f53a0	func	Fighter_LoadModel	(phase, slot, flags) loads a fighter's fight model: the prebuilt ARCHIVE.XAF entry of its preset, or (persons 51/52, changed outfits) head pieces from ARCHIVE.XAF combinations, clothes as ARCHIVE.XAF item + 0x3A6, textures from DATA.XAF by the slots' part ids; state in 0x005FFD48 (0x17 = done)	int (int phase, int slot, int flags)
-0029c420	func	Xaf_LoadDataTexture	(0, DATA.XAF entry, &handle, 1) starts or finds a texture load
+0029c420	func	Tex_Request	(archive, entry, &queue slot, mode) a texture by archive and entry: returns it (reference count + 1) if it is already loaded (textures are cached by name; DATA.XAF and CDATA.XAF share the name table 0x0059AE30, so a DATA id is the same key in both), else queues the load in *slot and returns 0; then call Xaf_Service and Tex_Collect each frame	void *(int archive, int entry, int *slot, int mode)
 002abde0	func	Editor_ApplyItem	character editor / dressing: applies an appearance record (its +0x2C group and +0x30 kind pick a list in g_EditorItems, +0x24 the index) to a fighter's outfit
 00503514	data	g_EditorItems	character editor item lists: [sex * 0xC00 + group * 0x300 + kind * 0x20] = {s16 *items, ...}; items[index] is a g_ItemTable item (e.g. HAIRSTYLE:BALD -> item 23, SLICKED BACK -> 335)
-
+0029c190	func	Xaf_Service	advances the queued XAF loads (call once per frame while waiting)	void (void)
+0029c810	func	Tex_Collect	(queue slot) -> the loaded texture once that slot's load finished (registered in the cache, reference count 1), else 0	void *(int slot)
+0026eac0	func	Tex_Release	(texture) reference count - 1; frees it at 0	int (void *tex)
+0029e500	func	Pack_Load	(phase, archive, entry, request) phase 0 resets, then call with 1 until it returns 1: loads a pack entry (textures, meshes, animations) into request's handle lists; each texture chunk takes its cache key from request->+4 list in order and reuses an already loaded texture with that key instead of the chunk's own pixels	int (int phase, int archive, int entry, void *request)
