@@ -11,7 +11,7 @@ trace-map commands work anywhere. Python 3 standard library only.
   python tools/pcsx2.py cheats --c tools/debug/teleport.c   # ... plus C cheats built on the fly (sandbox only)
   python tools/pcsx2.py start [--state 1]           # boot the game (and load save state slot 1)
   python tools/pcsx2.py ram128 on|off               # PCSX2's 128 MB "Extended RAM (Dev Console)" for this game only;
-                                                    # 32 MB save states don't load while it is on (docs/MEMORY-MAP.md)
+                                                    # 32 MB save states don't load while it is on (docs/mods/MEMORY-MAP.md)
   python tools/pcsx2.py stop
   python tools/pcsx2.py status                      # PINE: running / paused / shut down, and the game id
   python tools/pcsx2.py resume                      # unpause (a save state taken while loading can leave it paused)
@@ -37,7 +37,7 @@ its first two instructions moved into a stub that stores its return address in a
 `trace build` writes this as the cheat section "[Trace: function coverage]" into the sandbox's copy of the pnach
 (the repo's file is not touched) and turns it on; restart the game for it to apply. `trace clear` zeroes the
 table, `trace read` prints every function that ran since, with its last caller. Stubs and table use the
-debug-only high RAM area 0x01F00000-0x01FBFFFF (docs/MEMORY-MAP.md).
+debug-only high RAM area 0x01F00000-0x01FBFFFF (docs/mods/MEMORY-MAP.md).
 """
 import argparse
 import configparser
@@ -73,7 +73,7 @@ PAD1 = {"Up": "Up", "Right": "Right", "Down": "Down", "Left": "Left", "Triangle"
         "RRight": "H", "RDown": "G", "RLeft": "F"}
 BUTTON_KEYS = {k.lower(): v for k, v in PAD1.items()}
 
-# Memory areas (docs/MEMORY-MAP.md)
+# Memory areas (docs/mods/MEMORY-MAP.md)
 MOD_AREA = (0x000A0000, 0x000DFFFF)
 MOD_DATA = (0x000E0000, 0x000EFFFF)
 DEBUG_LOW = (0x000F0000, 0x000FFFFF)

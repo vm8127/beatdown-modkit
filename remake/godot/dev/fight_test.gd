@@ -230,11 +230,13 @@ func _test_walk(p: Fighter, d: Fighter) -> void:
 	var want := float(row["speeds"][0]) * 60.0 * Fighter.UNIT
 	_check(d._walk_action == int(row["actions"][0]) and absf(speed - want) < 0.05, "walk: front walk action %d at %.2f m/s (table %.2f)" % [
 		d._walk_action, speed, want])
-	print("  info walk: body moved %.2f m/s on average" % ((d.global_position - start).length() / maxf(moved_frames, 1) * 60.0))
+	if "--verbose" in OS.get_cmdline_user_args():
+		print("  info walk: body moved %.2f m/s on average" % ((d.global_position - start).length() / maxf(moved_frames, 1) * 60.0))
 	strides.sort()
 	slides.sort()
 	var avg: float = slides[slides.size() / 4] if slides.size() > 0 else 99.0   # lower quartile: the planted part of the step
-	print("  info walk: the lower foot moves %.2f m/s backwards against the body (median; the clip's own walking speed)" % (strides[strides.size() / 2] if strides.size() > 0 else 0.0))
+	if "--verbose" in OS.get_cmdline_user_args():
+		print("  info walk: the lower foot moves %.2f m/s backwards against the body (median; the clip's own walking speed)" % (strides[strides.size() / 2] if strides.size() > 0 else 0.0))
 	_check(n > 10 and avg < 0.35 * want, "walk: planted foot slides %.2f m/s (lower quartile, walking %.2f m/s, %d frames)" % [avg, want, n])
 	var back := p.walk_direction(p.global_transform.basis.z)
 	var side := p.walk_direction(p.global_transform.basis.x)
@@ -270,7 +272,8 @@ func _place(p: Fighter, d: Fighter, yaw: float, mode: DummyBrain.Mode) -> void:
 
 
 func _check(ok: bool, what: String) -> void:
-	print(("  ok   " if ok else "  FAIL ") + what)
+	if not ok:
+		print("  FAIL " + what)
 	if ok:
 		_passes += 1
 	else:

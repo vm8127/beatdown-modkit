@@ -63,19 +63,22 @@ func _physics_process(_delta: float) -> void:
 	var right := hud.hp_right
 	if hud.target == d and right.trail > right.hp:
 		if not _saw_trail:
-			print("frame %d: trail %d above HP %d" % [_frame, right.trail, right.hp])
+			if "--verbose" in OS.get_cmdline_user_args():
+				print("frame %d: trail %d above HP %d" % [_frame, right.trail, right.hp])
 		_saw_trail = true
 		_hp_at_hit = right.hp
 	if _saw_trail and _trail_back < 0 and right.trail == right.hp and right.hp == _hp_at_hit:
 		_trail_back = _frame
 	if hud.combo.visible_now():
 		if not _saw_combo:
-			print("frame %d: combo %d HITS" % [_frame, hud.combo.count])
+			if "--verbose" in OS.get_cmdline_user_args():
+				print("frame %d: combo %d HITS" % [_frame, hud.combo.count])
 			if _shots != "":
 				_shot("hud_fight.png")
 		_saw_combo = true
 	if _frame % 30 == 0:
-		print("frame %d: %s" % [_frame, hud.debug_text()])
+		if "--verbose" in OS.get_cmdline_user_args():
+			print("frame %d: %s" % [_frame, hud.debug_text()])
 	if _frame == 320:
 		_check(p, d)
 	if _frame == 325:
@@ -121,9 +124,7 @@ func _check_low(d: Fighter) -> void:
 
 
 func _eq(what: String, got, want) -> void:
-	if got == want:
-		print("  ok: %s" % what)
-	else:
+	if got != want:
 		_errors.append("%s: got %s, want %s" % [what, got, want])
 		print("  FAIL: %s: got %s, want %s" % [what, got, want])
 

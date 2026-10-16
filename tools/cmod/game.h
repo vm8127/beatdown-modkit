@@ -31,7 +31,7 @@ typedef float f32;
 
 /* Extended RAM: PCSX2's "Enable Extended RAM (Dev Console)" (per game: [EmuCore/CPU] ExtraMemory = true in
  * gamesettings/SLUS-21150_C9F6EF9A.ini) gives the PS2 128 MB, and the game leaves 0x02000000-0x07EFFFFF unused
- * (docs/MEMORY-MAP.md). Without it, PCSX2 drops writes there and reads 0, so a mod that keeps data there must
+ * (docs/mods/MEMORY-MAP.md). Without it, PCSX2 drops writes there and reads 0, so a mod that keeps data there must
  * check first and fall back (or do nothing). Code itself should stay in the normal mod area. */
 #define EXT_RAM_START 0x02000000
 #define EXT_RAM_END 0x07F00000

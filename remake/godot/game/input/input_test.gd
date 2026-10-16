@@ -25,7 +25,8 @@ func _ready() -> void:
 
 func _check(ok: bool, what: String) -> void:
 	_checks += 1
-	print("%s  %s" % ["ok  " if ok else "FAIL", what])
+	if not ok:
+		print("FAIL  " + what)
 	if not ok:
 		_errors.append(what)
 

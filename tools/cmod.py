@@ -2,7 +2,7 @@
 """Build Beat Down (SLUS-21150) mods written in C into PCSX2 cheat sections.
 
 The C file is compiled with the ps2dev PS2 compiler for a fixed address in a free code cave
-(docs/MEMORY-MAP.md), linked against every name in symbols/symbols.tsv, and turned into
+(docs/mods/MEMORY-MAP.md), linked against every name in symbols/symbols.tsv, and turned into
 `patch=1,EE,...` lines: the code itself plus the hooks that make the game call it.
 
   python tools/cmod.py build ISO/SLUS_211.50 mods/c/aaron_chester_model.c          # prints a pnach section
@@ -13,7 +13,7 @@ The C file is compiled with the ps2dev PS2 compiler for a fixed address in a fre
 Directives, in `// @name args` comment lines anywhere in the C file:
   @section NAME          pnach section name (required)
   @description TEXT      pnach description line
-  @org ADDR              where the code goes (required; a free range from docs/MEMORY-MAP.md: small mods in
+  @org ADDR              where the code goes (required; a free range from docs/mods/MEMORY-MAP.md: small mods in
                          the C mod cave 0x00216738-0x00216FFF, big ones in the mod area 0x000A0000-0x000DFFFF)
   @max SIZE              fail if code + constants grow past SIZE bytes (default 0x100)
   @bss ADDR SIZE         where the mod's writable globals go (mod data area 0x000E0000-0x000EFFFF). They
@@ -255,7 +255,7 @@ def build(elf_path, c_path, asm=False):
         bss_size = secs.get(".bss", (0, 0))[1]
         if bss_size and not d["bss"]:
             sys.exit(f"the mod has writable globals ({bss_size} bytes of .bss) but no @bss line saying where "
-                     "they go (docs/MEMORY-MAP.md, mod data area)")
+                     "they go (docs/mods/MEMORY-MAP.md, mod data area)")
         if d["bss"] and bss_size > d["bss"][1]:
             sys.exit(f"writable globals are {bss_size} bytes, over the @bss size {d['bss'][1]:#x}")
         run([tool("objcopy"), "-O", "binary", "-j", ".text", "-j", ".rodata", out, binf])

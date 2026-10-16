@@ -21,7 +21,8 @@ func _ready() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
-	print(("  ok    " if ok else "  FAIL  ") + what)
+	if not ok:
+		print("  FAIL  " + what)
 	if not ok:
 		_fails.append(what)
 

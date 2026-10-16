@@ -8,7 +8,7 @@
 
 void orig_MissionMgr_Task(void *task);
 
-#define TELEPORT_REQUEST ((volatile int *)0x000F0000)   /* debug scratch RAM (docs/MEMORY-MAP.md) */
+#define TELEPORT_REQUEST ((volatile int *)0x000F0000)   /* debug scratch RAM (docs/mods/MEMORY-MAP.md) */
 
 void Dbg_MissionMgrTask(void *task)
 {

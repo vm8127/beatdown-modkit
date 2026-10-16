@@ -1,6 +1,6 @@
 extends Node
 ## Scripted check of the combat loop (`-- --smoke`): puts the player next to Dummy 1, plays a
-## 3-hit combo, prints every state change, checks the result and quits with exit code 0 or 1.
+## 3-hit combo, checks the result and quits with exit code 0 or 1. Prints only RESULT lines; `-- --verbose` also prints every state change.
 ##
 ## - With Aaron's real style (assets_ripped/moves/aaron.tres): Triple Snake Fang, →P P P
 ##   (actions 1807 -> 1808 -> 1809). Each press is made a few frames into the previous move, so
@@ -62,13 +62,13 @@ func _physics_process(_delta: float) -> void:
 	elif _frame in [20, 30, 42]:
 		# Press each button a few frames early: the buffer holds it until the combo window.
 		(p.brain as PlayerBrain).press("P")
-		print("frame %d: press P" % Dev.frame)
 	for f in [p, d]:
 		var line: String = f.debug_text()
 		var key: String = "%s %s %s" % [f.display_name, f.state, f.move_id]
 		if _log_last.get(f.display_name, "") != key:
 			_log_last[f.display_name] = key
-			print("frame %d: %s" % [Dev.frame, line])
+			if "--verbose" in OS.get_cmdline_user_args():
+				print("frame %d: %s" % [Dev.frame, line])
 	var last_id: String = AARON[-1][2] if real else "straight"
 	if _shot != "" and not _shot_taken and p.move_id == last_id and p.hitstop > 0:
 		_shot_taken = true
@@ -100,13 +100,15 @@ func _drive_aaron(p: Fighter) -> void:
 	var brain := p.brain as PlayerBrain
 	if _step == 0 and _frame == 20:
 		brain.press(AARON[0][1], AARON[0][0])
-		print("frame %d: press %s%s" % [Dev.frame, AARON[0][0], AARON[0][1]])
+		if "--verbose" in OS.get_cmdline_user_args():
+			print("frame %d: press %s%s" % [Dev.frame, AARON[0][0], AARON[0][1]])
 		_step = 1
 		return
 	if _step >= 1 and _step < AARON.size() and p.state == Fighter.State.ATTACK \
 			and p.move_id == AARON[_step - 1][2] and p.state_frame == 3:
 		brain.press(AARON[_step][1], AARON[_step][0])
-		print("frame %d: press %s%s" % [Dev.frame, AARON[_step][0], AARON[_step][1]])
+		if "--verbose" in OS.get_cmdline_user_args():
+			print("frame %d: press %s%s" % [Dev.frame, AARON[_step][0], AARON[_step][1]])
 		_step += 1
 	# A chain: the move changed while attacking. It must start on the previous move's cancel frame
 	# (seen here one tick after the last frame we logged for the previous move).
@@ -133,13 +135,15 @@ func _one_move(p: Fighter, d: Fighter) -> void:
 			dir = _press.substr(0, _press.length() - 1)
 			b = _press.substr(_press.length() - 1)
 		(p.brain as PlayerBrain).press(b, dir)
-		print("frame %d: press %s" % [Dev.frame, _press])
+		if "--verbose" in OS.get_cmdline_user_args():
+			print("frame %d: press %s" % [Dev.frame, _press])
 	if p.state == Fighter.State.ATTACK and p.move.is_active(p.state_frame):
 		for h in p.move.get_hits():
 			if (h as MoveHit).is_active(p.state_frame):
 				for sp in p.hit_spheres(h):
-					print("frame %d: %s f%d parts %s sphere at %s r %.2f (dummy at %s)" % [Dev.frame, p.move.move_name,
-						p.state_frame, h.parts, sp[0], sp[1], d.global_position])
+					if "--verbose" in OS.get_cmdline_user_args():
+						print("frame %d: %s f%d parts %s sphere at %s r %.2f (dummy at %s)" % [Dev.frame, p.move.move_name,
+							p.state_frame, h.parts, sp[0], sp[1], d.global_position])
 	var want_shot := _shot != "" and not _shot_taken and p.state == Fighter.State.ATTACK and (
 		(p.state_frame == _shot_frame) if _shot_frame >= 0 else p.hitstop > 0)
 	if want_shot:
