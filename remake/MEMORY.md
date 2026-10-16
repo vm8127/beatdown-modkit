@@ -10,7 +10,9 @@ All done and tested headless, none yet played by V (status; details; next):
 - **M6 levels (subway + Downtown, doors, props, battle spots):** README.md "Levels (M6)", STAGES.md. Next: TODO.md "M6 follow-up" (more areas, interactive props).
 - **Controller controls (GameInput, TYPE 1-6, F8 screen):** CONTROLS.md. Next: V tries a real pad.
 - **Fight HUD, game text and font:** HUD.md, FORMATS.md "Text"; hud_test.tscn, test_text.py. Next: TODO.md "HUD follow-ups"; compare positions with the game.
-- **Not started:** M5 enemy AI, other areas.
+- **Bug:** `game/input/input_test.tscn` fails 1 check: Blade Cut whiffs from 1.2 m since 629519d/694709d (TODO.md has the trace). Fix first.
+- **Next candidates (V picks):** that bug, M7 negotiation + recruiting, more heroes, sound research. Later: M5 enemy AI, other areas.
+
 
 ## Decisions
 - Remake lives in `remake/` of this repo; Godot 4.7.2 in `__external_tools/godot/`; GDScript (Claude's choice, V OK). V reads and plays; Claude writes the code.
@@ -18,6 +20,7 @@ All done and tested headless, none yet played by V (status; details; next):
 - Incremental: every feature lands in `remake/godot/dev/` first (PLAN.md).
 - Areas: subway (area 5) and Downtown (area 1) with doors; more later. Enemy AI (M5) later.
 - Big independent tasks go to separate sessions with fresh context. Shared files (symbols.tsv, CODEMAP.md, this file) only by small edits.
+- The main session plans, briefs and checks; work runs in visible sessions (start_session in the turn of V's own message, one per task, exact-file briefs; model per PLAN.md). Check each result yourself (tests + screenshots sent to V), then archive the session. V works remotely often: tests and screenshots are the evidence.
 - Keep this file current at every step, so an interrupted session restarts from here.
 
 ## Open questions for V
