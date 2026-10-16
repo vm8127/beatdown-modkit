@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
 
+GameInput="*res://game/input/game_input.gd"
 Dev="*res://dev/dev.gd"
 
 [display]

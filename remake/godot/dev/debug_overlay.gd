@@ -4,8 +4,17 @@ extends CanvasLayer
 ## frame counter, every fighter's state and move frame, the input buffer, combo count.
 
 const KEYS := """WASD / left stick move · mouse / right stick camera (click to capture, Esc frees it, wheel zooms)
-J or LMB / X punch · K or RMB / Y kick · L or Shift / RB guard
+%s · F8 controls (rebind, TYPE 1-6, vibration)
 F1 boxes · F2 slow-mo · F3 pause · F4 step one frame · F5 spawn dummy · F6 dummy mode · F7 reset · Tab hide"""
+
+
+## The game buttons on the device in use (GameInput), e.g. "□ punch · △ kick · × guard ...".
+static func _buttons() -> String:
+	var parts: Array[String] = []
+	for a in [["attack_p", "punch"], ["attack_k", "kick"], ["guard", "guard"], ["special", "special"],
+			["run", "run"], ["grab", "grab/use"], ["taunt", "taunt"]]:
+		parts.append("%s %s" % [GameInput.button_for(a[0])["label"], a[1]])
+	return " · ".join(parts)
 
 @export var arena: Node
 
@@ -26,5 +35,5 @@ func _process(_delta: float) -> void:
 		if n != player:
 			lines.append((n as Fighter).debug_text())
 	lines.append("")
-	lines.append(KEYS)
+	lines.append(KEYS % _buttons())
 	_label.text = "\n".join(lines)

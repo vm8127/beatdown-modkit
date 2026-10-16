@@ -1,6 +1,6 @@
 extends Node
 ## Developer state shared by everything (autoload "Dev"): pause, frame step, slow motion,
-## hitbox drawing, and the input map.
+## hitbox drawing, and the dev keys (F1-F7, Tab).
 ##
 ## Game logic never reads real time. Every physics frame (60 per second) Dev decides
 ## whether the game advances one frame (`tick`); fighters skip their logic when it's false.
@@ -62,19 +62,9 @@ func status_text() -> String:
 	return s
 
 
-# The input map is built here instead of in project.godot so it stays readable.
+# Dev keys only. The game's controls (move, attacks, camera, pads, rebinding) are the autoload
+# GameInput (game/input/game_input.gd), which loads before this one.
 func _setup_input() -> void:
-	_bind("move_left", [KEY_A, KEY_LEFT], [], [], [[JOY_AXIS_LEFT_X, -1.0]])
-	_bind("move_right", [KEY_D, KEY_RIGHT], [], [], [[JOY_AXIS_LEFT_X, 1.0]])
-	_bind("move_forward", [KEY_W, KEY_UP], [], [], [[JOY_AXIS_LEFT_Y, -1.0]])
-	_bind("move_back", [KEY_S, KEY_DOWN], [], [], [[JOY_AXIS_LEFT_Y, 1.0]])
-	_bind("cam_left", [], [], [], [[JOY_AXIS_RIGHT_X, -1.0]])
-	_bind("cam_right", [], [], [], [[JOY_AXIS_RIGHT_X, 1.0]])
-	_bind("cam_up", [], [], [], [[JOY_AXIS_RIGHT_Y, -1.0]])
-	_bind("cam_down", [], [], [], [[JOY_AXIS_RIGHT_Y, 1.0]])
-	_bind("attack_p", [KEY_J], [MOUSE_BUTTON_LEFT], [JOY_BUTTON_X])
-	_bind("attack_k", [KEY_K], [MOUSE_BUTTON_RIGHT], [JOY_BUTTON_Y])
-	_bind("guard", [KEY_L, KEY_SHIFT], [], [JOY_BUTTON_RIGHT_SHOULDER])
 	_bind("dev_boxes", [KEY_F1])
 	_bind("dev_slow", [KEY_F2])
 	_bind("dev_pause", [KEY_F3])

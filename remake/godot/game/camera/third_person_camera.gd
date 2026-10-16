@@ -26,8 +26,10 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		yaw -= event.relative.x * mouse_sensitivity
-		pitch -= event.relative.y * mouse_sensitivity
+		var sx := -1.0 if GameInput.invert_x else 1.0   # CAMERA TYPE (X) / (Y): REVERSE
+		var sy := -1.0 if GameInput.invert_y else 1.0
+		yaw -= event.relative.x * mouse_sensitivity * sx
+		pitch -= event.relative.y * mouse_sensitivity * sy
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			distance = maxf(2.0, distance - 0.5)
@@ -36,7 +38,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
-	var look := Input.get_vector("cam_left", "cam_right", "cam_up", "cam_down")
+	var look := GameInput.camera_vector()   # right stick, dead zone and REVERSE options applied
 	yaw -= look.x * stick_speed * delta
 	pitch -= look.y * stick_speed * delta
 	pitch = clampf(pitch, -1.3, 0.35)
