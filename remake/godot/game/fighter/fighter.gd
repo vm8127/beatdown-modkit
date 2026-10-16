@@ -1126,6 +1126,8 @@ func _release_hold() -> void:
 	_enter(State.IDLE)
 	if model:
 		_tail = {"action": int(pair[0]), "key": "release%d" % _react_count, "from": 0}
+	if v and v.held_by == self:
+		v.held_by = null   # the victim is free again (it skips _end_held): no stale hold making it unhittable
 	if v and v.model:
 		v._react_action = int(pair[1])
 		v._react = v.model.action_info(v._react_action)
