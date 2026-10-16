@@ -9,7 +9,8 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | [PLAN.md](PLAN.md) | The brief: goal, rules, what research to reuse, milestones, progress log |
 | `godot/` | The Godot project (open `godot/project.godot`) |
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test; model viewer; stage test |
-| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/`, `text/` (`GameText`: the game's text by id, from `assets_ripped/text/`) |
+| `godot/levels/` | Playable levels: the subway and Downtown with doors between them (`level.gd`, `level_test.gd`) |
+| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/`, `stage/` (`GameArea`: an area from the disc), `text/` (`GameText`: the game's text by id, from `assets_ripped/text/`) |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
 | `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models, `conv_moves.py`: fighting styles, `conv_text.py`: text banks and dialogue as JSON) and `gltf_writer.py`; `test_moves.py` checks the generated moves, `test_text.py` the text (`python remake/tools/test_text.py ISO remake/godot/assets_ripped`) |
 
@@ -46,6 +47,22 @@ Walk around the ABANDONED SUBWAY STATION (area 5) converted from the disc (`asse
 ```bash
 __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://dev/stage_test.tscn
 ```
+
+## Levels (M6)
+
+The ABANDONED SUBWAY STATION (area 5) and DOWNTOWN STREET (area 1) as playable levels (`levels/subway.tscn`, `levels/downtown.tscn`; run the asset tool first): the area's world, all props, lights, wall / floor collision, the camera colliding with the area's camera mesh, battle spots, door zones and Chapter 2's items as markers (F1 hides them), animated Aaron, and training dummies (street 89) at the battle spots. Walk up to one and the fight starts the game's way (player on the nearest battle spot, opponent 2.5 m in front). **Doors**: stand on a door zone facing in and press E (pad A) or keep walking into it: fade out, the other area loads, you arrive at the game's arrival point of the destination's entrance, facing away from the door. Subway doors 1 and 2 lead to Downtown's subway stairs (entrances 6 and 7) and back; Downtown's other doors say "not in the remake yet". F7 back to the spawn point.
+
+Command line (after `--`): `--area=N --entrance=N --from=A` start elsewhere, `--variant=E` a Downtown variant (FSTAGE 1, 2, 3, 24), `--stage=N` the story stage, `--shot=<file.png> --view=player|overview|door|fight|through|fading` saves a screenshot and quits, `--test` runs `levels/level_test.gd` (exit code 0 = pass): props, spots and doors present, walls hold the player in, camera never behind a wall, a fight at a battle spot with blows landing, every subway <-> Downtown door both ways landing at the right arrival inside the walls.
+
+```bash
+__external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot res://levels/subway.tscn
+```
+
+```bash
+__external_tools/godot/Godot_v4.7.2-stable_win64_console.exe --headless --path remake/godot res://levels/subway.tscn -- --test
+```
+
+The level code: `game/stage/area.gd` (`GameArea`: loads an area's converted files, lights, collision layers 1 world / 16 camera, story-stage objects, markers; queries `arrival()`, `door_at()`, `facing_door()`, `nearest_battle_spot()`, `is_inside()`, `floor_height()`) and `levels/level.gd` (`Level`: player, camera, dummies, door flow with fade, fights, overlay). The stage converter alone (keeps the other assets): `cd remake/tools && python -c "import sys; sys.path.insert(0,'../../tools'); import conv_stages; conv_stages.convert('../../ISO','../godot/assets_ripped')"`.
 
 ## Smoke test
 
