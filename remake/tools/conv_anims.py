@@ -158,9 +158,11 @@ def plan(e, lib, iso, style_name, class_groups):
             return
         aid, blend, then, loops = first_play(e, act)
         a = dict(anim=aid if aid is not None else -1, blend=blend, then=then if then is not None else -1, loop=loops)
+        sim = action_sim.simulate(e, act, length_of)
+        # Posture (op 0x35: 4 down, 0x20 in the air...) and MATCHLESS ranges, by game frame: who can be hit, and how
+        a.update(posture=[list(x) for x in sim["posture"]], invincible=[list(x) for x in sim["invincible"]])
         if not loops:
             # Every clip in order, game frames, control back (action_sim.py): hitstun = release or the end
-            sim = action_sim.simulate(e, act, length_of)
             a.update(clips=sim["clips"], frames=sim["frames"], release=sim["release"], guard=sim["guard"],
                      clip_at=sim["clip_at"], frame_at=[round(x, 3) for x in sim["frame_at"]], place=sim["place"],
                      throws=[t["g"] for t in sim["throws"]])

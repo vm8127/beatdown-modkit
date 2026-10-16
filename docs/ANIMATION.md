@@ -184,7 +184,23 @@ Read from `Cmd_MatchSequence` `0x002A6720`, `Cmd_MatchSingle` `0x002A68B0`, `Act
 - **Conditions**: commands with a condition (Aaron's `←K K`, `←K K K`, `P P →P`, `P P ↓P`, `→→K`, `↓→K`, `→↓→K`) need the fighter's stat levels (`Cmd_CheckCondition`); the remake ignores them for now.
 - **Release**: op 0x3C's release frame calls `Fighter_ReturnControl`, after which a new neutral command can start; inputs read while busy are otherwise not queued for later (the remake keeps a press from the last 10 frames of a move as a convenience).
 
-**Timing in game frames** (the remake's converter, `remake/tools/conv_moves.py`): step the animation frame by the current speed every game frame (exact fractions) and fire each timeline op on the first game frame whose whole animation frame reaches its wait, with speed ops taking effect from the next step. Blade Cut (action 1805, speed 1.4 then 1.0 at 26): active animation frames 19-25 = game frames 14-18, cancel 24 = game frame 18, end 50 = game frame 43. `codemap.py framedata`'s "game" column assumes the speed switches at the exact frame, so moves with several speed changes (Weaving 587-589, Triple Snake Fang) differ by 1-2 game frames; which order the game runs the timeline and the motion update in within a frame isn't traced.
+**In a battle every motion plays 1.2 times faster** (`Fighter_UpdateMotion` `0x002F1610`: frame time x speed x 1.2 while `0x0060C960` bit 0, "in a battle", is set; read from code and **measured in the sandbox PCSX2** 2026-10-16: Blade Cut lasts 36 game frames, hits 12 frames after it starts and chains into Blade Hook 15 frames after it starts; the stance's motion frame runs at 60 per second with speed 0.83). So every game-frame figure in the tables here (`codemap.py framedata`'s "game" column) is 1.2 times too long for a fight: divide by 1.2. The remake's converters apply it (`action_sim.BATTLE_RATE`).
+
+**Timing in game frames** (the remake's converter, `remake/tools/conv_moves.py`): step the animation frame by the current speed (x 1.2 in a battle) every game frame (exact fractions) and fire each timeline op on the first game frame whose whole animation frame reaches its wait, with speed ops taking effect from the next step. Blade Cut (action 1805, speed 1.4 then 1.0 at 26, x 1.2 in a battle): active animation frames 19-25 = game frames 12-15, cancel 24 = game frame 15, end 50 = game frame 36 (without the x 1.2: 14-18, 18, 43). `codemap.py framedata`'s "game" column assumes the speed switches at the exact frame, so moves with several speed changes (Weaving 587-589, Triple Snake Fang) differ by 1-2 game frames; which order the game runs the timeline and the motion update in within a frame isn't traced.
+
+### Measured in the game (sandbox PCSX2)
+
+How to measure a move in the real game (2026-10-16, for the remake's combat-feel work): VS MODE NORMAL, PLAYER vs CPU, Aaron vs any CPU fighter; set debug switch 17 (`python tools/pcsx2.py w32 0x00599044 1`, docs/CUTCONTENT.md) so the CPU fighter (slot 1, `+0x17` = 2) reads pad 2, which nobody presses: it stands still like the remake's dummy; take both VS weapons away (`w16` fighter `+0x432C` = -1: Aaron then uses his style, □ = Blade Cut). The sandbox keeps this as its save state slot 7. `remake/tools/game_probe.py "P P P" "→K K K" --dist 1.2` walks Aaron to the distance, turns both to face each other (`+0x2D0`; the idle CPU doesn't turn), presses the inputs (each next one `--gap` frames after a move starts) and records both fighters over PINE about 20,000 times a second (`remake/tools/game_rec.py`: action, motion frame, position, HP, posture, status...). Writing `+0x2AC` (position) doesn't move a fighter; walking does.
+
+| Sequence (1.15-1.2 m) | Moves (game frame of start) | Hits (game frame: damage, victim's action) | Ends |
+|---|---|---|---|
+| P | 1805 @0 | @12: 180, 669 / 705 | victim back in 30 |
+| P P P | 1805 @0, 1822 @15 (Blade Cut motion frame 25), 1644 @35 | @12 669, @28 679, @53 650 (knockdown) | lying 20, getup 22 |
+| →P P P | 1807 @0, 1808 @16 (motion frame 21), 1809 @34 | @8, @26, @47 (kind 8: 725) | lying 19 |
+| →K K K | 1812 @0, 1813 @23, 1816 @41 | @17 710-712, @29 340 (launch), @53 hits the flying victim (340 again) | lying 20 |
+| ←K K | 1818 @0, 1819 @22 | @21 721, @40 709 | standing |
+
+Damage is Aaron's VS stats (x1.8 of the base). Wall-clock frame numbers are +-1. Takeaways: the x1.2 battle rate (above), the reaction bits 0x10 / 0x100 (corrected above), and launches stay hittable (posture, above).
 
 ## Hit reactions, guard and locomotion
 
@@ -194,17 +210,23 @@ Read from `Combat_TakeHit` `0x0030DFD0`, `Combat_SituationFactor` `0x00314D30`, 
 
 | Condition (record +8 reaction = R, record +6 level = L, record +4 detail = D; L and D read as those fields from how they are tested) | Kind | Set 0 front action (anim) | Then |
 |---|---|---|---|
-| `Fighter_IsDown(defender)` (`FUN_002FABC0`: posture `+0x4390` bit 4, on the floor; also makes the situation factor 1.0) | 9 face up / 10 face down (`Fighter_LyingFaceDown` `0x00308E10`) | 119 (114) / 708 (614) | lying 20 / 19 |
+| `Fighter_IsDown(defender)` (`FUN_002FABC0`: posture `+0x4390` & 4, on the floor; also makes the situation factor 1.0) | 9 face up / 10 face down (posture & 8 face up, & 0x10 face down, else from the hips' orientation) | 119 (114) / 708 (614) | lying 20 / 19 |
 | R & 0x800 | 0x14 | 1682 (1647) | 20 |
 | R & 0x1000 | 0x15 | 1687 (1646) | 20 |
-| R & 0x100 | 8 | 726 (632) | 20 |
-| R & 0x10 | 0xE | 340 (317) | 20 |
+| R & 0x100 | 0xE | 340 (317) | 20 |
+| R & 0x10 | 8 | 726 (632) | 20 |
 | R & 0x200 | 0xD | 393 (279) | 20 |
 | R & 0x400 | 0xF | 753 (662) | 20 |
+| posture & 2 (crouching) and L & 0xC | 6 | 686 | stance |
+| posture & 0x20 (**in the air**: launched by an earlier hit) | 5 | 340 (re-launch) | 20 |
 | L & 4 (mid) | 3 | 722 (628) | stance |
 | L & 8 (low) | 0xB | 710 (616); the detail bits 0x10 / 0x20 turn the direction | stance |
 | D & 0x10 / 0x20 / 8 / 4 | 1 / 2 / 0x10 / 0x11 | 679 (593) / 669 (585) / 687 (597) / 689 (599) | stance |
 | otherwise | 0 | 703 (521, 34 frames) | stance |
+
+**Correction (2026-10-16, combat-feel session, read again from the decomp's nesting and seen in the sandbox PCSX2):** R & 0x100 gives kind 0xE (340, a launch) and R & 0x10 kind 8 (726); this table had them swapped (MECHANICS.md had them right). In the game Aaron's Double Whip (→K K, reaction 0x100) makes the victim play 340.
+
+**Posture and who can be hit** (read from `Action_Timeline` op 0x35 and the reaction timelines, 2026-10-16; seen in the sandbox PCSX2): op **0x35 n** sets the posture `+0x4390` = n (1 standing, 2 crouching, 4 down, 8 face up, 0x10 face down, 0x20 in the air). The launches and big staggers do **not** set MATCHLESS: 340 is in the air (0x20) from frame 0 and down (12) from its game frame 43, 726 down (12) from game frame 5, 393 in the air from 7, 753 / 754 from 4. Only the real knockdowns (649-652: MATCHLESS frames 0-64), the KOs (680, 5) and the getups set MATCHLESS. So a launched fighter can be hit again: the hit takes kind 5 (in the air, 340 again: a juggle), or kind 9 / 10 once its posture says down. In the game Aaron's →K K K lands all three kicks: Whip Kick (stagger 710-712), Double Whip (launch 340), Triple Whip hits the flying victim (340 again), then it lies down. `remake/tools/action_sim.py` records the posture ops; the remake follows them.
 
 A few special cases set the kind to 4, 5, 6, 7, 0xC, 0x12, 0x13 (same target, status bits `+0x4390`, holds, a low-HP variant from `0x005FE268`) and 999 / 0x3E3-0x3E6 (action 0x290, or the class row's remap entries 0xF0 / 0xEF / 0xEE / 0x50). Every reaction action's script is one `play` then `goto 1` (stance: the reaction's length is the hitstun) or `goto 20` / `goto 19` (knocked down). **Lying**: action 20 loops anim 22 (face up), action 19 anim 9 (face down); each is a `loop -1` whose `goto` names the **getup**: 20 -> 22 (anim 24, 54 frames), 19 -> 21 (anim 23, 72 frames). So hitstun and knockdown lengths come from these animations, not from the hit records (MECHANICS.md said so; now the animations are known). Medium-high confidence (code and tables read; the meaning of `FUN_002FABC0` and the exact direction rule are not traced).
 

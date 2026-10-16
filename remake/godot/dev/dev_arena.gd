@@ -21,6 +21,10 @@ func _ready() -> void:
 		var test := preload("res://dev/smoke_test.gd").new()
 		test.arena = self
 		add_child(test)
+	elif "--probe" in " ".join(OS.get_cmdline_user_args()):
+		var probe := preload("res://dev/combo_probe.gd").new()
+		probe.arena = self
+		add_child(probe)
 	elif "--fight" in OS.get_cmdline_user_args():
 		var fight := preload("res://dev/fight_test.gd").new()
 		fight.arena = self

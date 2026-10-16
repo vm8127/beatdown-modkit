@@ -30,8 +30,9 @@ ACTIVE = re.compile(r"ACTIVE (-?\d+)-(-?\d+) \(game ([\d.]+)-([\d.]+)\) parts ([
 
 
 def ceil_frame(x):
-    """First whole game frame at or after a time framedata prints with one decimal."""
-    v = float(x)
+    """First whole game frame at or after a time framedata prints with one decimal. framedata counts at the speed ops'
+    rate; in a battle the game plays every motion x1.2 faster (action_sim.BATTLE_RATE), so its time is divided by 1.2."""
+    v = round(float(x) / 1.2, 1)
     return int(v) if abs(v - round(v)) < 0.051 and round(v) == int(v) else int(v) + 1
 
 

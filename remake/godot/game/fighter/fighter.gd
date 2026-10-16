@@ -134,6 +134,7 @@ var _getup_frames := GETUP_FRAMES
 var _tail := {}                      ## the rest of an animation after control returned: key, move or action, from
 var _block_action := 822            ## guard-hit action being played (blocked hit)
 var last_reaction := ""              ## the last reaction picked (overlay, tests), e.g. "a703 front kind 0 set 0" 
+var posture := 1                     ## +0x4390, set by timeline op 0x35: 1 standing, 2 crouching, 4 down, 8 face up, 0x10 face down, 0x20 in the air
 var _hit_views: Array[MeshInstance3D] = []
 
 @onready var _pivot: Node3D = $Pivot
@@ -265,6 +266,25 @@ func _enter(new_state: State) -> void:
 	_landed = -1
 	if new_state != State.IDLE:
 		_tail = {}
+	if new_state in [State.IDLE, State.MOVE, State.ATTACK, State.GUARD, State.HOLD]:
+		posture = 1   # every move and the stance start with op 0x35 1 (standing); the remake has no crouch yet
+
+
+## Applies an action's timeline posture (op 0x35) and MATCHLESS ranges at game frame `f` (reactions, falls, getups):
+## the game lets a falling or launched fighter be hit (no MATCHLESS: kinds 5 in the air, 9 / 10 down), only the real
+## knockdowns (649-652, the KOs) and the getups are invincible.
+func _track_status(action: int, f: int) -> void:
+	if model == null:
+		return
+	var info := model.action_info(action)
+	for p in info.get("posture", []):
+		if int(p[0]) <= f:
+			posture = int(p[1])
+	var inv := false
+	for r in info.get("invincible", []):
+		if f >= int(r[0]) and f < int(r[1]):
+			inv = true
+	_set_invulnerable(inv)
 
 
 ## States whose animation carries the body (root motion); idle only while a tail plays.
@@ -474,6 +494,8 @@ func _tick_attack() -> void:
 func _tick_stun() -> void:
 	if model == null:
 		_apply_friction(KNOCK_FRICTION)
+	elif state == State.HITSTUN:
+		_track_status(_react_action, state_frame)
 	stun -= 1
 	if stun <= 0:
 		combo_taken = 0
@@ -498,7 +520,9 @@ func _tick_knockdown() -> void:
 	if model:
 		# The fall plays the reaction's clips (MATCHLESS in the game), then the lying loop.
 		var n := int(_react.get("frames", 0))
-		if state_frame == n:
+		if state_frame < n:
+			_track_status(_react_action, state_frame)   # the fall: launched (0x20) or down (4), MATCHLESS only for real knockdowns
+		elif state_frame == n:
 			_set_invulnerable(false)   # lying: low hits still connect (take_hit)
 		if state_frame >= n + DOWN_FRAMES:
 			if hp <= 0:
@@ -631,6 +655,11 @@ func damage_from(attacker: Fighter, h: MoveHit) -> int:
 	return maxi(d, 1)
 
 
+## Lying face down (posture 0x10, or the face-down lying action 19).
+func _face_down() -> bool:
+	return posture & 0x10 != 0 if posture & 4 else _down_action == 19
+
+
 func _in_damage_state() -> bool:
 	return state == State.HITSTUN or (state == State.KNOCKDOWN and not _is_lying())
 
@@ -643,7 +672,7 @@ func take_hit(attacker: Fighter, h: MoveHit) -> String:
 	if state == State.HELD or held_by:
 		return "miss"   # remake: a held fighter only takes its holder's throw damage
 	_let_go()   # hit while holding: the hold breaks
-	var lying := _is_lying()
+	var lying := _is_lying() or (model != null and posture & 4 != 0)   # Fighter_IsDown: posture bit 4
 	if lying and not (h.level & 8):
 		return "miss"   # remake: the hurtbox is a standing capsule, so on the floor only low hits connect
 	var entry := hit_direction(attacker)
@@ -719,11 +748,11 @@ func _react_to(attacker: Fighter, h: MoveHit, heavy: bool, entry: int, lying: bo
 	if ko or (h.reaction & 0x20 and not lying):
 		var row := (2 if lying else 1) if ko else 0
 		if row == 2:
-			e = DIR_LEFT if _down_action == 19 else DIR_BEHIND   # KO on the floor: face down 231, face up 230
+			e = DIR_LEFT if _face_down() else DIR_BEHIND   # KO on the floor: face down 231, face up 230
 		action = model.reaction_action("knockdown", row, DIRECTIONS[e])
 		last_reaction = "a%d %s knockdown row %d" % [action, DIRECTIONS[e], row]
 	else:
-		var kind := reaction_kind(h, lying, _down_action == 19)
+		var kind := reaction_kind(h, lying, _face_down(), posture)
 		e = turned_entry(kind, entry, h.reaction_detail)
 		if not lying and not kind in [8, 0x15, 0xE, 0x14, 6, 0xB] and _wall_behind(attacker):
 			var row := 1 if hp <= max_hp / 2 else 0
@@ -744,12 +773,13 @@ func _react_to(attacker: Fighter, h: MoveHit, heavy: bool, entry: int, lying: bo
 		_getup_frames = int(g["release"]) if int(g.get("release", -1)) > 0 else int(g.get("frames", GETUP_FRAMES))
 		stun = 0
 		_enter(State.KNOCKDOWN)
-		_set_invulnerable(true)   # the falls set MATCHLESS (status bit 1) on their first frame
+		_track_status(action, 0)   # the knockdowns 649-652 and KOs set MATCHLESS on frame 0; launches and big staggers don't
 		_shake_camera(0.6)
 	else:
 		var rel := int(_react.get("release", -1))
 		stun = rel if rel > 0 else int(_react.get("frames", 30))
 		_enter(State.HITSTUN)
+		_track_status(action, 0)
 		_shake_camera(0.25)
 
 
@@ -916,15 +946,21 @@ func _pose_limb(limb: Node3D, ext: float, height: float) -> void:
 # --- Animation (M4): which clip the state shows -------------------------------------
 
 ## Reaction kind for a hit, in Combat_TakeHit 0x0030DFD0's order (docs/ANIMATION.md, "Hit reactions"): hit on the
-## floor (9 face up, 10 face down), the big reaction bits, then the hit level, then the stagger detail bits.
-## Knockdowns (reaction 0x20) and KOs use the knockdown rows instead (_react_to). Not modelled: kinds 4-7,
-## 0x12, 0x13 (same team, special states, weapon hits) and the class-row reactions 0x3E3-0x3E6 (reaction 0x40).
-static func reaction_kind(h: MoveHit, lying := false, face_down := false) -> int:
+## floor (9 face up, 10 face down), the big reaction bits (0x10 -> 8, 0x100 -> 0xE: checked in the sandbox PCSX2, Double
+## Whip's 0x100 plays 340), crouching hit by a mid / low (6), in the air (5: posture 0x20, a launched fighter hit again
+## re-launches), then the hit level, then the stagger detail bits. Knockdowns (reaction 0x20) and KOs use the knockdown
+## rows instead (_react_to). Not modelled: kinds 4, 7, 0x12, 0x13 (same team, special states, weapon hits) and the
+## class-row reactions 0x3E3-0x3E6 (reaction 0x40).
+static func reaction_kind(h: MoveHit, lying := false, face_down := false, pose := 1) -> int:
 	if lying:
 		return 10 if face_down else 9
-	for pair in [[0x800, 0x14], [0x1000, 0x15], [0x100, 8], [0x10, 0xE], [0x200, 0xD], [0x400, 0xF]]:
+	for pair in [[0x800, 0x14], [0x1000, 0x15], [0x100, 0xE], [0x10, 8], [0x200, 0xD], [0x400, 0xF]]:
 		if h.reaction & pair[0]:
 			return pair[1]
+	if pose & 2 and h.level & 0xC:
+		return 6
+	if pose & 0x20:
+		return 5
 	if h.level & 4:
 		return 3
 	if h.level & 8:

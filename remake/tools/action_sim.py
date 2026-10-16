@@ -11,6 +11,9 @@ What it models (read from code, 2026-10-16):
 - Playback speed (+0x3FE8) is set to 1.0 by Fighter_SetAction and changed by speed ops in either stream; a new clip
   keeps it. The animation frame advances by the speed every game frame (exact fractions), and an op waiting on frame n
   fires on the first game frame whose whole animation frame reaches n.
+- In a battle (`0x0060C960` bit 0) `Fighter_UpdateMotion` 0x002F1610 advances the motion by frame time x speed x 1.2,
+  so every action plays 20 % faster than its speed ops say (BATTLE_RATE; measured in the sandbox PCSX2 2026-10-16:
+  Blade Cut lasts 36 game frames, its 50 animation frames at 1.4 then 1.0 x 1.2). Outside a battle rate = 1.
 - Not modelled: branches (0x32/0x33), random follow-ups, timeline loops (they stop the timeline); the motion script's
   own loop (lying actions 19/20) ends the simulation with `loops` = True.
 """
@@ -20,10 +23,12 @@ from fractions import Fraction
 import codemap
 
 MAX_FRAMES = 2000
+BATTLE_RATE = Fraction(6, 5)   # Fighter_UpdateMotion: x1.2 while 0x0060C960 bit 0 (in a battle) is set
 
 
-def simulate(e, act, length_of):
-    """Run action `act`. `length_of(anim id)` gives a clip's length in animation frames (None if unknown).
+def simulate(e, act, length_of, rate=BATTLE_RATE):
+    """Run action `act`. `length_of(anim id)` gives a clip's length in animation frames (None if unknown). `rate`
+    multiplies the playback speed (BATTLE_RATE in a fight, 1 in the field).
 
     Returns a dict:
       clips     [[anim, start, end, blend]] in play order, end = the effective end frame (capped at the length)
@@ -37,13 +42,15 @@ def simulate(e, act, length_of):
       throws    op 0x2B (throw damage on the held target): {g: game frame, record: hit record index (op 0x30), arg}
       place     op 0x17 (REVISION POS: where this fighter goes relative to its partner, timeline +0x43CC-0x43E0):
                 [x, y, z in game units (0.1 m), angle in degrees, frames], or None
+      posture   [(game frame, value)] of timeline op 0x35 (fighter +0x4390: 1 standing, 2 crouching, 4 down, 8 face up,
+                0x10 face down, 0x20 in the air), in order
       then      the action the motion script continues with (goto / start), None
       loops     the motion script loops forever (lying)
     """
     script = codemap.motion_script(e, act)
     stream = codemap.action_stream(e, act)
     out = dict(clips=[], clip_at=[], frame_at=[], frames=0, windows=[], cancel=[], combo=False, release=-1,
-               guard=-1, invincible=[], throws=[], place=None, then=None, loops=False, notes=[])
+               guard=-1, invincible=[], throws=[], place=None, then=None, loops=False, notes=[], posture=[])
     if not script:
         out["notes"].append("no motion script in the ELF")
         return out
@@ -125,6 +132,8 @@ def simulate(e, act, length_of):
                     pend_release = (clip, args[0] - 1)
                 if args[1]:
                     pend_guard = (clip, args[1] - 1)
+            elif name == "op35":
+                out["posture"].append((g, args[0] & 0xFF))
             elif name == "throwhit":
                 out["throws"].append(dict(g=g, record=hit_index, arg=args[0]))
             elif name == "move17" and out["place"] is None:
@@ -161,7 +170,7 @@ def simulate(e, act, length_of):
         for chk, key in ((pend_release, "release"), (pend_guard, "guard")):
             if chk and out[key] < 0 and chk[0] == clip and math.floor(a) >= chk[1]:
                 out[key] = g
-        a += speed
+        a += speed * rate
         g += 1
     out["frames"] = g
     if inv_start is not None:
