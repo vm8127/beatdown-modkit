@@ -17,6 +17,10 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 ## After the running work lands
 
+- [ ] **Running since 2026-10-16 (visible sessions):** "Fight feel: reactions, grabs, walk" (M4 follow-ups), "Fight HUD with the game's font and colours", "Controller controls like the PS2 game", "M6 complete: subway + Downtown levels with doors". Each updates MEMORY.md as it goes.
+- [ ] **More playable heroes:** export the other heroes' models and styles, a character pick in the dev arena.
+- [ ] **Sound and music research:** find and decode the music, sound effect and voice formats; a converter.
+
 - [ ] **M6 complete (running since 2026-10-15 as a background subagent of the main session; restart from this line if no `levels/subway.tscn` commit follows):** the subway and DOWNTOWN STREET (area 1) as full levels with working doors between them (V, 2026-10-15): area loader, lights, all props, battle spots, items, camera collision, a fight at the battle spots, area change through the doors, level tests.
 
 - [ ] **M4a follow-ups:** root motion pushes the capsule into the dummy (applied past body collision; seen in the smoke screenshot); hitstun / hitstop / knockback are placeholders (not in the hit records: find where the game keeps them); motion-input time limits (`g_InputPatterns`) and where ↑/↓ come from; grabs and context moves can't be input yet; command conditions, Pride and TIRED unused.
