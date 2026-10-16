@@ -79,7 +79,7 @@ func load_area(id: int, fstage := -1) -> bool:
 	var stage := (load(base + ".glb") as PackedScene).instantiate()
 	_world.add_child(stage)
 	fix_materials(stage)
-	var props := stage.get_node_or_null("props")
+	var props := stage.find_child("props", true, false)
 	props_placed = props.get_child_count() if props else 0
 	_add_collision(load(base + "_collision.glb") as PackedScene)
 	_setup_lights()

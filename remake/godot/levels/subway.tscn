@@ -1,0 +1,66 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://levels/level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://game/stage/area.tscn" id="2_area"]
+[ext_resource type="PackedScene" path="res://game/fighter/fighter.tscn" id="3_fighter"]
+[ext_resource type="Script" path="res://game/fighter/player_brain.gd" id="4_brain"]
+[ext_resource type="PackedScene" path="res://game/camera/third_person_camera.tscn" id="5_camera"]
+
+[sub_resource type="LabelSettings" id="label"]
+font_size = 15
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="prompt"]
+font_size = 26
+outline_size = 6
+outline_color = Color(0, 0, 0, 1)
+
+[node name="Subway" type="Node3D"]
+script = ExtResource("1_level")
+
+[node name="Area" parent="." instance=ExtResource("2_area")]
+
+[node name="Player" parent="." groups=["player"] instance=ExtResource("3_fighter")]
+display_name = "Player"
+color = Color(0.85, 0.25, 0.2, 1)
+
+[node name="Brain" type="Node" parent="Player" node_paths=PackedStringArray("camera")]
+script = ExtResource("4_brain")
+camera = NodePath("../../Camera")
+
+[node name="Camera" parent="." node_paths=PackedStringArray("target") instance=ExtResource("5_camera")]
+target = NodePath("../Player")
+
+[node name="Dummies" type="Node3D" parent="."]
+
+[node name="Overlay" type="CanvasLayer" parent="."]
+
+[node name="Info" type="Label" parent="Overlay"]
+offset_left = 12.0
+offset_top = 10.0
+label_settings = SubResource("label")
+
+[node name="Prompt" type="Label" parent="Overlay"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -90.0
+offset_right = 300.0
+offset_bottom = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+label_settings = SubResource("prompt")
+
+[node name="Fade" type="ColorRect" parent="Overlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)

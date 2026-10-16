@@ -22,6 +22,7 @@ const FADE_FRAMES := 20
 const WALK_IN_FRAMES := 8       ## frames of walking into a door zone that count as using it
 const FIGHT_RANGE := 3.0        ## a fight starts when the player comes this close to a street fighter
 const OPPONENT_DISTANCE := 2.5  ## Battle_PlaceFighters: the opponent stands 25 units in front of the spot
+const SPAWN_CLEAR := 6.0        ## no street fighter this close to where the player enters (remake choice)
 
 @export var start_area := 5
 @export var start_entrance := 0     ## 0 = the area's spawn point (its story-fight battle spot)
@@ -82,7 +83,7 @@ func _ready() -> void:
 	cam.get_node("Pitch/SpringArm3D").collision_mask = GameArea.LAYER_WORLD | GameArea.LAYER_CAMERA
 	enter_area(start_area, start_entrance, _from_arg)
 	if test:
-		var t: Node = load("res://levels/level_test.gd").new()   # not written yet (WIP)
+		var t: Node = load("res://levels/level_test.gd").new()
 		t.level = self
 		add_child(t)
 
@@ -131,7 +132,8 @@ func place(f: Fighter, pos: Vector3, angle_deg: float) -> void:
 	f.rotation.y = GameArea.yaw_from_game(angle_deg)
 
 
-## One street fighter per battle spot (except the story spot 0 and duplicates), nearest to the player first,
+## One street fighter per battle spot (except the story spot 0, duplicates and spots by the player's way in),
+## nearest to the player first,
 ## standing where Battle_PlaceFighters would put the opponent.
 func _spawn_dummies() -> void:
 	for d in dummies:
@@ -148,8 +150,15 @@ func _spawn_dummies() -> void:
 			spots.append(i)
 	var ppos := player.global_position
 	spots.sort_custom(func(a, b): return (area.battle_spots[a]["pos"] as Vector3).distance_to(ppos) < (area.battle_spots[b]["pos"] as Vector3).distance_to(ppos))
-	for k in mini(spots.size(), max_dummies):
+	var placed := 0
+	for k in spots.size():
+		if placed >= max_dummies:
+			break
 		var s: Dictionary = area.battle_spots[spots[k]]
+		var at: Vector3 = (s["pos"] as Vector3) + GameArea.dir_from_game(s["angle_deg"]) * OPPONENT_DISTANCE
+		if Vector2(at.x - ppos.x, at.z - ppos.z).length() < SPAWN_CLEAR:
+			continue
+		placed += 1
 		var f: Fighter = FIGHTER_SCENE.instantiate()
 		f.name = "Street%d" % spots[k]
 		f.display_name = "Street fighter %d" % spots[k]
@@ -161,7 +170,7 @@ func _spawn_dummies() -> void:
 		f.add_child(brain)
 		f.set_meta("spot", spots[k])
 		$Dummies.add_child(f)
-		place(f, (s["pos"] as Vector3) + GameArea.dir_from_game(s["angle_deg"]) * OPPONENT_DISTANCE, float(s["angle_deg"]) + 180.0)
+		place(f, at, float(s["angle_deg"]) + 180.0)
 		dummies.append(f)
 
 
