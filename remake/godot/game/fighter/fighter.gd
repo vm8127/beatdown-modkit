@@ -65,6 +65,8 @@ const DIR_BEHIND := 0
 const DIR_FRONT := 1
 const DIR_LEFT := 2
 const DIR_RIGHT := 3
+const LOCK_RANGE := 5.0         ## remake: walking within this distance of an enemy locks on (the game is locked in every battle)
+const UNIT := 0.1               ## metres per game unit
 const HOLD_FRAMES := 150        ## remake: how long a hold lasts without a throw before letting go (the game's escape isn't traced)
 const WALL_RANGE := 1.1         ## Combat_TakeHit's wall test radius, 11 units
 
@@ -91,6 +93,10 @@ var held_by: Fighter = null          ## the fighter holding this one
 var _hold_rear := false              ## the hold was taken from behind (throws use REAR GRAB P / K)
 var _held_action := 0                ## held: the partner action being played (catch, hold, a throw's victim side)
 var _held_loop := false
+var _walk_frame := 0.0              ## walk clip frame (advances at the rate that keeps the feet planted)
+var _walk_rate := 1.0
+var _walk_action := 2                ## the walk action shown (g_WalkModes direction, or the run)
+var walk_mode := 0                   ## g_WalkModes mode: 0 unarmed, 2 afraid and hurt (FUN_003155D0)
 var state := State.IDLE
 var state_frame := 0
 var move: MoveData                   ## current move while attacking
@@ -164,6 +170,8 @@ func _setup_model() -> void:
 		m.queue_free()
 		return
 	model = m
+	# Fighters push each other apart with the game's body spheres (_push_apart), not the fat capsules.
+	collision_mask &= ~LAYER_BODIES
 	for n in ["Body", "Visor", "ArmR", "ArmL", "Leg"]:
 		(_pivot.get_node(n) as Node3D).visible = false
 	_animate()
@@ -221,6 +229,34 @@ func _physics_process(_delta: float) -> void:
 		velocity.z = model.root_delta.z / DT
 	velocity.y -= GRAVITY * DT
 	move_and_slide()
+	_push_apart()
+
+
+## The game's body collision between fighters (FUN_003072C0, every frame, every pair): where a body sphere of this
+## fighter (g_BodySpheres on the posed bones: hips and chest 0.22 m, head, limbs) overlaps the other's, both move
+## apart along the floor line between them, half each (each fighter moves itself by its half here). Remake: the
+## deepest overlap of the pair, moved with collision so walls still stop it; held pairs are skipped.
+func _push_apart() -> void:
+	if model == null:
+		return
+	var mine := model.body_spheres()
+	for n in get_tree().get_nodes_in_group("fighters"):
+		var o := n as Fighter
+		if o == self or o.model == null or o == holding or o == held_by:
+			continue
+		if global_position.distance_to(o.global_position) > 2.5:
+			continue
+		var depth := 0.0
+		for a in mine:
+			for b in o.model.body_spheres():
+				var d := float(a[0].distance_to(b[0]))
+				depth = maxf(depth, float(a[1]) + float(b[1]) - d)
+		if depth <= 0.0:
+			continue
+		var away := global_position - o.global_position
+		away.y = 0
+		away = away.normalized() if away.length() > 0.001 else -forward()
+		move_and_collide(away * depth * 0.5)
 
 
 func _enter(new_state: State) -> void:
@@ -271,9 +307,9 @@ func _tick_free() -> void:
 		return
 	var dir: Vector3 = brain.move_dir(self)
 	if dir.length() > 0.1:
-		velocity.x = dir.x * walk_speed
-		velocity.z = dir.z * walk_speed
-		_turn_toward(dir)
+		var v := _walk_velocity(dir.normalized())
+		velocity.x = v.x
+		velocity.z = v.z
 		if state != State.MOVE:
 			_enter(State.MOVE)
 	else:
@@ -281,6 +317,80 @@ func _tick_free() -> void:
 		if state != State.IDLE:
 			_enter(State.IDLE)
 		_face_target_smoothly()
+
+
+## Fighter_TaskWalk 0x0030CA90: locked on an enemy, the fighter keeps facing it and steps in one of 8 directions
+## (g_WalkModes: each its own action and speed, so the feet match); running (L1 or the stick at full tilt) faces
+## the way it goes, action 3 at 54 units/s; with nobody near, a plain walk forward. Sets the walk action.
+func _walk_velocity(dir: Vector3) -> Vector3:
+	var row: Dictionary = model.meta.get("walk_modes", {}).get(str(walk_mode), {}) if model else {}
+	if row.is_empty():
+		_turn_toward(dir)
+		return dir * walk_speed
+	var run: bool = brain.has_method("wants_run") and brain.wants_run(self)
+	var target := _lock_target()
+	if run or target == null:
+		_turn_toward(dir)
+		if run:
+			var r: Dictionary = model.meta.get("run", {})
+			_walk_action = int(r.get("action", 3))
+			return _walk_at(dir, float(r.get("speed", 54.0)) * UNIT, 0)
+		_walk_action = int(row["actions"][0])
+		return _walk_at(dir, float(row["speeds"][0]) * 60.0 * UNIT, 0)
+	var to := target.global_position - global_position
+	_turn_toward(Vector3(to.x, 0, to.z))
+	var i := walk_direction(dir)
+	_walk_action = int(row["actions"][i])
+	return _walk_at(dir, float(row["speeds"][i]) * 60.0 * UNIT, i)
+
+
+## Moves at the game's speed and sets the clip's playback rate so its feet keep up (remake: the game moves 2.16 m/s
+## with a front walk whose stride is about 1.35 m/s at speed 1.0, docs/ANIMATION.md "Locomotion").
+const WALK_DIRS := [Vector3(0, 0, 1), Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(-1, 0, 0),
+	Vector3(0.707, 0, 0.707), Vector3(-0.707, 0, 0.707), Vector3(0.707, 0, -0.707), Vector3(-0.707, 0, -0.707)]
+
+
+func _walk_at(dir: Vector3, speed: float, i: int) -> Vector3:
+	var natural := model.stride_speed(model.clip_for_action(_walk_action), WALK_DIRS[i])
+	_walk_rate = clampf(speed / natural, 0.5, 2.5) if natural > 0.05 else 1.0
+	return dir * speed
+
+
+## The walk task's 8 directions from the game angle of the move against the facing: 0 front (-25..25), 4 (25..65),
+## 2 (65..115), 6 (115..155), 5 (-65..-25), 3 (-115..-65), 7 (-155..-115), 1 back.
+func walk_direction(dir: Vector3) -> int:
+	var l := global_transform.basis.inverse() * dir
+	var a := rad_to_deg(atan2(-l.x, -l.z))
+	if a >= -25.0 and a < 25.0:
+		return 0
+	if a >= 25.0 and a < 65.0:
+		return 4
+	if a >= 65.0 and a < 115.0:
+		return 2
+	if a >= 115.0 and a < 155.0:
+		return 6
+	if a >= -65.0 and a < -25.0:
+		return 5
+	if a >= -115.0 and a < -65.0:
+		return 3
+	if a >= -155.0 and a < -115.0:
+		return 7
+	return 1
+
+
+## The nearest other fighter within LOCK_RANGE that can still fight, any direction.
+func _lock_target() -> Fighter:
+	var best: Fighter = null
+	var best_d := LOCK_RANGE
+	for n in get_tree().get_nodes_in_group("fighters"):
+		var f := n as Fighter
+		if f == self or f.state == State.KNOCKDOWN:
+			continue
+		var d := global_position.distance_to(f.global_position)
+		if d < best_d:
+			best = f
+			best_d = d
+	return best
 
 
 func _tick_guard() -> void:
@@ -870,7 +980,8 @@ func _animate() -> void:
 				return
 			_show_action(int(generic.get("stance", 1)), "stance", state_frame)
 		State.MOVE:
-			_show_action(int(generic.get("walk", 2)), "walk", state_frame)
+			_walk_frame += _walk_rate
+			_show_action(_walk_action, "walk%d" % _walk_action, _walk_frame)
 		State.GUARD:
 			# The unarmed standing guard loop (action 821), blending in over its 10 frames.
 			_show_action(int(generic.get("guard", 821)), "guard", state_frame)
@@ -923,7 +1034,7 @@ func _show_tail() -> bool:
 
 
 ## Shows an action's first clip (stance, walk, lying...) with that action's blend.
-func _show_action(action: int, key: String, frame: int) -> void:
+func _show_action(action: int, key: String, frame: float) -> void:
 	var clip := model.clip_for_action(action)
 	if clip == "":
 		clip = model.clip_for_action(1)

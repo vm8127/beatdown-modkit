@@ -42,6 +42,8 @@ var _root_prev := Vector3.ZERO      ## this clip's raw hips floor position on th
 var _root_frame := -1.0
 var _shown_tick := -1               ## physics frame of the last show_clip (a second call in a frame changes nothing)
 var root_delta := Vector3.ZERO      ## world-space floor travel of the hips on the last shown frame
+var _strides := {}                  ## stride_speed cache
+var _body := []                    ## g_BodySpheres: [bone index, offset, radius] (fighters push apart with these)
 var _parts := {}                    ## attack part -> {"bone": index, "offset": Vector3, "radius": float}
 
 
@@ -81,6 +83,11 @@ func setup(model_name: String, anim_set: String) -> bool:
 		var o: Array = p["offset"]
 		_parts[int(p["part"])] = {"bone": skeleton.find_bone(p["bone"]), "offset": Vector3(o[0], o[1], o[2]),
 			"radius": float(p["radius"])}
+	for p in meta.get("body_parts", []):
+		var o: Array = p["offset"]
+		var b := skeleton.find_bone(p["bone"])
+		if b >= 0:
+			_body.append([b, Vector3(o[0], o[1], o[2]), float(p["radius"])])
 	var stance := clip_for_action(int(meta.get("generic", {}).get("stance", 1)))
 	if has_clip(stance) and _hips >= 0:
 		_hips_ref = _sample_pos(stance, _hips, 0.0)
@@ -184,6 +191,56 @@ func part_sphere(part: int) -> Array:
 	var p: Dictionary = _parts[part]
 	var g := skeleton.global_transform * skeleton.get_bone_global_pose(p["bone"])
 	return [g * (p["offset"] as Vector3), p["radius"]]
+
+
+## A clip's own walking speed (m/s at playback 1.0) along `dir` (skeleton space, forward +Z): the median speed at
+## which the lower foot moves backwards under the hips, sampled once per clip and cached. 0 if unknown.
+func stride_speed(clip: String, dir: Vector3) -> float:
+	var key := "%s %s" % [clip, dir]
+	if _strides.has(key):
+		return _strides[key]
+	var feet := [skeleton.find_bone("foot_r"), skeleton.find_bone("foot_l")]
+	if not _anims.has(clip) or feet.has(-1):
+		return 0.0
+	var anim: Animation = _anims[clip]
+	var keep := []
+	for i in skeleton.get_bone_count():
+		keep.append([skeleton.get_bone_pose_rotation(i), skeleton.get_bone_pose_position(i)])
+	var speeds := []
+	var prev := []
+	var n := clip_frames(clip)
+	for f in n + 1:
+		var t := minf(f / 60.0, anim.length)
+		for tr in _tracks_of(clip):
+			if tr[1] >= 0:
+				skeleton.set_bone_pose_rotation(tr[0], anim.rotation_track_interpolate(tr[1], t))
+			if tr[2] >= 0:
+				skeleton.set_bone_pose_position(tr[0], anim.position_track_interpolate(tr[2], t))
+		var hips := skeleton.get_bone_global_pose(_hips).origin if _hips >= 0 else Vector3.ZERO
+		var pos := []
+		for b in feet:
+			var q := skeleton.get_bone_global_pose(b).origin - hips
+			pos.append(q)
+		if prev.size() == 2:
+			var low := 0 if pos[0].y < pos[1].y else 1
+			speeds.append(-((pos[low] - prev[low]) * 60.0).dot(dir.normalized()))
+		prev = pos
+	for i in keep.size():
+		skeleton.set_bone_pose_rotation(i, keep[i][0])
+		skeleton.set_bone_pose_position(i, keep[i][1])
+	speeds.sort()
+	var v: float = speeds[speeds.size() / 2] if speeds.size() > 0 else 0.0
+	_strides[key] = v * skeleton.global_transform.basis.get_scale().x
+	return _strides[key]
+
+
+## The body spheres on the posed bones, as world [centre, radius] pairs ([] without the data).
+func body_spheres() -> Array:
+	var out := []
+	for b in _body:
+		var g := skeleton.global_transform * skeleton.get_bone_global_pose(b[0])
+		out.append([g * (b[1] as Vector3), b[2]])
+	return out
 
 
 func _tracks_of(clip: String) -> Array:

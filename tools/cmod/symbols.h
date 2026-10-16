@@ -200,6 +200,7 @@ u16 Area_DoorOpen(int area);  /* 0x002e8e60 */
 u32 Pad_ActionButton(int layout, int action);  /* 0x002ebd40 */
 void Fighter_AttackCollide(Fighter *fighter, Fighter *other);  /* 0x002ec560 */
 void Fighter_HazardWall(Fighter *fighter);  /* 0x002ec920 */
+void Fighter_ApplyRootMotion(Fighter *fighter);  /* 0x002f0260 */
 void Fighter_PlayMotion(Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames);  /* 0x002f0900 */
 void Fighter_UpdateMotion(Fighter *fighter);  /* 0x002f1610 */
 void Fighter_AttachPart(int item, Fighter *f, int slot, void *clump, int a5);  /* 0x002f4bf0 */
@@ -214,6 +215,7 @@ f32 Fighter_GetHPRatio(Fighter *fighter);  /* 0x002f8bc0 */
 f32 Fighter_GetPride(Fighter *fighter);  /* 0x002f8c00 */
 f32 Fighter_GetPrideRatio(Fighter *fighter);  /* 0x002f8c20 */
 void Fighter_GetPos(Fighter *fighter, f32 *xyz);  /* 0x002f8c80 */
+int Fighter_WalkBody(Fighter *fighter);  /* 0x002f8d60 */
 int Fighter_GetStyle(Fighter *fighter);  /* 0x002f8e00 */
 Person *Fighter_GetPerson(Fighter *fighter);  /* 0x002f9250 */
 PersonDef *Fighter_GetPersonDef(Fighter *fighter);  /* 0x002f9260 */
@@ -245,6 +247,7 @@ int Area_LoadStage(void *pack, int a1, void *area);  /* 0x002fe010 */
 int Stage_LoadCommon(void);  /* 0x002ffa50 */
 void Pad_BuildButtonJobs(void);  /* 0x003045c0 */
 void Fighter_Spawn(int slot, int target, int team);  /* 0x00304b60 */
+void Fighter_PushApart(void);  /* 0x003072c0 */
 void Fighter_StartAction(Fighter *fighter, int action);  /* 0x00307e40 */
 int Fighter_LyingFaceDown(Fighter *fighter);  /* 0x00308e10 */
 void Fighter_UpdateTargetDir(void);  /* 0x00308ec0 */
@@ -256,6 +259,7 @@ void Fighter_TaskWalk(void *task);  /* 0x0030ca90 */
 void Combat_TakeHit(Fighter *fighter);  /* 0x0030dfd0 */
 void Fighter_TaskGuard(int *task);  /* 0x0030ff20 */
 void Fighter_TaskGuardLow(int *task);  /* 0x00310690 */
+int Fighter_WalkMode(Fighter *fighter);  /* 0x003155d0 */
 Command *Style_GetCommandList(int style);  /* 0x00317bc0 */
 Command *Style_GetWeaponCommandList(int weapon_kind);  /* 0x00317be0 */
 int MoveList_IsLearned(Fighter *fighter, int style, int line);  /* 0x00317e50 */

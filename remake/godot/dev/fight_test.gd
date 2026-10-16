@@ -40,6 +40,7 @@ func _run() -> void:
 	await _test_knockdown(p, d)
 	await _test_grab(p, d, false, "fight_grab.png")
 	await _test_grab(p, d, true, "")
+	await _test_walk(p, d)
 	var ok := _fails.is_empty()
 	print("RESULT fight: %d checks passed, %d failed %s -> %s" % [_passes, _fails.size(), _fails, "PASS" if ok else "FAIL"])
 	get_tree().quit(0 if ok else 1)
@@ -114,7 +115,17 @@ func _test_knockdown(p: Fighter, d: Fighter) -> void:
 	_place(p, d, PI, DummyBrain.Mode.STAND)
 	await _frames(10)
 	(p.brain as PlayerBrain).press(code.right(1), code.left(code.length() - 1))
-	var got := await _until(func(): return d.state == Fighter.State.KNOCKDOWN, 120)
+	var closest := 99.0
+	var got := false
+	for i in 120:
+		await _frames(1)
+		var gap := Vector2(p.global_position.x - d.global_position.x, p.global_position.z - d.global_position.z).length()
+		closest = minf(closest, gap)
+		if d.state == Fighter.State.KNOCKDOWN:
+			got = true
+			break
+	# FUN_003072C0: the body spheres (hips and chest 0.22 m) keep the bodies apart while the lunge's hips travel
+	_check(closest >= 0.35, "body collision: %s's lunge keeps the bodies %.2f m apart (hips spheres 2 x 0.22)" % [code, closest])
 	_check(got, "knockdown: %s knocks Dummy 1 down (%s)" % [code, d.last_reaction])
 	if not got:
 		return
@@ -180,6 +191,54 @@ func _test_grab(p: Fighter, d: Fighter, rear: bool, shot: String) -> void:
 		t, Fighter.State.keys()[d.state], n, then])
 	await _until(func(): return d.state == Fighter.State.IDLE and p.state == Fighter.State.IDLE, 400)
 	_check(d.held_by == null and p.holding == null, "%s: both free again" % t)
+
+
+## Walking (Fighter_TaskWalk, g_WalkModes): Dummy 1 walks at the player, locked on: the front walk action at the
+## table's speed, and the lower foot barely slides (its floor speed is a small part of the walking speed). Then the
+## 8-way choice and the back speed for a step backwards.
+func _test_walk(p: Fighter, d: Fighter) -> void:
+	_place(p, d, PI, DummyBrain.Mode.FIGHT)
+	d.global_position = Vector3(0, 0, -1.6)
+	var sk := d.model.skeleton
+	var feet := [sk.find_bone("foot_r"), sk.find_bone("foot_l")]
+	var row: Dictionary = d.model.meta["walk_modes"]["0"]
+	var prev := []
+	var slide := 0.0
+	var n := 0
+	var speed := 0.0
+	var strides := []
+	var slides := []
+	var start := d.global_position
+	var moved_frames := 0
+	for i in 45:
+		await _frames(1)
+		if d.state != Fighter.State.MOVE:
+			continue
+		speed = Vector2(d.velocity.x, d.velocity.z).length()
+		moved_frames += 1
+		var pos := []
+		for b in feet:
+			pos.append(sk.global_transform * sk.get_bone_global_pose(b).origin)
+		if prev.size() == 2 and i > 12:   # after the blend in
+			var low := 0 if pos[0].y < pos[1].y else 1
+			var v: Vector3 = (pos[low] - prev[low]) / Fighter.DT
+			slide += Vector2(v.x, v.z).length()
+			strides.append(-(v - d.velocity).dot(d.forward()))   # the lower foot against the body: the clip's own speed
+			slides.append(absf(v.dot(d.forward())))   # along the walk: sideways ankle roll is not sliding
+			n += 1
+		prev = pos
+	var want := float(row["speeds"][0]) * 60.0 * Fighter.UNIT
+	_check(d._walk_action == int(row["actions"][0]) and absf(speed - want) < 0.05, "walk: front walk action %d at %.2f m/s (table %.2f)" % [
+		d._walk_action, speed, want])
+	print("  info walk: body moved %.2f m/s on average" % ((d.global_position - start).length() / maxf(moved_frames, 1) * 60.0))
+	strides.sort()
+	slides.sort()
+	var avg: float = slides[slides.size() / 4] if slides.size() > 0 else 99.0   # lower quartile: the planted part of the step
+	print("  info walk: the lower foot moves %.2f m/s backwards against the body (median; the clip's own walking speed)" % (strides[strides.size() / 2] if strides.size() > 0 else 0.0))
+	_check(n > 10 and avg < 0.35 * want, "walk: planted foot slides %.2f m/s (lower quartile, walking %.2f m/s, %d frames)" % [avg, want, n])
+	var back := p.walk_direction(p.global_transform.basis.z)
+	var side := p.walk_direction(p.global_transform.basis.x)
+	_check(back == 1 and side in [2, 3], "walk: back -> direction %d, side -> %d" % [back, side])
 
 
 ## The first one-input command of the style whose move has a knockdown hit (reaction 0x20).

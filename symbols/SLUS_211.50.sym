@@ -255,6 +255,7 @@
 002EBD40 Pad_ActionButton
 002EC560 Fighter_AttackCollide
 002EC920 Fighter_HazardWall
+002F0260 Fighter_ApplyRootMotion
 002F0900 Fighter_PlayMotion
 002F1610 Fighter_UpdateMotion
 002F4BF0 Fighter_AttachPart
@@ -270,6 +271,7 @@
 002F8C00 Fighter_GetPride
 002F8C20 Fighter_GetPrideRatio
 002F8C80 Fighter_GetPos
+002F8D60 Fighter_WalkBody
 002F8DC0 Person_GetBody
 002F8E00 Fighter_GetStyle
 002F8E20 Fighter_GetWeaponMoveList
@@ -312,6 +314,7 @@
 003045C0 Pad_BuildButtonJobs
 00304B60 Fighter_Spawn
 00305CC0 Combat_ResolveHit
+003072C0 Fighter_PushApart
 00307E40 Fighter_StartAction
 00308E10 Fighter_LyingFaceDown
 00308EC0 Fighter_UpdateTargetDir
@@ -325,6 +328,7 @@
 00310690 Fighter_TaskGuardLow
 00313F90 Fighter_PrideRegen
 00314D30 Combat_SituationFactor
+003155D0 Fighter_WalkMode
 00317BC0 Style_GetCommandList
 00317BE0 Style_GetWeaponCommandList
 00317E50 MoveList_IsLearned

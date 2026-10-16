@@ -88,6 +88,26 @@ __external_tools/godot/Godot_v4.7.2-stable_win64_console.exe --headless --path r
 
 The level code: `game/stage/area.gd` (`GameArea`: loads an area's converted files, lights, collision layers 1 world / 16 camera, story-stage objects, markers; queries `arrival()`, `door_at()`, `facing_door()`, `nearest_battle_spot()`, `is_inside()`, `floor_height()`) and `levels/level.gd` (`Level`: player, camera, dummies, door flow with fade, fights, overlay). The stage converter alone (keeps the other assets): `cd remake/tools && python -c "import sys; sys.path.insert(0,'../../tools'); import conv_stages; conv_stages.convert('../../ISO','../godot/assets_ripped')"`.
 
+## Fight HUD
+
+The dev arena shows the game's fight HUD (`game/ui/fight_hud.tscn`; docs/HUD.md): the player's HP bar and name top left, the target's top right (mirrored), the red damage trail, the low-HP pulse, both Pride gauges (the lighter with the burning fuse: the flames shrink with Pride), NEGOTIATION OK! when the enemy's Pride is empty, the N HITS combo counter, and a thin TIRED strip under each bar (remake-only). Art, font and layout come from `remake_assets.py` `ui` (`conv_ui.py`, alone: `python remake/tools/conv_ui.py ISO remake/godot/assets_ripped`). Text uses the game's font everywhere you want it: `GameFont.font()` for any Label / RichTextLabel, `GameFont.bbcode(GameText.text(id))` for colours and button icons. Without the assets it falls back to plain shapes and the default font.
+
+HUD check (exit code 0 = pass; the player hits Dummy 1 and the HUD's HP, trail, Pride, TIRED and combo must follow); `--shots=<folder>` (without `--headless`) saves hud_fight.png, hud_lowhp.png, hud_text.png:
+
+```bash
+__external_tools/godot/Godot_v4.7.2-stable_win64_console.exe --headless --path remake/godot res://game/ui/hud_test.tscn
+```
+
+## Fight test
+
+`-- --fight` (with the assets) checks how hits land against Dummy 1, in the game's way: reactions from the front, behind and the side (hitstun = the reaction's release frame, knockback = its hip travel), a blocked hit, a knockdown with lying and getting up, a grab and throw from the front (GRAB P) and from behind (REAR GRAB P, Sleeper Hold), the locked 8-way walk with planted feet, and body collision. Exit code 0 = pass; without `--headless` and with `--shots=<folder>` it saves fight_behind / fight_block / fight_down / fight_grab.png.
+
+```bash
+__external_tools/godot/Godot_v4.7.2-stable_win64_console.exe --headless --path remake/godot -- --fight
+```
+
+In play: R1 grabs (P / K throw while holding; from behind the rear throws), guard blocks high and mid hits from the front, L1 or the stick at full tilt runs.
+
 ## Smoke test
 
 Runs a scripted combo on Dummy 1 (exit code 0 = pass). With the assets extracted it's Aaron's Triple Snake Fang, →P P P (actions 1807, 1808, 1809): each chain must start on the previous move's cancel frame, all 3 hits must combo, and the damage must match the MECHANICS formula (60 + 70 + 150 = 280). Without them, the placeholder jab, jab, straight for 50 damage. `--headless` skips the window; drop it and add `--shot=<file.png>` for a screenshot. `--press=P` instead plays one move on Dummy 1 (passes if it hits; prints the hit spheres; with `--shot=` a side view on the hit), `--shot-down=<file.png>` saves Dummy 1 knocked down after the combo.

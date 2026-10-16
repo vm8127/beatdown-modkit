@@ -686,6 +686,10 @@
 002fb840	func	Fighter_NewAttackId	+0x44E6 += 1: a new swing, so the same attack can hit again (timeline ops 0x30 and 0x2D HIT)	void (Fighter *fighter)
 002ec560	func	Fighter_AttackCollide	(fighter, other) sends the attack spheres (g_AttackSpheres, radius x 2) whose bit is in +0x44F0, only while +0x44F4 <= motion frame (+0x2D4) <= +0x44F6; damage from g_ActionHits[+0x4348][+0x4570]	void (Fighter *fighter, Fighter *other)
 002f1610	func	Fighter_UpdateMotion	advances the motion by frame time x speed (+0x3FE8, x1.2 when 0x0060C960 bit 0), blends from the previous motion over +0x3FA8 seconds, copies bone positions to +0x35C	void (Fighter *fighter)
+002f0260	func	Fighter_ApplyRootMotion	every frame: the hips' floor offset (x, z) from the motion start point (+0x3FB0 / +0x3FB8, set by Fighter_PlayMotion) is turned into world space and added to the position, and taken off the hips: animations carry the fighter (moves, reactions, knockdowns, grabs)	void (Fighter *fighter)
+003072c0	func	Fighter_PushApart	body collision: every pair of fighters, every overlapping g_BodySpheres pair (depth from FUN_003052A0) pushes both apart on the floor, half each (only the movable one when +0x4724 bit 0 differs)	void (void)
+003155d0	func	Fighter_WalkMode	g_WalkModes mode: 0 unarmed, 2 FEAR (status 0x40000) and hurt, 5/6/7/9/10/0xB by the held weapon class, 0xC special state	int (Fighter *fighter)
+002f8d60	func	Fighter_WalkBody	the body size for the walk tables (0 in a special state 0x44)	int (Fighter *fighter)
 0030ca90	func	Fighter_TaskWalk	walk state: starts Fighter_RemapAction(2) (M body: action 2, anim 5)	void (void *task)
 0030aeb0	func	Fighter_TaskAction	per-frame action state: tired, and the op 0x3C frames (+0x43AA guard bit, +0x43A8 Fighter_ReturnControl)	void (void *task)
 002a42e0	func	Pad_ReadCommand	turns the pad into an input code and stores it at fighter +0x4510; inputs while the fighter is busy (state & 6) count up +0x450D	int (int fighter_index, int a2)
@@ -748,7 +752,7 @@
 005161c0	data	g_ReactionSet0	normal hit reactions: 0x16 pointers (one per reaction kind) to 4 x {s16 action, s16 angle}; kind 0 front = action 703	u32[22]
 00516300	data	g_ReactionSet1	heavier hit reactions (set 1), same layout as g_ReactionSet0; kind 0 front = action 643	u32[22]
 005d0630	data	g_HitSituationSet	reaction set per hit situation, returned by Combat_SituationFactor: normal 0, HP<1000 1, HP<300 1, counter 1, reeling 0, held 1	u32[6]
-00516560	data	g_WalkModes	walk task (0x30CA90) locomotion modes: 14 rows of 6 pointers, [mode*6+i] = s16 actions for 8 directions, [mode*6+3+i] = f32 speeds (units per frame); i probably body size	u32[14][6]
+00516560	data	g_WalkModes	Fighter_TaskWalk locomotion: [mode * 6 + body] -> s16 actions for 8 directions (0 front, 1 back, 2 / 3 sides, 4 / 5 front diagonals, 6 / 7 back diagonals), [mode * 6 + 3 + body] -> f32 speeds in units per 1/60 s; mode from Fighter_WalkMode (0 unarmed: medium 2, 693-699 at 0.359 / 0.198)	u32[14][6]
 001d0b90	func	Pad_Update	(frame time) reads ports 0-1 every frame: buttons through Pad_RemapButtons, auto-repeat, hold times, sticks with a half-radius rescaled dead zone, into g_Pad1 / pad 2 (docs/CONTROLS.md)	void (float dt)
 001d0770	func	Pad_PortSetup	(port) libpad connection state machine (analog mode lock, actuator align); 0 while the pad isn't ready	int (int port)
 001d2130	func	Pad_Vibrate	(seconds, port, motor 0 small / 1 large, strength) starts a rumble if VIBRATION is on for the port (g_SystemData +7)	void (float seconds, int port, int motor, int strength)

@@ -197,7 +197,9 @@ struct Fighter {
     s16 motion;  /* +0x3fa4 current animation slot (anim id + 1; the overlay's MOT + 1) */
     s16 prev_motion;  /* +0x3fa6 */
     f32 blend;  /* +0x3fa8 blend time (seconds) */
-    u8 _3FAC[0x24];
+    u8 _3FAC[0x4];
+    f32 motion_origin[0x3];  /* +0x3fb0 the hips' position when the motion started (Fighter_PlayMotion; node 1 and 8 translation x body scale); Fighter_ApplyRootMotion moves the fighter by the hips' offset from it */
+    u8 _3FBC[0x14];
     f32 timeline_wait;  /* +0x3fd0 Action_Timeline: wait until motion_frame >= this (op 0x0A); motion script op 4 clears it */
     u8 *motion_script;  /* +0x3fd4 current action's motion script (docs/ANIMATION.md) */
     u8 *second_stream;  /* +0x3fd8 current action's timeline (second stream), run by Action_Timeline (docs/ANIMATION.md, Frame data) */
@@ -284,6 +286,7 @@ _Static_assert(__builtin_offsetof(Fighter, motion_frame) == 0x2d4, "Fighter.moti
 _Static_assert(__builtin_offsetof(Fighter, motion) == 0x3fa4, "Fighter.motion");
 _Static_assert(__builtin_offsetof(Fighter, prev_motion) == 0x3fa6, "Fighter.prev_motion");
 _Static_assert(__builtin_offsetof(Fighter, blend) == 0x3fa8, "Fighter.blend");
+_Static_assert(__builtin_offsetof(Fighter, motion_origin) == 0x3fb0, "Fighter.motion_origin");
 _Static_assert(__builtin_offsetof(Fighter, timeline_wait) == 0x3fd0, "Fighter.timeline_wait");
 _Static_assert(__builtin_offsetof(Fighter, motion_script) == 0x3fd4, "Fighter.motion_script");
 _Static_assert(__builtin_offsetof(Fighter, second_stream) == 0x3fd8, "Fighter.second_stream");

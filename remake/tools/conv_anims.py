@@ -21,6 +21,7 @@ The skeleton's joint names are fixed (skeleton.BONE_NAMES), so in Godot the clip
 conv_models.py with the same body (the Skeleton3D bones match by name).
 """
 import json
+import struct
 import os
 import sys
 
@@ -33,6 +34,7 @@ import action_sim  # noqa: E402
 import conv_moves  # noqa: E402
 from conv_models import Disc, body_clump  # noqa: E402
 from gltf_writer import Gltf  # noqa: E402
+BODY = 1   # medium (Aaron); the walk table row
 from skeleton import BONE_NAMES, MOVING_NODES, SCALE, Skeleton
 
 REACTION_SETS = 0x005FE260      # u32[2] -> reaction set: u32[0x16] -> 4 x {s16 action, s16 angle}; then u32[2] -> the
@@ -51,6 +53,10 @@ GUARD_ACTIONS = 0x005166C0
 # Generic grab pairs (attacker, victim), medium body: the catch and hold Combat_ResolveHit starts for a front grab
 # (g_ActionRemap_M 0x181 / 0x182 -> 126 / 124, partners via g_ActionEvents +8: 127 / 125); the release pair 132 / 133
 # is a remake guess (hold category, partner placed 5 units in front)
+# g_WalkModes 0x00516560: 14 rows of 6 pointers; [mode * 6 + body] -> s16 actions for 8 directions, [mode * 6 + 3 + body]
+# -> f32 speeds (game units per 1/60 s). Fighter_TaskWalk 0x0030CA90: mode 0 unarmed, 2 afraid and hurt (FUN_003155D0)
+WALK_MODES = 0x00516560
+WALK_MODE_ROWS = (0, 2)
 GRAB = {"catch": [126, 127], "hold": [124, 125], "release": [132, 133]}
 
 # Output name -> (outfit preset whose body skeleton to use, style name in conv_moves.STYLES, the class row's
@@ -115,6 +121,20 @@ def attack_parts(e):
     return out
 
 
+BODY_SPHERES = 0x00515CC0      # g_BodySpheres: 9 x {s8 node, f32 offset xyz, f32 radius} (FUN_003072C0 pushes fighters apart)
+
+
+def body_parts(e):
+    out = []
+    for i in range(9):
+        o = e.v2o(BODY_SPHERES + 20 * i)
+        node = e.d[o] - 256 if e.d[o] > 127 else e.d[o]
+        x, y, z, r = struct.unpack_from("<4f", e.d, o + 4)
+        out.append(dict(part=i, node=node, bone=BONE_NAMES[node] if 0 <= node < len(BONE_NAMES) else "",
+                        offset=[round(c * SCALE, 5) for c in (x, y, z)], radius=round(r * SCALE, 5)))
+    return out
+
+
 def plan(e, lib, iso, style_name, class_groups):
     """Every clip to export: {anim id: role list}, plus the reaction / action tables for the JSON."""
     name, style, title, prefs = next(s for s in conv_moves.STYLES if s[0] == style_name)
@@ -159,6 +179,10 @@ def plan(e, lib, iso, style_name, class_groups):
             add_action(act, f"grab {role}")
     for act in pairs:
         add_action(act, "grab partner")
+    walk = walk_tables(e, BODY)
+    for mode, row in walk.items():
+        for act in row["actions"]:
+            add_action(act, f"walk mode {mode}")
     guard = guard_tables(e)
     for kind, acts in guard.items():
         for i, act in enumerate(acts):
@@ -168,7 +192,18 @@ def plan(e, lib, iso, style_name, class_groups):
         for k, dirs in kinds.items():
             for d, act in dirs.items():
                 add_action(act, f"reaction {s} {k:#x} {d}")
-    return prefs, want, actions, reactions, guard
+    return prefs, want, actions, reactions, guard, walk
+
+
+def walk_tables(e, body):
+    """{mode: {actions: [8], speeds: [8] units per frame}} for one body size; directions in the walk task's order:
+    0 front, 1 back, 2 / 3 the sides (game angle 65..115 / -115..-65), 4 / 5 front diagonals, 6 / 7 back diagonals."""
+    out = {}
+    for mode in WALK_MODE_ROWS:
+        pa, ps = e.u32(WALK_MODES + 4 * (mode * 6 + body)), e.u32(WALK_MODES + 4 * (mode * 6 + 3 + body))
+        out[mode] = dict(actions=[e.s16(pa + 2 * i) for i in range(8)],
+                         speeds=[round(struct.unpack_from("<f", e.d, e.v2o(ps + 4 * i))[0], 4) for i in range(8)])
+    return out
 
 
 def guard_tables(e):
@@ -196,8 +231,9 @@ def convert(iso, out, log=print):
     os.makedirs(os.path.join(out, "anims"), exist_ok=True)
     written = []
     for name, preset, style_name, class_groups in SETS:
-        prefs, want, actions, reactions, guard = plan(e, lib, iso, style_name, class_groups)
-        loop_anims = {a["anim"] for act, a in actions.items() if a["loop"] and act in LOOPING_ACTIONS}
+        prefs, want, actions, reactions, guard, walk = plan(e, lib, iso, style_name, class_groups)
+        walking = {a for row in walk.values() for a in row["actions"]}
+        loop_anims = {a["anim"] for act, a in actions.items() if a["loop"] and (act in LOOPING_ACTIONS or act in walking)}
         g = Gltf()
         joints, _ = Skeleton(body_clump(disc, presets, preset)).add_to(g)
         clips, missing = {}, []
@@ -214,8 +250,9 @@ def convert(iso, out, log=print):
             f.write(g.glb())
         meta = dict(clips=clips, generic=GENERIC, actions={str(k): v for k, v in sorted(actions.items())},
                     reactions={str(s): {str(k): v for k, v in kinds.items()} for s, kinds in reactions.items()},
-                    guard=guard, grab=GRAB,
-                    attack_parts=attack_parts(e), missing=missing)
+                    guard=guard, grab=GRAB, walk_modes={str(k): v for k, v in walk.items()},
+                    run=dict(action=3, speed=54.0),
+                    attack_parts=attack_parts(e), body_parts=body_parts(e), missing=missing)
         with open(os.path.join(out, "anims", name + ".json"), "w", encoding="utf-8", newline="\n") as f:
             json.dump(meta, f, indent=1, sort_keys=True)
         log(f"  anims/{name}.glb: {len(clips)} clips (style {style_name}, generic, reactions)"

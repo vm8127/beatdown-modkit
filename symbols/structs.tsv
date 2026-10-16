@@ -80,6 +80,7 @@ Fighter	0x02D4	s32	motion_frame	current motion frame = (anim time + 1/120) * 60,
 Fighter	0x3FA4	s16	motion	current animation slot (anim id + 1; the overlay's MOT + 1)
 Fighter	0x3FA6	s16	prev_motion
 Fighter	0x3FA8	f32	blend	blend time (seconds)
+Fighter	0x3FB0	f32[3]	motion_origin	the hips' position when the motion started (Fighter_PlayMotion; node 1 and 8 translation x body scale); Fighter_ApplyRootMotion moves the fighter by the hips' offset from it
 Fighter	0x3FD0	f32	timeline_wait	Action_Timeline: wait until motion_frame >= this (op 0x0A); motion script op 4 clears it
 Fighter	0x3FD4	u8*	motion_script	current action's motion script (docs/ANIMATION.md)
 Fighter	0x3FD8	u8*	second_stream	current action's timeline (second stream), run by Action_Timeline (docs/ANIMATION.md, Frame data)
