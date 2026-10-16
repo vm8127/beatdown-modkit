@@ -130,7 +130,7 @@ Side 1 offsets: (-2, -1), (-94, 15), (-112, 16), (-100, 5), all flipped. **The f
 
 ## Combo counter
 
-`Hud_ComboWatch` `0x0031BA50` watches the player's `Fighter.combo_hits` (`+0x450E`, the **attacker's** running hit count: `Fighter_AddComboHit` `0x002FC290` adds 1 per landed hit and keeps the "Biggest combo" record `0x0060D17C`; `Fighter_ResetCombo` `0x002FC260`). When it changes and is 2 or more, `Combo_Show` `0x002BD150(count, side)` starts a 40-frame task (`Combo_TaskLeft` `0x002BFD50` -> `Combo_DrawLeft` `0x002BED10`; side 1 = `0x002BFE60` / `0x002BF4B0`, only in VS-type battles). It draws the count (1-2 digits, max 99) in FONT_TEX_03's cyan digits (25 x 32 at (25 n, 64)) and **HITS** (175, 42, 81 x 22), sprite records `g_HudSprites` `0x00505920` (0x28 each: texture group/index, texture size, u v w h, display size).
+`Hud_ComboWatch` `0x0031BA50` watches the player's `Fighter.combo_hits` (`+0x450E`, the **attacker's** running hit count: `Fighter_AddComboHit` `0x002FC290` adds 1 per landed hit and keeps the "Biggest combo" record `0x0060D17C`; `Fighter_ResetCombo` `0x002FC260`). When it changes and is 2 or more, `Combo_Show` `0x002BD150(count, side)` starts a 40-frame task (`Combo_TaskLeft` `0x002BFD50` -> `Combo_DrawLeft` `0x002BED10`; side 1 = `0x002BFE60` / `0x002BF4B0`, only in VS-type battles). It draws the count (1-2 digits, max 99) in FONT_TEX_03's cyan digits (25 x 32 at (25 n, 64)) and **HITS** (175, 42, 81 x 22), sprite records `g_HudSprites` `0x00505920` (0x28 each: texture group/index, a default x y, texture size, u v w h).
 
 Animation over its 40 frames f: the whole counter fades `alpha = (1 - 0.025 f) x 255`; for f < 15 the digits are drawn at 1.333 scale sliding in by `(10 - f) x 8` px and HITS slides by `8 f`; from f = 15 on, everything grows `1 + 0.025 f` and fades `255 - 6 f`. Position (side 0): digits around x 57-80, y 104 + 40 + 16; HITS to their right around x 90, y 109 + 40 + 11; 25 px lower per extra party member (`g_Party[1]`, `[2]`), 45 more in some team modes.
 
@@ -145,5 +145,5 @@ Animation over its 40 frames f: the whole counter fades `alpha = (1 - 0.025 f) x
 - `PersonDef +0xB`: which people get the magenta enemy bar (bosses / named characters?).
 - What a full TIRED meter does; the initial value of `+0x44E0`.
 - `0x002DE500` (NEGOTIATION vs NEGOTIATION OK!).
-- The combo counter's exact positions (the sprite records' display sizes at `+0x20` / `+0x24` are used as half-offsets; not checked).
+- The combo counter's exact positions (half the sprite's w / h are used as offsets; not checked on screen).
 - The text box default colour (box `+0x34`) per box kind.

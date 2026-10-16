@@ -76,6 +76,7 @@
 001755E0 Street_HairMaterial
 00175650 Street_HairAtomic
 00176130 Fighter_FindNpcSlot
+00176E10 Door_ArrivalIndex
 00178700 NpcSpawn_Step
 00186A30 Str_CompareBytes
 00187EC0 BList_Main
@@ -235,6 +236,7 @@
 002E0150 Talk_OpenMenu
 002E0310 Talk_PollMenu
 002E2660 Battle_RequestEscape
+002E2930 Battle_EscapeDoor
 002E2F60 Battle_OnFighterDown
 002E3390 Battle_RequestSelect
 002E37E0 Battle_IsStoryTalkBattle
@@ -244,10 +246,15 @@
 002E67C0 Area_BuildPeople
 002E6DC0 Area_PeopleBase
 002E7130 Area_PeopleLayer
+002E7900 Door_Destination
 002E7A50 Location_Current
+002E7A60 Area_SetTarget
+002E7B10 Door_ArrivalPoint
+002E8E60 Area_DoorOpen
 002E9590 Options_SetMode
 002EBD40 Pad_ActionButton
 002EC560 Fighter_AttackCollide
+002EC920 Fighter_HazardWall
 002F0900 Fighter_PlayMotion
 002F1610 Fighter_UpdateMotion
 002F4BF0 Fighter_AttachPart
@@ -276,6 +283,9 @@
 002FA150 Fighter_IsAttacking
 002FA170 Fighter_IsReeling
 002FA180 Fighter_IsHolding
+002FAB40 Fighter_IsStandGuard
+002FAB80 Fighter_IsCrouchGuard
+002FABC0 Fighter_IsDown
 002FB120 Fighter_HasPride
 002FB780 Fighter_SetGuard
 002FB840 Fighter_NewAttackId
@@ -301,6 +311,8 @@
 00304B60 Fighter_Spawn
 00305CC0 Combat_ResolveHit
 00307E40 Fighter_StartAction
+00308E10 Fighter_LyingFaceDown
+00308EC0 Fighter_UpdateTargetDir
 0030A5A0 Fighter_ReadPad
 0030A9F0 Fighter_MaskPad
 0030AEB0 Fighter_TaskAction
@@ -367,11 +379,18 @@
 0034C7C0 ZenFS_Close
 0034D2D0 ZenAudio_GetSoundStatus
 0034EA50 zenGetIOPReply
+00351060 Doors_CopyArrival
 003510B0 Doors_CollectAtomic
 00351230 Doors_Load
+00351280 Door_LockText
+00351480 Door_Locked
 003515A0 Door_State
+00351810 Doors_DisableDests
+00351A70 Door_ZoneTest
+00351CF0 Door_FindArrival
 00370620 VsMode_SelectScreen
 00371160 VsCustom_SetupLists
+00378120 Camera_HitPunch
 00387760 Text_LoadLanguage
 00387780 Text_LoadBank
 00387980 Text_Get
@@ -661,6 +680,7 @@
 00516050 g_SphereTables
 005161C0 g_ReactionSet0
 00516300 g_ReactionSet1
+00516390 g_KnockdownReactions
 00516560 g_WalkModes
 005168C0 g_HpBarPulse
 00516930 g_HpBarNamePos
@@ -679,7 +699,7 @@
 00589A40 g_VsRoster
 00589AF0 g_CharTypeNames
 00589BE8 g_VsTempPersons
-0058BDB4 g_AreaDoorFlags
+0058BDB0 g_AreaDoorFlags
 00599000 g_DebugSwitches
 0059995C g_MissionFlagRanges
 00599BB0 g_MissionEventHandlers

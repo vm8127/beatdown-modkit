@@ -12,6 +12,7 @@ Converters (one module each, run in this order; --only picks some):
   stages   areas: render world + props, collision, doors/spots -> stages/area_NN* (conv_stages.py)
   moves    fighting styles: commands, frame data, hit records -> moves/*.tres (conv_moves.py)
   text     text banks + script strings, 6 languages, with markup -> text/*.json (conv_text.py)
+  ui       text font + icons + colour palette, fight HUD art and layout -> ui/* (conv_ui.py)
 """
 import argparse
 import hashlib
@@ -28,9 +29,10 @@ import conv_models  # noqa: E402
 import conv_moves  # noqa: E402
 import conv_stages  # noqa: E402
 import conv_text  # noqa: E402
+import conv_ui  # noqa: E402
 
 CONVERTERS = {"models": conv_models.convert, "anims": conv_anims.convert, "stages": conv_stages.convert,
-              "moves": conv_moves.convert, "text": conv_text.convert}
+              "moves": conv_moves.convert, "text": conv_text.convert, "ui": conv_ui.convert}
 
 # README.md, "Before you start": the files the converters read, with their sizes and MD5s
 DISC = {

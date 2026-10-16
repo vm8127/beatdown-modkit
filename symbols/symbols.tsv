@@ -71,6 +71,12 @@
 00304b60	func	Fighter_Spawn	(slot, target, team) HP from person, attack multiplier, difficulty scaling	void (int slot, int target, int team)
 00305cc0	func	Combat_ResolveHit	(attacker, defender, ...) computes damage into defender +0x44B0
 0030dfd0	func	Combat_TakeHit	applies pending damage, knockdown meter, calls Fighter_ApplyDamage	void (Fighter *fighter)
+00308ec0	func	Fighter_UpdateTargetDir	every frame, every fighter: where its target (or holder) stands vs its facing; +0x4393 = 4 front (-45..45), 1 (45..135), 2 (-135..-45), 8 behind (game angle atan2(x, z) - facing); +0x4391 side 1/2, +0x4392 octant bits, +0x4394 target in the front half. Combat_TakeHit picks the reaction entry from +0x4393, the block test needs bit 4	void (void)
+00308e10	func	Fighter_LyingFaceDown	1 = lying face down (flags4390 0x10, or by the hips' axis when neither 8 nor 0x10 is set), 0 = face up (flags4390 8); picks reaction kind 9 / 10 and the KO-on-the-floor entry	int (Fighter *fighter)
+002fabc0	func	Fighter_IsDown	flags4390 bit 4: on the floor (Combat_TakeHit: hits on a lying fighter use reaction kinds 9 / 10; reaction bit 0x80 misses them)	int (Fighter *fighter)
+002fab40	func	Fighter_IsStandGuard	state 0x400 (guarding) and not crouching: Combat_ResolveHit lets low hits (level 8) through it	int (Fighter *fighter)
+002fab80	func	Fighter_IsCrouchGuard	state 0x400 and flags4390 bit 2 (crouching): mid hits (level 4) get through	int (Fighter *fighter)
+00378120	func	Camera_HitPunch	(frames in, frames back, strength): the fight camera moves toward the fighters for `in` frames and back over `back`; Combat_TakeHit calls (5, 15, 0.7) when the damage is over 14. The only impact effect found: no hitstop in the hit code	void (float frames_in, float frames_back, float strength)
 00317bc0	func	Style_GetCommandList	(style) -> g_StyleCommands[style]	Command *(int style)
 00317be0	func	Style_GetWeaponCommandList	(weapon kind 0..27) -> command list	Command *(int weapon_kind)
 00317e50	func	MoveList_IsLearned	(fighter, style, line) -> 0 if a command gated on this line isn't learned yet	int (Fighter *fighter, int style, int line)
@@ -732,7 +738,8 @@
 002ffa50	func	Stage_LoadCommon	loads FSTAGE.XAF entry 56 (shared textures and models) once into 0x0071D830; Area_Load step 0	int (void)
 001594e0	func	Xaf_ReadEntry	(archive, entry, callback, arg, flags, buffer) reads a whole XAF entry into memory (buffer or a new 64-aligned allocation) in the background; returns the 0x24-byte request {file, size, ?, data, archive, entry, flags, callback, arg}	void *(int archive, int entry, void *cb, void *arg, u32 flags, void *buf)
 0022ffd0	func	RpWorldStreamRead	RenderWare: reads a world (chunk 0x0B: struct, material list, plane sectors 0x0A and atomic sectors 0x09); Stage_Parse section 1	void *(void *stream)
-005fe260	data	g_ReactionSets	hit reaction sets used by Combat_TakeHit: [0] 0x5161C0 normal, [1] 0x516300 heavy (low HP, counter hit, held); fighter +0x4554 picks; each = 0x16 kinds -> 4 x {s16 action, s16 angle} (behind, front, left, right); docs/ANIMATION.md "Hit reactions"	u32[4]
+005fe260	data	g_ReactionSets	hit reaction sets used by Combat_TakeHit: [0] 0x5161C0 normal, [1] 0x516300 heavy (low HP, counter hit, held); fighter +0x4554 picks; each = 0x16 kinds -> 4 x {s16 action, s16 angle} (behind, front, left, right); [2] 0x5163A0 / [3] 0x5163B0 are the wall-hit rows (kind 0xC: above / at most half HP; Combat_TakeHit uses &[2] as a row list); docs/ANIMATION.md "Hit reactions"	u32[4]
+00516390	data	g_KnockdownReactions	Combat_TakeHit's rows for a knockdown hit (reaction 0x20) or a KO: [0] knocked down 649 behind / 650 front / 651 / 652, [1] KO 5 / 680 / 681 / 682, [2] KO while lying 230 (face up) / 231 (face down); each 4 x {s16 action, s16 angle}	u32[3]
 005161c0	data	g_ReactionSet0	normal hit reactions: 0x16 pointers (one per reaction kind) to 4 x {s16 action, s16 angle}; kind 0 front = action 703	u32[22]
 00516300	data	g_ReactionSet1	heavier hit reactions (set 1), same layout as g_ReactionSet0; kind 0 front = action 643	u32[22]
 005d0630	data	g_HitSituationSet	reaction set per hit situation, returned by Combat_SituationFactor: normal 0, HP<1000 1, HP<300 1, counter 1, reeling 0, held 1	u32[6]
@@ -812,7 +819,7 @@
 002bf4b0	func	Combo_DrawRight	side 1 version of Combo_DrawLeft	void (int buf, int a, int frame, s16 count)
 002bfd50	func	Combo_TaskLeft	task: Combo_DrawLeft each frame for 40 frames	void (int task)
 002bfe60	func	Combo_TaskRight	task: Combo_DrawRight each frame for 40 frames	void (int task)
-00505920	data	g_HudSprites	HUD sprite records 0x28: s16 texture group, index, ?, f32 texture w, h, u, v, w, h, display w, h (0 HITS, 12-21 digits 0-9)	u8[24][0x28]
+00505920	data	g_HudSprites	HUD sprite records 0x28: s16 texture group, index, ?, f32 x, y, texture w, h, u, v, w, h (0 HITS, 12-21 digits 0-9)	u8[24][0x28]
 002fc290	func	Fighter_AddComboHit	(attacker) combo_hits + 1 per landed hit; keeps the Biggest combo record 0x0060D17C	s16 (Fighter *fighter)
 002fc260	func	Fighter_ResetCombo	combo_hits = 0	void (Fighter *fighter)
 002fc380	func	Fighter_GetComboHits	-> combo_hits	s16 (Fighter *fighter)

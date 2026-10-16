@@ -67,6 +67,7 @@ void *Street_RetextureAtomic(void *atomic, void *ctx);  /* 0x001755a0 */
 void *Street_HairMaterial(void *material, s16 *ctx);  /* 0x001755e0 */
 void *Street_HairAtomic(void *atomic, void *ctx);  /* 0x00175650 */
 int Fighter_FindNpcSlot(int person_id);  /* 0x00176130 */
+int Door_ArrivalIndex(void);  /* 0x00176e10 */
 int NpcSpawn_Step(int phase, s16 *request);  /* 0x00178700 */
 int Str_CompareBytes(const char *a, const char *b);  /* 0x00186a30 */
 char *BList_EntryName(s16 index);  /* 0x0018d020 */
@@ -184,15 +185,21 @@ void Anim_UnloadGroupList(int *groups);  /* 0x002dc880 */
 int Battle_Start(int arg);  /* 0x002dcf60 */
 void Battle_StartTalk(int kind);  /* 0x002de6e0 */
 int Battle_RequestEscape(Fighter *fighter);  /* 0x002e2660 */
+void Battle_EscapeDoor(void);  /* 0x002e2930 */
 void Battle_OnFighterDown(Fighter *fighter, int flag);  /* 0x002e2f60 */
 void Battle_RequestSelect(Fighter *fighter);  /* 0x002e3390 */
 AreaPerson *Area_People(void);  /* 0x002e6300 */
 void *Area_BuildPeople(void);  /* 0x002e67c0 */
 void Area_PeopleBase(AreaPerson *entries);  /* 0x002e6dc0 */
 void Area_PeopleLayer(AreaPerson *entries);  /* 0x002e7130 */
+u16 Door_Destination(float *pos, int *door, int *entrance);  /* 0x002e7900 */
 int Location_Current(void);  /* 0x002e7a50 */
+void Area_SetTarget(int area, int entrance);  /* 0x002e7a60 */
+void Door_ArrivalPoint(u64 a0, float *pos, float *angle);  /* 0x002e7b10 */
+u16 Area_DoorOpen(int area);  /* 0x002e8e60 */
 u32 Pad_ActionButton(int layout, int action);  /* 0x002ebd40 */
 void Fighter_AttackCollide(Fighter *fighter, Fighter *other);  /* 0x002ec560 */
+void Fighter_HazardWall(Fighter *fighter);  /* 0x002ec920 */
 void Fighter_PlayMotion(Fighter *fighter, int anim, int start_frame, int end_frame, int blend_frames);  /* 0x002f0900 */
 void Fighter_UpdateMotion(Fighter *fighter);  /* 0x002f1610 */
 void Fighter_AttachPart(int item, Fighter *f, int slot, void *clump, int a5);  /* 0x002f4bf0 */
@@ -216,6 +223,9 @@ int Person_IsBoss(Fighter *fighter);  /* 0x002f9f30 */
 int Fighter_IsAttacking(Fighter *fighter);  /* 0x002fa150 */
 int Fighter_IsReeling(Fighter *fighter);  /* 0x002fa170 */
 int Fighter_IsHolding(Fighter *fighter);  /* 0x002fa180 */
+int Fighter_IsStandGuard(Fighter *fighter);  /* 0x002fab40 */
+int Fighter_IsCrouchGuard(Fighter *fighter);  /* 0x002fab80 */
+int Fighter_IsDown(Fighter *fighter);  /* 0x002fabc0 */
 int Fighter_HasPride(Fighter *fighter);  /* 0x002fb120 */
 void Fighter_SetGuard(Fighter *fighter, int max, f32 value);  /* 0x002fb780 */
 void Fighter_NewAttackId(Fighter *fighter);  /* 0x002fb840 */
@@ -234,6 +244,8 @@ int Stage_LoadCommon(void);  /* 0x002ffa50 */
 void Pad_BuildButtonJobs(void);  /* 0x003045c0 */
 void Fighter_Spawn(int slot, int target, int team);  /* 0x00304b60 */
 void Fighter_StartAction(Fighter *fighter, int action);  /* 0x00307e40 */
+int Fighter_LyingFaceDown(Fighter *fighter);  /* 0x00308e10 */
+void Fighter_UpdateTargetDir(void);  /* 0x00308ec0 */
 void Fighter_ReadPad(int slot, Pad *pad);  /* 0x0030a5a0 */
 void Fighter_MaskPad(int slot, int mode);  /* 0x0030a9f0 */
 void Fighter_TaskAction(void *task);  /* 0x0030aeb0 */
@@ -274,10 +286,17 @@ void Text_ToAscii(const char *text, char *out);  /* 0x0033a670 */
 int VsMode_MirrorId(int id, int side);  /* 0x00344470 */
 void VsMode_MakeFighters(void);  /* 0x00344550 */
 void *Appearance_FindItem(int code);  /* 0x00349b40 */
+u64 Doors_CopyArrival(u64 a0, int frame);  /* 0x00351060 */
 void *Doors_CollectAtomic(void *atomic, int *doors);  /* 0x003510b0 */
 void Doors_Load(void *doors, void *clump, void *anim);  /* 0x00351230 */
+int Door_LockText(int flag);  /* 0x00351280 */
+int Door_Locked(void *door);  /* 0x00351480 */
 int Door_State(int door);  /* 0x003515a0 */
+int Doors_DisableDests(void *doors);  /* 0x00351810 */
+void *Door_ZoneTest(float radius, int panels, int *doors, float *pos);  /* 0x00351a70 */
+void *Door_FindArrival(void *doors, s16 prev_area, int entrance);  /* 0x00351cf0 */
 void VsCustom_SetupLists(void);  /* 0x00371160 */
+void Camera_HitPunch(float frames_in, float frames_back, float strength);  /* 0x00378120 */
 const char *Text_Get(int text_id, int zero);  /* 0x00387980 */
 int Text_FindIndex(int slot, int text_id, int lo, int hi);  /* 0x00387d20 */
 int Criminal_Rank(int which);  /* 0x003937c0 */
@@ -532,6 +551,7 @@ extern u8 g_HurtSpheres[0x168];  /* 0x00515ea0 */
 extern u8 *g_SphereTables[3];  /* 0x00516050 */
 extern u32 g_ReactionSet0[22];  /* 0x005161c0 */
 extern u32 g_ReactionSet1[22];  /* 0x00516300 */
+extern u32 g_KnockdownReactions[3];  /* 0x00516390 */
 extern u32[14] g_WalkModes[6];  /* 0x00516560 */
 extern u8[4] g_HpBarPulse[4];  /* 0x005168c0 */
 extern f32[6] g_HpBarNamePos[2];  /* 0x00516930 */
@@ -542,7 +562,7 @@ extern HitRecord *g_ActionHits[2004];  /* 0x00580a40 */
 extern ActionScript g_ActionScripts[2001];  /* 0x005848e0 */
 extern TitleMenuElement g_TitleMenuElements[8];  /* 0x00589760 */
 extern s16 g_VsTempPersons[6];  /* 0x00589be8 */
-extern u8[57] g_AreaDoorFlags[0x14];  /* 0x0058bdb4 */
+extern u8[57] g_AreaDoorFlags[0x14];  /* 0x0058bdb0 */
 extern u32 g_MissionFlagRanges[148];  /* 0x0059995c */
 extern void *g_MissionEventHandlers[10];  /* 0x00599bb0 */
 extern MissionReq g_MissionReq[147];  /* 0x0059a750 */

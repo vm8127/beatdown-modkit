@@ -104,12 +104,12 @@ TOKENS = {
     "○": "{btn:circle}", "△": "{btn:triangle}", "□": "{btn:square}", "×": "{btn:cross}",
     "●": "{btn:circle_on}", "▲": "{btn:triangle_on}", "■": "{btn:square_on}", "Ⅹ": "{btn:cross_on}",
     # Icon glyphs: ①-⑥ shoulder / stick buttons (tutorials: ① + stick = RUN, ②/⑤ use equipped items, ④ grab/pick up,
-    # ⑥ taunt; which physical button each is is not pinned down), ⑰ ⑱ two more icons, ∬ "rapid press" (GRAB ∬〆)
+    # ⑥ taunt; the font's icon sheet shows ① L1 ② L2 ③ L3 ④ R1 ⑤ R2 ⑥ R3, docs/HUD.md), ⑰ ⑱ crime icons, ∬ "rapid press" (GRAB ∬〆)
     "①": "{icon:1}", "②": "{icon:2}", "③": "{icon:3}", "④": "{icon:4}", "⑤": "{icon:5}",
     "⑥": "{icon:6}", "⑰": "{icon:17}", "⑱": "{icon:18}", "∬": "{icon:rapid}",
     "⑲": "®",       # ⑲  ®
-    "α": "{icon:alpha}",  # α  a menu button in tutorials ("open a menu with α"; probably START), own glyph
-    "β": "{icon:beta}",   # β  its partner glyph (probably SELECT; unused in English)
+    "α": "{icon:alpha}",  # α  a menu button in tutorials ("open a menu with α"): START (docs/HUD.md)
+    "β": "{icon:beta}",   # β  the same START picture (unused in English)
 }
 for _c in "㊤㊥㊦㊧㊨":   # ㊤㊥㊦㊧㊨: icon glyphs (unused in the English banks)
     TOKENS[_c] = "{icon:%04x}" % ord(_c)
