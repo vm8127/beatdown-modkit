@@ -173,7 +173,11 @@ Inventory	0x4	u32[512]	items	bits 0-11 item, 12-15 quantity
 
 SystemData	size	0x248		g_SystemData, the system save file (options, unlocks)
 SystemData	0x04	u8	difficulty	indexes g_EnemyDamageByDifficulty
+SystemData	0x05	u8[2]	pad_type	CONTROL CONFIG TYPE per player, 0-5 = TYPE 1-6 (g_PadLayouts row)
+SystemData	0x07	u8[2]	vibration	VIBRATION per player, 1 = on
 SystemData	0x10	u8	language	0 JP, 1 EN, 2 FR, 3 DE, 4 ES, 5 IT
+SystemData	0x24	u32	menu_ok_bits	buttons that confirm in menus (tested against newly pressed)
+SystemData	0x28	u32	menu_back_bits	buttons that cancel / go back in menus
 SystemData	0x164	u8[228]	dummy	reserved: the game's debug print calls it dummy[228] and no code reads or writes it; new characters' blacklist bits go here (docs/mods/NATIVE-CHARACTERS.md)
 
 ScriptOpcode	size	0x14		g_ScriptOpcodes entry: an EXF_* script command
@@ -292,3 +296,21 @@ AreaDef	0xC4	u16[18]	floor_kinds	per floor-collision material (Area_MaterialKind
 AreaDef	0xE8	u16[12]	wall_kinds	per wall-collision material (Area_MaterialKind which 1): the wall kind a fighter touching it gets (+0x34A)
 AreaDef	0x100	u8	flag100	Area_DefFlag100 (door test)
 AreaDef	0x101	u8	flag101	Area_DefFlag101
+Pad	size	0x80		one controller's state (g_Pad1, g_FighterPads), Pad_Update / Fighter_ReadPad (docs/CONTROLS.md)
+Pad	0x00	u32	prev	last frame's held bits
+Pad	0x04	u32	held	game bits (Pad_RemapButtons) + left stick digital bits 0x10000-0x80000
+Pad	0x08	u32	pressed	newly pressed this frame
+Pad	0x0C	u32	released
+Pad	0x10	u32	repeat	pressed, then auto-repeat after 20 frames every 4th frame
+Pad	0x14	s32	repeat_count
+Pad	0x18	u32	stick_prev
+Pad	0x1C	u32	stick_held	left stick bits 0x10000 left, 0x20000 right, 0x40000 up, 0x80000 down (beyond about 75 %)
+Pad	0x20	u32	stick_pressed
+Pad	0x24	u32	stick_released
+Pad	0x28	u32	stick_repeat
+Pad	0x2C	f32[16]	hold_time	seconds each button bit has been held
+Pad	0x6C	s32	stick_repeat_count
+Pad	0x70	f32	lx	left stick X, -1..1, positive = left (centre - raw), dead zone half the radius, rescaled
+Pad	0x74	f32	ly	left stick Y, positive = up
+Pad	0x78	f32	rx	right stick X
+Pad	0x7C	f32	ry	right stick Y

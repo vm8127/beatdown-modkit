@@ -19,6 +19,7 @@ All tools read game files from `ISO/`, which holds the user's own disc unpacked 
 | `tools/ghidra/ApplyPS2Signatures.py`, `ps2sigdb.py` | Name the Sony SDK library functions by signature before the export; `dumps/ps2_sdk_functions.tsv` lists them |
 | `docs/CODEMAP.md` | Where things are in the code (functions, tables, structs) |
 | `docs/MECHANICS.md` | What the stats and meters do, with formulas |
+| `docs/CONTROLS.md` | Pad reading, every button's job, the six layouts, input patterns, vibration |
 | `docs/CUTCONTENT.md` | Cut content and unreachable code, with restore cheats |
 | `docs/ANIMATION.md` | Animation groups and slots, action motion scripts, body remap tables |
 | `docs/SCRIPTS.md` | Missions, side jobs, events, dialogue: the mission manager, the script format, the event VM and every command |

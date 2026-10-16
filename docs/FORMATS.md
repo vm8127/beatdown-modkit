@@ -234,4 +234,4 @@ python tools/textkit.py get ISO/XAF/CDATA.XAF 11069 18002   # text by id with th
 - Pack chunk types 0x23 and 0x0C (`0x00259980`, `0x0022B9A0`).
 - Left/right of the leg and arm chains; confirm by posing in M2.
 - Is the DATA.XAF clump of an item identical to its ARCHIVE.XAF item + 0x3A6 copy?
-- Text: the colour palette behind `@0`-`@9`; which physical buttons icons ①-⑥, ⑰, ⑱, α, β are (L1/R1/L2/R2/START/SELECT?); who sets the second person `⑫` (gp-0x771C); what Text_Encode's `box` (0x308-byte records at `0x006629E4`) holds (line count, wrap width); the font itself (glyph table and texture) for a faithful look. Not checked in the emulator.
+- Text: the colour palette behind `@0`-`@9`; which physical buttons icons ③, ⑰, ⑱, α, β are (① L1, ② L2, ④ R1, ⑤ R2, ⑥ R3: docs/CONTROLS.md, "Icons in the text"); who sets the second person `⑫` (gp-0x771C); what Text_Encode's `box` (0x308-byte records at `0x006629E4`) holds (line count, wrap width); the font itself (glyph table and texture) for a faithful look. Not checked in the emulator.

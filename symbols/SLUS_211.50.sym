@@ -53,6 +53,7 @@
 0013EB30 Hero_ScaleToPlayer
 0013FC50 JobMenu_Open
 00142F90 Allies_ListByStatus
+001541E0 AI_MakePad
 001594E0 Xaf_ReadEntry
 0015B5A0 Stage_LoadProps
 0015B7E0 Stage_PlaceObjects
@@ -114,7 +115,12 @@
 001C5C70 MoveList_Color
 001C89A0 ScenePlayer_Main
 001D02B0 Pad_RemapButtons
+001D0770 Pad_PortSetup
+001D0B90 Pad_Update
 001D1810 Boot_LoadModules
+001D2130 Pad_Vibrate
+001D21A0 Pad_VibrateStop
+001D21D0 Pad_UpdateVibration
 001D8CA0 MemCard_Step
 001DA020 MemCard_SetupFiles
 001DB720 Save_BuildGameFile
@@ -206,7 +212,9 @@
 002DE850 Talk_Update
 002E0150 Talk_OpenMenu
 002E0310 Talk_PollMenu
+002E2660 Battle_RequestEscape
 002E2F60 Battle_OnFighterDown
+002E3390 Battle_RequestSelect
 002E37E0 Battle_IsStoryTalkBattle
 002E38D0 Battle_CanTalkAfterKO
 002E3A20 Battle_PrideHudShown
@@ -238,6 +246,7 @@
 002F8E20 Fighter_GetWeaponMoveList
 002F9250 Fighter_GetPerson
 002F9260 Fighter_GetPersonDef
+002F92A0 Fighter_Pad
 002F9930 Person_GetHeroDefId
 002F9A80 Fighter_HeroId
 002F9BE0 Fighter_IsPartyMember
@@ -251,6 +260,7 @@
 002FB880 Fighter_ApplyDamage
 002FB8D0 Fighter_PrideDamage
 002FBAE0 Fighter_SubPride
+002FC1B0 Fighter_Vibrate
 002FD280 Allies_UpdateArrestFlag
 002FD300 Fighter_FindByPerson
 002FD5F0 Area_Collision
@@ -262,9 +272,12 @@
 00301D80 Action_Register
 003020E0 Debug_PrintAt
 00302260 Debug_FighterInfo
+003045C0 Pad_BuildButtonJobs
 00304B60 Fighter_Spawn
 00305CC0 Combat_ResolveHit
 00307E40 Fighter_StartAction
+0030A5A0 Fighter_ReadPad
+0030A9F0 Fighter_MaskPad
 0030AEB0 Fighter_TaskAction
 0030BC40 Fighter_ReturnControl
 0030CA90 Fighter_TaskWalk
@@ -596,6 +609,7 @@
 00509A20 g_MinHpByDifficulty
 00509AA0 g_StageLayer
 00509D90 g_OptionPages
+0050ADC0 g_PadLayoutJP
 0050B990 g_ActionRemap_M
 0050BDE0 g_ActionRemap_L
 0050C230 g_ActionRemap_S
@@ -636,6 +650,8 @@
 005CAB40 g_MoveListTable
 005CD9B0 g_InputFallback
 005CF7C0 g_PadLayouts
+005CF930 g_VibrationStrength
+005CF938 g_VibrationTime
 005D04D0 g_AttackRankMul
 005D04F0 g_EnemyDamageByDifficulty
 005D0630 g_HitSituationSet
@@ -670,6 +686,7 @@
 005FFDD8 g_PresetData
 005FFE30 g_DebugOverlayOn
 005FFE44 g_DebugOverlayPage
+005FFE48 g_PadJobBits
 006000D0 g_VsSaveHero
 006000D4 g_VsCustom
 00600320 g_TextSwapSlot
@@ -703,6 +720,7 @@
 00645B20 g_NpcSpawnTextures
 006614A0 g_BList
 006620C0 g_TextCodes
+00685340 g_PadVibration
 00685450 g_Pad1
 0069C2B0 g_McFiles
 0069DF08 g_RtAnimInterpInfo
@@ -715,6 +733,7 @@
 006CFB70 g_Fighters
 006D3F8C g_Player_HP
 006D3F8E g_Player_MaxHP
+007241D0 g_FighterPads
 0075B330 g_AppearanceItems
 0076A970 g_VsCustomIds
 0076DDB0 g_TextBanks

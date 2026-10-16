@@ -95,6 +95,11 @@ s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
 const char *MoveList_NameText(int unused, int style, int line);  /* 0x001c5bf0 */
 const char *MoveList_InputText(int unused, int style, int line);  /* 0x001c5c30 */
 int MoveList_Color(int style, int line);  /* 0x001c5c70 */
+int Pad_PortSetup(int port);  /* 0x001d0770 */
+void Pad_Update(float dt);  /* 0x001d0b90 */
+void Pad_Vibrate(float seconds, int port, int motor, int strength);  /* 0x001d2130 */
+void Pad_VibrateStop(int port);  /* 0x001d21a0 */
+void Pad_UpdateVibration(void);  /* 0x001d21d0 */
 void *MemCard_SystemBuffer(int file);  /* 0x001dd550 */
 u8 *MemCard_SlotHeader(int file, int slot);  /* 0x001dd5d0 */
 void *MemCard_GameBuffer(int file);  /* 0x001dd680 */
@@ -156,7 +161,9 @@ void *Anim_GetSlot(int slot);  /* 0x002dc300 */
 int Anim_UnloadGroup(int group);  /* 0x002dc790 */
 void Anim_UnloadGroupList(int *groups);  /* 0x002dc880 */
 void Battle_StartTalk(int kind);  /* 0x002de6e0 */
+int Battle_RequestEscape(Fighter *fighter);  /* 0x002e2660 */
 void Battle_OnFighterDown(Fighter *fighter, int flag);  /* 0x002e2f60 */
+void Battle_RequestSelect(Fighter *fighter);  /* 0x002e3390 */
 AreaPerson *Area_People(void);  /* 0x002e6300 */
 void *Area_BuildPeople(void);  /* 0x002e67c0 */
 void Area_PeopleBase(AreaPerson *entries);  /* 0x002e6dc0 */
@@ -181,6 +188,7 @@ void Fighter_GetPos(Fighter *fighter, f32 *xyz);  /* 0x002f8c80 */
 int Fighter_GetStyle(Fighter *fighter);  /* 0x002f8e00 */
 Person *Fighter_GetPerson(Fighter *fighter);  /* 0x002f9250 */
 PersonDef *Fighter_GetPersonDef(Fighter *fighter);  /* 0x002f9260 */
+Pad *Fighter_Pad(Fighter *fighter);  /* 0x002f92a0 */
 int Fighter_HeroId(Fighter *fighter);  /* 0x002f9a80 */
 int Person_IsBoss(Fighter *fighter);  /* 0x002f9f30 */
 int Fighter_IsAttacking(Fighter *fighter);  /* 0x002fa150 */
@@ -191,14 +199,18 @@ void Fighter_SetGuard(Fighter *fighter, int max, f32 value);  /* 0x002fb780 */
 void Fighter_NewAttackId(Fighter *fighter);  /* 0x002fb840 */
 void Fighter_ApplyDamage(Fighter *fighter, int damage);  /* 0x002fb880 */
 void Fighter_SubPride(Fighter *fighter, int amount);  /* 0x002fbae0 */
+int Fighter_Vibrate(Fighter *fighter, int kind);  /* 0x002fc1b0 */
 void Allies_UpdateArrestFlag(void);  /* 0x002fd280 */
 Fighter *Fighter_FindByPerson(int person_id);  /* 0x002fd300 */
 void *Area_Collision(void);  /* 0x002fd5f0 */
 int Area_Current(void);  /* 0x002fd630 */
 int Area_LoadStage(void *pack, int a1, void *area);  /* 0x002fe010 */
 int Stage_LoadCommon(void);  /* 0x002ffa50 */
+void Pad_BuildButtonJobs(void);  /* 0x003045c0 */
 void Fighter_Spawn(int slot, int target, int team);  /* 0x00304b60 */
 void Fighter_StartAction(Fighter *fighter, int action);  /* 0x00307e40 */
+void Fighter_ReadPad(int slot, Pad *pad);  /* 0x0030a5a0 */
+void Fighter_MaskPad(int slot, int mode);  /* 0x0030a9f0 */
 void Fighter_TaskAction(void *task);  /* 0x0030aeb0 */
 void Fighter_ReturnControl(Fighter *fighter);  /* 0x0030bc40 */
 void Fighter_TaskWalk(void *task);  /* 0x0030ca90 */
@@ -471,6 +483,7 @@ extern AnimGroup g_AnimGroups[317];  /* 0x004fb4c0 */
 extern float[13] g_AreaSpawnPoints[4];  /* 0x00509700 */
 extern void *g_FixedBattlePos[57];  /* 0x00509930 */
 extern s32 g_StageLayer[12];  /* 0x00509aa0 */
+extern s16 g_PadLayoutJP[6];  /* 0x0050adc0 */
 extern ClassRow g_ClassTable[51];  /* 0x0050d6a0 */
 extern Command *g_StyleCommands[37];  /* 0x00515c10 */
 extern u8 g_BodySpheres[0xB4];  /* 0x00515cc0 */
@@ -495,6 +508,8 @@ extern u32[8276] g_TexNames[2];  /* 0x0059ae30 */
 extern s16 g_VsPortraitCells[258];  /* 0x005b81f0 */
 extern u32 g_InputFallback[136];  /* 0x005cd9b0 */
 extern u32 g_PadLayouts[24];  /* 0x005cf7c0 */
+extern u8 g_VibrationStrength[3];  /* 0x005cf930 */
+extern f32 g_VibrationTime[3];  /* 0x005cf938 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
 extern u32 g_HitSituationSet[6];  /* 0x005d0630 */
@@ -520,6 +535,7 @@ extern s16 g_BListTop;  /* 0x005feee0 */
 extern Battle *g_Battle;  /* 0x005ffc6c */
 extern s32 g_AreaPeopleCount;  /* 0x005ffcf0 */
 extern Preset *g_PresetData;  /* 0x005ffdd8 */
+extern u32 g_PadJobBits[22];  /* 0x005ffe48 */
 extern u16 g_VsSaveHero[2];  /* 0x006000d0 */
 extern s32 g_VsCustom;  /* 0x006000d4 */
 extern u8 *g_VsSelect;  /* 0x006005f4 */
@@ -540,12 +556,15 @@ extern s32 g_PlayerMoney;  /* 0x0060d3a0 */
 extern s32 g_NpcSpawnTextures[10];  /* 0x00645b20 */
 extern s16 g_BList[111];  /* 0x006614a0 */
 extern u16 g_TextCodes[512];  /* 0x006620c0 */
+extern u8 g_PadVibration[16];  /* 0x00685340 */
+extern Pad g_Pad1;  /* 0x00685450 */
 extern u8 g_McFiles[320];  /* 0x0069c2b0 */
 extern u8 g_RtAnimInterpInfo[0x300];  /* 0x0069df08 */
 extern AreaPerson g_AreaPeople[7];  /* 0x006cb920 */
 extern Fighter g_Fighters[13];  /* 0x006cfb70 */
 extern s16 g_Player_HP;  /* 0x006d3f8c */
 extern s16 g_Player_MaxHP;  /* 0x006d3f8e */
+extern Pad g_FighterPads[4];  /* 0x007241d0 */
 extern s32 g_AppearanceItems;  /* 0x0075b330 */
 extern s16 g_VsCustomIds[200];  /* 0x0076a970 */
 extern MissionMgr g_MissionMgr;  /* 0x0076ed60 */

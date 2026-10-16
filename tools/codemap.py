@@ -847,6 +847,36 @@ def cmd_const_uses(a):
             print(f"0x{m.group(2)}  {syms.get(m.group(2), m.group(1)):<28} {' '.join(found)}")
 
 
+# g_InputPatterns step bits (Pad_MatchPatterns 0x002A30F0; docs/CONTROLS.md, "Input patterns"). Buttons are jobs, turned
+# into the port's pad bits through g_PadJobBits; directions are relative to the target (Pad_ReadCommand).
+INPUT_PATTERNS = 0x004FC580
+PATTERN_STEP_BITS = [(0x1, "P"), (0x2, "K"), (0x4, "R1"), (0x8, "G"), (0x10, "R3"), (0x20, "R1b"), (0x40, "S"),
+                     (0x80, "L2"), (0x100, "R2"), (0x200, "→"), (0x400, "←"), (0x800, "↑"), (0x1000, "↓")]
+
+
+def cmd_input_patterns(a):
+    """Dumps g_InputPatterns: one 64-byte entry per input code (index = code), until the -1 end marker."""
+    elf = open(a.elf, "rb").read()
+    for code in range(256):
+        w = struct.unpack_from("<16I", elf, INPUT_PATTERNS + code * 64 - 0xFFF80)
+        if code and w[1] == 0xFFFFFFFF:
+            break
+        steps = []
+        for s in w[7:]:
+            if s == 0xFFFFFFFF:
+                break
+            names = [n for b, n in PATTERN_STEP_BITS if s & b]
+            rest = s & ~(sum(b for b, _ in PATTERN_STEP_BITS) | 0x18000)
+            t = "+".join(names) + (f"+0x{rest:X}" if rest else "")
+            if s & 0x10000:
+                t += "(held)"
+            if s & 0x8000:
+                t += "(released)"
+            steps.append(t or "0")
+        conds = " ".join(f"{x:X}" for x in w[1:7])
+        print(f"0x{code:02X}  {INPUTS.get(code, ''):12} {w[0]:4} ms  cond {conds:18}  newest first: {', '.join(steps)}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     s = ap.add_subparsers(dest="cmd", required=True)
@@ -865,6 +895,7 @@ def main():
     x = s.add_parser("addr-refs"); x.add_argument("elf"); x.add_argument("lo"); x.add_argument("hi")
     x.add_argument("--move", help="print cmod @word lines that point the references at this address instead")
     x.set_defaults(fn=cmd_addr_refs)
+    x = s.add_parser("input-patterns"); x.add_argument("elf"); x.set_defaults(fn=cmd_input_patterns)
     x = s.add_parser("const-uses"); x.add_argument("all_c"); x.add_argument("consts", nargs="+")
     x.set_defaults(fn=cmd_const_uses)
     a = ap.parse_args()

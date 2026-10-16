@@ -31,6 +31,7 @@ typedef struct Mission Mission;
 typedef struct MissionMgr MissionMgr;
 typedef struct AreaPerson AreaPerson;
 typedef struct AreaDef AreaDef;
+typedef struct Pad Pad;
 
 /* one outfit slot: an item and the model parts it adds */
 struct OutfitSlot {
@@ -423,13 +424,22 @@ _Static_assert(sizeof(Inventory) == 0x804, "sizeof Inventory");
 struct SystemData {
     u8 _0000[0x4];
     u8 difficulty;  /* +0x4 indexes g_EnemyDamageByDifficulty */
-    u8 _0005[0xb];
+    u8 pad_type[0x2];  /* +0x5 CONTROL CONFIG TYPE per player, 0-5 = TYPE 1-6 (g_PadLayouts row) */
+    u8 vibration[0x2];  /* +0x7 VIBRATION per player, 1 = on */
+    u8 _0009[0x7];
     u8 language;  /* +0x10 0 JP, 1 EN, 2 FR, 3 DE, 4 ES, 5 IT */
-    u8 _0011[0x153];
+    u8 _0011[0x13];
+    u32 menu_ok_bits;  /* +0x24 buttons that confirm in menus (tested against newly pressed) */
+    u32 menu_back_bits;  /* +0x28 buttons that cancel / go back in menus */
+    u8 _002C[0x138];
     u8 dummy[0xe4];  /* +0x164 reserved: the game's debug print calls it dummy[228] and no code reads or writes it; new characters' blacklist bits go here (docs/mods/NATIVE-CHARACTERS.md) */
 };
 _Static_assert(__builtin_offsetof(SystemData, difficulty) == 0x4, "SystemData.difficulty");
+_Static_assert(__builtin_offsetof(SystemData, pad_type) == 0x5, "SystemData.pad_type");
+_Static_assert(__builtin_offsetof(SystemData, vibration) == 0x7, "SystemData.vibration");
 _Static_assert(__builtin_offsetof(SystemData, language) == 0x10, "SystemData.language");
+_Static_assert(__builtin_offsetof(SystemData, menu_ok_bits) == 0x24, "SystemData.menu_ok_bits");
+_Static_assert(__builtin_offsetof(SystemData, menu_back_bits) == 0x28, "SystemData.menu_back_bits");
 _Static_assert(__builtin_offsetof(SystemData, dummy) == 0x164, "SystemData.dummy");
 _Static_assert(sizeof(SystemData) == 0x248, "sizeof SystemData");
 
@@ -699,5 +709,44 @@ _Static_assert(__builtin_offsetof(AreaDef, wall_kinds) == 0xe8, "AreaDef.wall_ki
 _Static_assert(__builtin_offsetof(AreaDef, flag100) == 0x100, "AreaDef.flag100");
 _Static_assert(__builtin_offsetof(AreaDef, flag101) == 0x101, "AreaDef.flag101");
 _Static_assert(sizeof(AreaDef) == 0x104, "sizeof AreaDef");
+
+/* one controller's state (g_Pad1, g_FighterPads), Pad_Update / Fighter_ReadPad (docs/CONTROLS.md) */
+struct Pad {
+    u32 prev;  /* +0x0 last frame's held bits */
+    u32 held;  /* +0x4 game bits (Pad_RemapButtons) + left stick digital bits 0x10000-0x80000 */
+    u32 pressed;  /* +0x8 newly pressed this frame */
+    u32 released;  /* +0xc */
+    u32 repeat;  /* +0x10 pressed, then auto-repeat after 20 frames every 4th frame */
+    s32 repeat_count;  /* +0x14 */
+    u32 stick_prev;  /* +0x18 */
+    u32 stick_held;  /* +0x1c left stick bits 0x10000 left, 0x20000 right, 0x40000 up, 0x80000 down (beyond about 75 %) */
+    u32 stick_pressed;  /* +0x20 */
+    u32 stick_released;  /* +0x24 */
+    u32 stick_repeat;  /* +0x28 */
+    f32 hold_time[0x10];  /* +0x2c seconds each button bit has been held */
+    s32 stick_repeat_count;  /* +0x6c */
+    f32 lx;  /* +0x70 left stick X, -1..1, positive = left (centre - raw), dead zone half the radius, rescaled */
+    f32 ly;  /* +0x74 left stick Y, positive = up */
+    f32 rx;  /* +0x78 right stick X */
+    f32 ry;  /* +0x7c right stick Y */
+};
+_Static_assert(__builtin_offsetof(Pad, prev) == 0x0, "Pad.prev");
+_Static_assert(__builtin_offsetof(Pad, held) == 0x4, "Pad.held");
+_Static_assert(__builtin_offsetof(Pad, pressed) == 0x8, "Pad.pressed");
+_Static_assert(__builtin_offsetof(Pad, released) == 0xc, "Pad.released");
+_Static_assert(__builtin_offsetof(Pad, repeat) == 0x10, "Pad.repeat");
+_Static_assert(__builtin_offsetof(Pad, repeat_count) == 0x14, "Pad.repeat_count");
+_Static_assert(__builtin_offsetof(Pad, stick_prev) == 0x18, "Pad.stick_prev");
+_Static_assert(__builtin_offsetof(Pad, stick_held) == 0x1c, "Pad.stick_held");
+_Static_assert(__builtin_offsetof(Pad, stick_pressed) == 0x20, "Pad.stick_pressed");
+_Static_assert(__builtin_offsetof(Pad, stick_released) == 0x24, "Pad.stick_released");
+_Static_assert(__builtin_offsetof(Pad, stick_repeat) == 0x28, "Pad.stick_repeat");
+_Static_assert(__builtin_offsetof(Pad, hold_time) == 0x2c, "Pad.hold_time");
+_Static_assert(__builtin_offsetof(Pad, stick_repeat_count) == 0x6c, "Pad.stick_repeat_count");
+_Static_assert(__builtin_offsetof(Pad, lx) == 0x70, "Pad.lx");
+_Static_assert(__builtin_offsetof(Pad, ly) == 0x74, "Pad.ly");
+_Static_assert(__builtin_offsetof(Pad, rx) == 0x78, "Pad.rx");
+_Static_assert(__builtin_offsetof(Pad, ry) == 0x7c, "Pad.ry");
+_Static_assert(sizeof(Pad) == 0x80, "sizeof Pad");
 
 #endif
