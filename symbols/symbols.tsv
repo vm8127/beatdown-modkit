@@ -743,3 +743,63 @@
 001541e0	func	AI_MakePad	(ai, pad) turns a CPU fighter's request (abstract bits 0x80 punch, 0x200 kick, 0x100 guard, 0x40 special, 0x1000 R1, 0x800 L2, 0x2000 R2, 0x8000 R3) into its slot's pad bits; L1 to circle the target
 002e2660	func	Battle_RequestEscape	(fighter) L1 + R1 in a battle: if the side may run and the target isn't a boss, sets g_Battle +0xA0 (+ side * 12); 0x002E2930 then needs a door zone (docs/CONTROLS.md)	int (Fighter *fighter)
 002e3390	func	Battle_RequestSelect	(fighter) SELECT pressed in a battle while free: sets g_Battle +0xCC = 1, +0xD0 = fighter; meaning not traced	void (Fighter *fighter)
+001b2b90	func	Text_SetString	(box, UTF-8 text) Text_Encode + Text_SetCodes with the Latin glyph table; docs/HUD.md, "The text font"	int (int box, const char *text)
+001b2810	func	Text_SetCodes	(box, codes, glyph table, tex w, tex h) copies the font codes into the box and lays them out (Text_Layout)	int (int box, u16 *codes, u16 *glyphs, int tex_w, int tex_h)
+001b1850	func	Text_Layout	(box, codes, glyph table, tex w, tex h) one quad per glyph: table per code range (Latin, kanji 1-4, icons page 5, crime icons page 6), advance w x 0.95, icon y nudges	int (int box, u16 *codes, u16 *glyphs, int tex_w, int tex_h)
+001b1310	func	Text_GlyphQuad	(box, quad, raster, uv, char index) glyph colour g_TextPalette[colour byte] or the box colour when 0; position, scale, rotation, y squeeze (y - 16) x 0.4667	void (int box, float *quad, void *raster, int uv, int index)
+001b7d30	func	Font_SetPages	(page 0..4 rasters) g_FontPages[0..4]	void (void *p0, void *p1, void *p2, void *p3, void *p4)
+001b7d60	func	Font_SetIconPage	(raster) g_FontPages[5] = BUTTON (GRAPH 32)	void (void *raster)
+002c4090	func	Font_Load	requests GRAPH 374 (UNICODEFONT) and, for Japanese, 375-378 (kanji pages); calls Font_SetPages	int (void)
+002d86e0	func	Font_LoadCrimeIcons	(collect) GRAPH 305 MURDER_01 for the ⑰ ⑱ glyphs (page 6)	int (s16 collect)
+00662900	data	g_FontPages	7 rasters: 0 UNICODEFONT, 1-4 kanji (or page 0 again), 5 BUTTON icons, 6 MURDER_01	void *[7]
+00662960	data	g_TextBoxes	text box records, 0x308 bytes, index 1-127: +0x08 centring flags, +0x0C/+0x10 position, +0x20/+0x24 scale, +0x28 rotation, +0x34 colour, +0x88 per-character colour bytes; Text_Encode's box	u8[128][0x308]
+005b8840	data	g_FontGlyphs	text font page 0 (UNICODEFONT 512x512): 520 x {u16 code, u, v, w, h}, code = Unicode, 0-terminated	u16[521][5]
+005b9ca0	data	g_FontKanji1	font page 1 glyphs (codes 0x4E00-0x64FE), same records	u16[2141][5]
+005bf050	data	g_FontKanji2	font page 2 glyphs (0x6500-0x7E39)	u16[2141][5]
+005c4400	data	g_FontKanji3	font page 3 glyphs (0x7E3A-0x9B2E)	u16[2141][5]
+005c97b0	data	g_FontKanji4	font page 4 glyphs (0x9B2F-0x9FA0)	u16[262][5]
+005ca1f0	data	g_FontCrimeGlyphs	page 6 (MURDER_01): ⑰ ⑱	u16[3][5]
+005ca210	data	g_FontIconGlyphs	page 5 (BUTTON 256x128): 25 button / stick / d-pad icons (docs/HUD.md)	u16[26][5]
+005ca320	data	g_TextPalette	RGBA per @N / $N colour (1 white, 2 red, 3 green, 4 blue, 5 light red, 6 yellow, 7 pink, 8 mint, 9 invisible)	u8[16][4]
+002c0e10	func	Tex_FindLoaded	(name) a texture of g_HudTexGroups by name, else 0	void *(const char *name)
+006b6740	data	g_HudTexGroups	5 groups x 4 loaded HUD textures (FONT_TEX_02/03 ...), searched by Tex_FindLoaded; g_HudSprites use (group, index)	void *[5][4]
+00317f50	func	Hud_LoadTextures	requests the field/battle HUD textures into g_HudTex: GD_HPG_01/02, MAP_BG (language), MAP_MASK, MAP_PARTS01/02, SYSFONT02, GD_NGI_00, CURSOR, VS_PARTS_02 (language)	void (void)
+00318270	func	Hud_TexturesReady	collects the g_HudTex loads; 1 when all 10 are in	int (void)
+00737050	data	g_HudTex	10 HUD textures (Hud_LoadTextures order); [0] GD_HPG_01 frame, [1] GD_HPG_02 fill, [6] SYSFONT02	void *[10]
+002dcf60	func	Battle_Start	allocates g_Battle (0x14C), starts Battle_Update as a task, inits the Pride gauge (PrideGauge_Init, PrideGauge_Reset per side) and the 17 battle texts (0x005990C0)	int (int arg)
+0031a2c0	func	Hud_BattleUpdate	per battle frame, both sides: HpBar_SyncMax, HpBar_TrackHP, HpBar_Drain, HpBar_BuildQuads, HpBar_PlaceNames; Pride gauge ratios + PrideGauge_Update	void (void)
+0031a380	func	Hud_FieldUpdate	the same HP bar steps outside a battle, then the map HUD	void (void)
+0031a400	func	HpBar_Draw	draws each side's bars (4 layers x 3 quads per member) with g_HudTex[0]/[1]	void (void)
+0031aaf0	func	HpBar_SyncMax	(side) resets a member's bar when its max HP changed	void (int side)
+0031ad30	func	HpBar_TrackHP	(side) on an HP change: last damage, trail-to-drain += damage, HP = new	void (int side)
+0031b010	func	HpBar_Drain	(side) trail -= max(1, (trail - HP) / 60) per frame while damage is left; HP and trail x 128 / max	void (int side)
+0031b4a0	func	HpBar_PlaceNames	(side) positions and colours the member name strings	void (int side)
+00318560	func	HpBar_BuildQuads	(side) low-HP pulse colour (0x00732250), then HpBar_MemberQuads per member and layer	void (int side)
+0031bb60	func	HpBar_MemberQuads	(side, member, layer) picks max / trail / HP for the member, then HpBar_LayerQuads	void (int side, int member, int layer)
+0031bfe0	func	HpBar_LayerQuads	(max, trail, HP, side, member, layer) the 3 quads (cap, stretched middle, cap) of one layer: length 1.4 x value x 0.018, colours, side 1 mirrored (docs/HUD.md)	void (float max, float trail, float hp, int side, int member, int layer)
+0031cf20	func	HpBar_SetPrideOffset	(pixels) moves party members' bars down while the Pride gauge shows (gp-0x4D18)	void (float px)
+00732260	data	g_HpBars	2 sides x 3 members x 0x28: max, trail, HP, last damage, HP before, trail left, HP x128/max, trail x128/max	s32[2][3][10]
+005168c0	data	g_HpBarPulse	low-HP pulse base colours (255 180 50), 4 vertices	u8[4][4]
+005d4378	data	g_HpBarLayerOrder	draw priority per layer: 1200 frame, 1050 trail, 1100 HP, 1000 back	u16[4]
+00516930	data	g_HpBarNamePos	name x, y per side and member (46, 75/105/133; side 1 489.6 + 104)	f32[6][2]
+00516960	data	g_HpBarRowY	bar y per member before + 40: 47, 81, 109	f32[3]
+001c3210	func	PrideGauge_Init	finds FONT_TEX_02/03 (language suffix) by name, resets both sides	void (void)
+001c20d0	func	PrideGauge_Build	(side) creates the 6 sprites (lighter, cap, fuse, fuse end, two flame sprites) and side 1's NEGOTIATION text	void (s8 side)
+001c29f0	func	PrideGauge_Side	(side) state machine: build, slide in, live (flames, side 1 NEGOTIATION OK! when empty), slide out, free	void (s8 side)
+001c2720	func	PrideGauge_Flames	(side) flame frame cycle ((1 - ratio) x 0.05 + 0.05 s) and scale (ratio x 1.3, ratio x 1.8)	void (s8 side)
+001c33d0	func	PrideGauge_Update	both sides' PrideGauge_Side; frees the textures when both are done	void (void)
+001c3440	func	PrideGauge_SetRatio	(ratio, side) target ratio while live	void (float ratio, s8 side)
+001c34c0	func	PrideGauge_Reset	(ratio, side) current = target = ratio	void (float ratio, s8 side)
+00685110	data	g_PrideGauge	2 sides x 0x4C: slide timer, 6 sprite handles, state +0x1C, text state +0x20, flame frame +0x28, ratio +0x3C..	u8[2][0x4C]
+005ca830	data	g_PrideGaugeLayout	per side 0x14: x, y, then offsets of cap, fuse, fuse end, flames (s16)	s16[2][10]
+005ca860	data	g_PrideFlameFrames	8 x {u, v} of the flame frames (0-3 FONT_TEX_02, 4-7 FONT_TEX_03)	f32[8][2]
+0031ba50	func	Hud_ComboWatch	shows the combo counter when a side's combo_hits changes and is > 1 (side 1 only in VS-type battles)	void (void)
+002bd150	func	Combo_Show	(count, side) starts a 40-frame combo counter task (count capped at 99)	void (s16 count, s16 side)
+002bed10	func	Combo_DrawLeft	(sprites, ?, frame, count) digits + HITS, slide / grow / fade by frame	void (int buf, int a, int frame, s16 count)
+002bf4b0	func	Combo_DrawRight	side 1 version of Combo_DrawLeft	void (int buf, int a, int frame, s16 count)
+002bfd50	func	Combo_TaskLeft	task: Combo_DrawLeft each frame for 40 frames	void (int task)
+002bfe60	func	Combo_TaskRight	task: Combo_DrawRight each frame for 40 frames	void (int task)
+00505920	data	g_HudSprites	HUD sprite records 0x28: s16 texture group, index, ?, f32 texture w, h, u, v, w, h, display w, h (0 HITS, 12-21 digits 0-9)	u8[24][0x28]
+002fc290	func	Fighter_AddComboHit	(attacker) combo_hits + 1 per landed hit; keeps the Biggest combo record 0x0060D17C	s16 (Fighter *fighter)
+002fc260	func	Fighter_ResetCombo	combo_hits = 0	void (Fighter *fighter)
+002fc380	func	Fighter_GetComboHits	-> combo_hits	s16 (Fighter *fighter)

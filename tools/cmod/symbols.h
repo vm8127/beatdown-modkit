@@ -78,7 +78,13 @@ void BList_Clear(void);  /* 0x0018ebc0 */
 s16 *BList_GetList(s16 which);  /* 0x0018ec00 */
 void BList_SetList(s16 *ids, s16 count);  /* 0x0018ec80 */
 s16 BList_IndexOf(s16 which, s16 person);  /* 0x0018ede0 */
+void Text_GlyphQuad(int box, float *quad, void *raster, int uv, int index);  /* 0x001b1310 */
+int Text_Layout(int box, u16 *codes, u16 *glyphs, int tex_w, int tex_h);  /* 0x001b1850 */
+int Text_SetCodes(int box, u16 *codes, u16 *glyphs, int tex_w, int tex_h);  /* 0x001b2810 */
+int Text_SetString(int box, const char *text);  /* 0x001b2b90 */
 u16 *Text_Encode(int box, const char *text);  /* 0x001b2be0 */
+void Font_SetPages(void *p0, void *p1, void *p2, void *p3, void *p4);  /* 0x001b7d30 */
+void Font_SetIconPage(void *raster);  /* 0x001b7d60 */
 void Text_SetPerson(int n);  /* 0x001b7d80 */
 void Text_SetArea(int area);  /* 0x001b7d90 */
 void Text_SetItem(int item);  /* 0x001b7da0 */
@@ -89,6 +95,13 @@ void Text_SetNum2(int n);  /* 0x001b7de0 */
 void Text_SetNum1(int n);  /* 0x001b7df0 */
 void Text_SetText1(int text_id);  /* 0x001b7e00 */
 void Text_SetText2(int text_id);  /* 0x001b7e10 */
+void PrideGauge_Build(s8 side);  /* 0x001c20d0 */
+void PrideGauge_Flames(s8 side);  /* 0x001c2720 */
+void PrideGauge_Side(s8 side);  /* 0x001c29f0 */
+void PrideGauge_Init(void);  /* 0x001c3210 */
+void PrideGauge_Update(void);  /* 0x001c33d0 */
+void PrideGauge_SetRatio(float ratio, s8 side);  /* 0x001c3440 */
+void PrideGauge_Reset(float ratio, s8 side);  /* 0x001c34c0 */
 int Person_IsState3(s16 person);  /* 0x001c3dd0 */
 int Allies_FirstFree(s16 exclude);  /* 0x001c44a0 */
 s16 MoveList_Count(int unused, int style);  /* 0x001c5ba0 */
@@ -152,14 +165,23 @@ void *Preset_Get(int preset, int part);  /* 0x002a8720 */
 void Fighter_AssignPerson(int slot, int person_id);  /* 0x002a89d0 */
 void Person_RecalcMaxHP(int person_id);  /* 0x002afd60 */
 void Battle_AddBonusExp(int n);  /* 0x002b2660 */
+void Combo_Show(s16 count, s16 side);  /* 0x002bd150 */
+void Combo_DrawLeft(int buf, int a, int frame, s16 count);  /* 0x002bed10 */
+void Combo_DrawRight(int buf, int a, int frame, s16 count);  /* 0x002bf4b0 */
+void Combo_TaskLeft(int task);  /* 0x002bfd50 */
+void Combo_TaskRight(int task);  /* 0x002bfe60 */
+void *Tex_FindLoaded(const char *name);  /* 0x002c0e10 */
+int Font_Load(void);  /* 0x002c4090 */
 void Jobs_ResetAll(void);  /* 0x002c8f40 */
 void Persons_ClearKind2(void);  /* 0x002d7cb0 */
+int Font_LoadCrimeIcons(s16 collect);  /* 0x002d86e0 */
 void Area_ChangeTo(int from, int to);  /* 0x002d9890 */
 void Battle_PlaceFighters(void);  /* 0x002d9ab0 */
 int Anim_IsLoaded(int slot);  /* 0x002dc2e0 */
 void *Anim_GetSlot(int slot);  /* 0x002dc300 */
 int Anim_UnloadGroup(int group);  /* 0x002dc790 */
 void Anim_UnloadGroupList(int *groups);  /* 0x002dc880 */
+int Battle_Start(int arg);  /* 0x002dcf60 */
 void Battle_StartTalk(int kind);  /* 0x002de6e0 */
 int Battle_RequestEscape(Fighter *fighter);  /* 0x002e2660 */
 void Battle_OnFighterDown(Fighter *fighter, int flag);  /* 0x002e2f60 */
@@ -200,6 +222,9 @@ void Fighter_NewAttackId(Fighter *fighter);  /* 0x002fb840 */
 void Fighter_ApplyDamage(Fighter *fighter, int damage);  /* 0x002fb880 */
 void Fighter_SubPride(Fighter *fighter, int amount);  /* 0x002fbae0 */
 int Fighter_Vibrate(Fighter *fighter, int kind);  /* 0x002fc1b0 */
+void Fighter_ResetCombo(Fighter *fighter);  /* 0x002fc260 */
+s16 Fighter_AddComboHit(Fighter *fighter);  /* 0x002fc290 */
+s16 Fighter_GetComboHits(Fighter *fighter);  /* 0x002fc380 */
 void Allies_UpdateArrestFlag(void);  /* 0x002fd280 */
 Fighter *Fighter_FindByPerson(int person_id);  /* 0x002fd300 */
 void *Area_Collision(void);  /* 0x002fd5f0 */
@@ -218,7 +243,21 @@ void Combat_TakeHit(Fighter *fighter);  /* 0x0030dfd0 */
 Command *Style_GetCommandList(int style);  /* 0x00317bc0 */
 Command *Style_GetWeaponCommandList(int weapon_kind);  /* 0x00317be0 */
 int MoveList_IsLearned(Fighter *fighter, int style, int line);  /* 0x00317e50 */
+void Hud_LoadTextures(void);  /* 0x00317f50 */
+int Hud_TexturesReady(void);  /* 0x00318270 */
+void HpBar_BuildQuads(int side);  /* 0x00318560 */
+void Hud_BattleUpdate(void);  /* 0x0031a2c0 */
+void Hud_FieldUpdate(void);  /* 0x0031a380 */
+void HpBar_Draw(void);  /* 0x0031a400 */
+void HpBar_SyncMax(int side);  /* 0x0031aaf0 */
+void HpBar_TrackHP(int side);  /* 0x0031ad30 */
+void HpBar_Drain(int side);  /* 0x0031b010 */
 void HpBar_Build(int side);  /* 0x0031b210 */
+void HpBar_PlaceNames(int side);  /* 0x0031b4a0 */
+void Hud_ComboWatch(void);  /* 0x0031ba50 */
+void HpBar_MemberQuads(int side, int member, int layer);  /* 0x0031bb60 */
+void HpBar_LayerQuads(float max, float trail, float hp, int side, int member, int layer);  /* 0x0031bfe0 */
+void HpBar_SetPrideOffset(float px);  /* 0x0031cf20 */
 u8 Area_DefFlag101(int area);  /* 0x0031cfa0 */
 AreaDef *Area_Def(int area);  /* 0x0031cfc0 */
 u32 Area_CurrentDef10(void);  /* 0x0031cfe0 */
@@ -480,6 +519,7 @@ extern u8 g_PresetFlagA[189];  /* 0x00431b60 */
 extern void *g_ArchiveTexNames[10];  /* 0x004ec950 */
 extern ItemDef g_ItemTable[488];  /* 0x004f2400 */
 extern AnimGroup g_AnimGroups[317];  /* 0x004fb4c0 */
+extern u8[24] g_HudSprites[0x28];  /* 0x00505920 */
 extern float[13] g_AreaSpawnPoints[4];  /* 0x00509700 */
 extern void *g_FixedBattlePos[57];  /* 0x00509930 */
 extern s32 g_StageLayer[12];  /* 0x00509aa0 */
@@ -493,6 +533,9 @@ extern u8 *g_SphereTables[3];  /* 0x00516050 */
 extern u32 g_ReactionSet0[22];  /* 0x005161c0 */
 extern u32 g_ReactionSet1[22];  /* 0x00516300 */
 extern u32[14] g_WalkModes[6];  /* 0x00516560 */
+extern u8[4] g_HpBarPulse[4];  /* 0x005168c0 */
+extern f32[6] g_HpBarNamePos[2];  /* 0x00516930 */
+extern f32 g_HpBarRowY[3];  /* 0x00516960 */
 extern s16[57] g_BattleSpotDefault[4];  /* 0x00516980 */
 extern AreaDef g_AreaDefs[57];  /* 0x005170f0 */
 extern HitRecord *g_ActionHits[2004];  /* 0x00580a40 */
@@ -506,6 +549,16 @@ extern MissionReq g_MissionReq[147];  /* 0x0059a750 */
 extern void *g_AutoMissionChecks[26];  /* 0x0059a9a0 */
 extern u32[8276] g_TexNames[2];  /* 0x0059ae30 */
 extern s16 g_VsPortraitCells[258];  /* 0x005b81f0 */
+extern u16[521] g_FontGlyphs[5];  /* 0x005b8840 */
+extern u16[2141] g_FontKanji1[5];  /* 0x005b9ca0 */
+extern u16[2141] g_FontKanji2[5];  /* 0x005bf050 */
+extern u16[2141] g_FontKanji3[5];  /* 0x005c4400 */
+extern u16[262] g_FontKanji4[5];  /* 0x005c97b0 */
+extern u16[3] g_FontCrimeGlyphs[5];  /* 0x005ca1f0 */
+extern u16[26] g_FontIconGlyphs[5];  /* 0x005ca210 */
+extern u8[16] g_TextPalette[4];  /* 0x005ca320 */
+extern s16[2] g_PrideGaugeLayout[10];  /* 0x005ca830 */
+extern f32[8] g_PrideFlameFrames[2];  /* 0x005ca860 */
 extern u32 g_InputFallback[136];  /* 0x005cd9b0 */
 extern u32 g_PadLayouts[24];  /* 0x005cf7c0 */
 extern u8 g_VibrationStrength[3];  /* 0x005cf930 */
@@ -513,6 +566,7 @@ extern f32 g_VibrationTime[3];  /* 0x005cf938 */
 extern f32 g_AttackRankMul[7];  /* 0x005d04d0 */
 extern f32 g_EnemyDamageByDifficulty[4];  /* 0x005d04f0 */
 extern u32 g_HitSituationSet[6];  /* 0x005d0630 */
+extern u16 g_HpBarLayerOrder[4];  /* 0x005d4378 */
 extern s16 g_VsNormalIds[16];  /* 0x005da080 */
 extern ScriptOpHandler g_ScriptOpHandlers[204];  /* 0x005dacf0 */
 extern u8 g_PhoneOrderAllies[16];  /* 0x005db360 */
@@ -556,15 +610,21 @@ extern s32 g_PlayerMoney;  /* 0x0060d3a0 */
 extern s32 g_NpcSpawnTextures[10];  /* 0x00645b20 */
 extern s16 g_BList[111];  /* 0x006614a0 */
 extern u16 g_TextCodes[512];  /* 0x006620c0 */
+extern void *g_FontPages[7];  /* 0x00662900 */
+extern u8[128] g_TextBoxes[0x308];  /* 0x00662960 */
+extern u8[2] g_PrideGauge[0x4C];  /* 0x00685110 */
 extern u8 g_PadVibration[16];  /* 0x00685340 */
 extern Pad g_Pad1;  /* 0x00685450 */
 extern u8 g_McFiles[320];  /* 0x0069c2b0 */
 extern u8 g_RtAnimInterpInfo[0x300];  /* 0x0069df08 */
+extern void *[5] g_HudTexGroups[4];  /* 0x006b6740 */
 extern AreaPerson g_AreaPeople[7];  /* 0x006cb920 */
 extern Fighter g_Fighters[13];  /* 0x006cfb70 */
 extern s16 g_Player_HP;  /* 0x006d3f8c */
 extern s16 g_Player_MaxHP;  /* 0x006d3f8e */
 extern Pad g_FighterPads[4];  /* 0x007241d0 */
+extern s32[2][3] g_HpBars[10];  /* 0x00732260 */
+extern void *g_HudTex[10];  /* 0x00737050 */
 extern s32 g_AppearanceItems;  /* 0x0075b330 */
 extern s16 g_VsCustomIds[200];  /* 0x0076a970 */
 extern MissionMgr g_MissionMgr;  /* 0x0076ed60 */

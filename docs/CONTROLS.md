@@ -102,7 +102,7 @@ docs/FORMATS.md, "Text", lists the icon glyphs. Meaning (text + code): ① run /
 
 ## Open questions
 
-- Which buttons α, β, ⑰, ⑱ are (the font glyphs would show it).
+- ~~Which buttons α, β, ⑰, ⑱ are~~: the font's icon sheet shows α β = START, ③ = L3, ⑥ = R3, ⑰ ⑱ = crime icons (sheriff star, skull), not buttons (docs/HUD.md, 2026-10-16).
 - What SELECT in a battle requests (`0x002E3390`, `g_Battle` +0xCC / +0xD0).
 - How a door is taken in the field without a battle.
 - The default confirm / cancel masks (`g_SystemData` +0x24 / +0x28).

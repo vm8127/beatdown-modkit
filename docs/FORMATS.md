@@ -208,7 +208,7 @@ The swappable banks share one slot (`g_TextSwapSlot` `0x00600320` says 3 = stati
 | ①-⑥, ⑰, ⑱, ∬, α, β, ㊤-㊨ | icon glyphs: ① + stick = RUN, ②/⑤ use the equipped items, ④ grab / pick up (move lists: "□□ ④"), ⑥ taunt, ∬ rapid press ("GRAB ∬□"), α opens a menu | `{icon:1}` ... `{icon:rapid}` `{icon:alpha}` |
 | ⑲ | ® | ® |
 
-Everything else (Latin-1 and Latin Extended-A letters, general punctuation, arrows ←↑→↓ which the MOVE LIST uses, kana, kanji) is a font glyph. Note that NFKC normalisation (what bdkit.py and scriptkit.py use for display) folds the circled placeholders into digits ("controller port ⑯" becomes "port 16"); use `textkit` when the codes matter. A real `{` or `}` would be written `{lb}` / `{rb}` (none occur).
+Everything else (Latin-1 and Latin Extended-A letters, general punctuation, arrows ←↑→↓ which the MOVE LIST uses, kana, kanji) is a font glyph. The font, its glyph tables, the colour palette and the icon pictures: docs/HUD.md, "The text font". Note that NFKC normalisation (what bdkit.py and scriptkit.py use for display) folds the circled placeholders into digits ("controller port ⑯" becomes "port 16"); use `textkit` when the codes matter. A real `{` or `}` would be written `{lb}` / `{rb}` (none occur).
 
 **For the remake** (`conv_text.py`, run by `remake_assets.py` as `text`): `assets_ripped/text/<lang>.json` `{"text": {id: markup}}` (7,943 texts), `dialogue_<lang>.json` `{"scripts": {SCRIPT.XAF entry: [markup]}}` (1,088 scripts, 6,245 strings), `index.json` (banks, tokens, area id -> name texts, style -> move list text ids, id bases). `GameText.text(id)`, `render(id, vars, bbcode)`, `person_name(n)`, `item_name(n)`, `area_name(area)`, `move_list(style)`, `dialogue(entry)`; missing assets give `#id`.
 
@@ -234,4 +234,4 @@ python tools/textkit.py get ISO/XAF/CDATA.XAF 11069 18002   # text by id with th
 - Pack chunk types 0x23 and 0x0C (`0x00259980`, `0x0022B9A0`).
 - Left/right of the leg and arm chains; confirm by posing in M2.
 - Is the DATA.XAF clump of an item identical to its ARCHIVE.XAF item + 0x3A6 copy?
-- Text: the colour palette behind `@0`-`@9`; which physical buttons icons ③, ⑰, ⑱, α, β are (① L1, ② L2, ④ R1, ⑤ R2, ⑥ R3: docs/CONTROLS.md, "Icons in the text"); who sets the second person `⑫` (gp-0x771C); what Text_Encode's `box` (0x308-byte records at `0x006629E4`) holds (line count, wrap width); the font itself (glyph table and texture) for a faithful look. Not checked in the emulator.
+- Text: answered in docs/HUD.md (2026-10-16, read from the code and the font textures): the colour palette (`g_TextPalette`), the icon pictures (③ L3, ⑥ R3, α β START, ⑰ ⑱ crime icons) and the font (GRAPH.XAF 374 + `g_FontGlyphs`). Still open: who sets the second person `⑫` (gp-0x771C); what Text_Encode's `box` (0x308-byte records at `0x006629E4`) holds (line count, wrap width); the font itself (glyph table and texture) for a faithful look. Not checked in the emulator.

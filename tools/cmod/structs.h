@@ -233,7 +233,8 @@ struct Fighter {
     s16 stagger_max;  /* +0x4428 500 */
     s16 tired;  /* +0x442a tired meter */
     s16 tired_max;  /* +0x442c 1.5 x max HP */
-    u8 _442E[0x6];
+    s16 tired_total;  /* +0x442e running total of action costs; each multiple of tired_max lowers the TIRED floor factor (+0x44E0) by 0.1 (docs/HUD.md, "TIRED") */
+    f32 tired_timer;  /* +0x4430 tired drops by 1 every 0.5 s, not below tired_max x (1 - the +0x44E0 factor) */
     s16 limb_pool[0x6];  /* +0x4434 per-limb attack pool */
     s16 limb_pool_max[0x6];  /* +0x4440 */
     u8 _444C[0x64];
@@ -303,6 +304,8 @@ _Static_assert(__builtin_offsetof(Fighter, stagger) == 0x4426, "Fighter.stagger"
 _Static_assert(__builtin_offsetof(Fighter, stagger_max) == 0x4428, "Fighter.stagger_max");
 _Static_assert(__builtin_offsetof(Fighter, tired) == 0x442a, "Fighter.tired");
 _Static_assert(__builtin_offsetof(Fighter, tired_max) == 0x442c, "Fighter.tired_max");
+_Static_assert(__builtin_offsetof(Fighter, tired_total) == 0x442e, "Fighter.tired_total");
+_Static_assert(__builtin_offsetof(Fighter, tired_timer) == 0x4430, "Fighter.tired_timer");
 _Static_assert(__builtin_offsetof(Fighter, limb_pool) == 0x4434, "Fighter.limb_pool");
 _Static_assert(__builtin_offsetof(Fighter, limb_pool_max) == 0x4440, "Fighter.limb_pool_max");
 _Static_assert(__builtin_offsetof(Fighter, pending_damage) == 0x44b0, "Fighter.pending_damage");

@@ -27,6 +27,7 @@ All tools read game files from `ISO/`, which holds the user's own disc unpacked 
 | `tools/scriptkit.py` | Script disassembler (`dis`), mission table (`missions`), command use counts (`stats`) |
 | `docs/MEMORY-MAP.md` | Every address our cheats write, the code caves (used and free), which cheats conflict |
 | `remake/` | Side project: a Beat Down remake in Godot built on this research. Start with `remake/MEMORY.md` (session memory: state, decisions, next step; update it before stopping), then `remake/PLAN.md` (brief, rules, milestones). Holds the Godot project and remake-only tools; game knowledge still goes in `docs/` |
+| `docs/HUD.md` | Fight HUD (HP bars, damage trail, Pride gauge, combo counter), the text font, colour palette and button icons; GRAPH.XAF names |
 | `docs/FORMATS.md`, `tools/rwkit.py` | Model and texture formats (RenderWare 3.x clumps, skeleton, skinning, street and outfit model assembly) and their decoder |
 | `docs/STAGES.md`, `tools/stagekit.py` | Stages (areas): area ids, FSTAGE.XAF area packs (world geometry, collision, doors, props), battle spots, per-area tables; read-only inspector |
 | `docs/PARTS.md` | Body and outfit parts reference for new characters' looks (`bdkit.py tex` views them); grows as parts are identified |

@@ -193,7 +193,7 @@ These are shown by the unused debug overlay `Debug_FighterInfo` `0x00302260`.
 | Meter | Fields | What the code does |
 |---|---|---|
 | DAMAGE | `+0x4426` / `+0x4428` (500) | **Read**: every hit adds its damage, capped at max HP. **Probably** the stagger meter: some reactions (`0x003119A0`) pick a heavier stagger once it passes half of `+0x4428`. It is not a knockdown threshold as CODEMAP said. |
-| TIRED | `+0x442A` / `+0x442C` | **Read**: max = 1.5 x max HP. Each attack you start adds its cost (`0x003081C4`); it drains by 1 per frame down to a floor (`0x0030BBB8`). The tutorial says the Devastator tires you. What a full meter does wasn't traced. |
+| TIRED | `+0x442A` / `+0x442C` | **Read**: max = 1.5 x max HP. Each attack you start adds its cost (`0x003081C4`); it drains by 1 every 0.5 s (timer `+0x4430`; corrected 2026-10-16, was "per frame") down to a floor `tired_max x (1 - f)` that rises as the fight goes on (`0x0030BBB8`; docs/HUD.md, "TIRED"). Not shown on the HUD. The tutorial says the Devastator tires you. What a full meter does wasn't traced. |
 | REV | `+0x451C` / `+0x451E` | reversal meter; not traced |
 | ATTACK (per limb) | `+0x4434[6]` / `+0x4440[6]` | **Read**: when your hit lands, the limb that hit loses a third of the damage from its pool, and every 30 points used lowers a per-limb float (`+0x44B8`) by 0.1, down to 0.5. **Probably** limb fatigue. |
 | INJURY | `+0x46AA[]` / `+0x4692[]` | face L/R, body front/back, arms, legs; not traced |

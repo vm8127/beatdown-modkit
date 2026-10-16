@@ -108,6 +108,8 @@ Fighter	0x4426	s16	stagger	damage/stagger meter, capped at max HP
 Fighter	0x4428	s16	stagger_max	500
 Fighter	0x442A	s16	tired	tired meter
 Fighter	0x442C	s16	tired_max	1.5 x max HP
+Fighter	0x442E	s16	tired_total	running total of action costs; each multiple of tired_max lowers the TIRED floor factor (+0x44E0) by 0.1 (docs/HUD.md, "TIRED")
+Fighter	0x4430	f32	tired_timer	tired drops by 1 every 0.5 s, not below tired_max x (1 - the +0x44E0 factor)
 Fighter	0x4434	s16[6]	limb_pool	per-limb attack pool
 Fighter	0x4440	s16[6]	limb_pool_max
 Fighter	0x44B0	s16	pending_damage
