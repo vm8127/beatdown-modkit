@@ -12,13 +12,15 @@ Work queued for when a running task finishes (running work is in [MEMORY.md](MEM
 
 ## Next, in order
 
+0. [ ] **Controller follow-ups:** wire `PlayerBrain.wants_run()` (L1 / full tilt) into the fighter's walk modes and `wants_escape()` (L1+R1) into a battle escape at doors (fight-feel / M6 own those files); taunt (#01), items (#4C/#4D) and grab (#1E) moves once their systems exist; the HUD draws `GameInput.text_button()` glyphs; find which buttons α, β, ⑰, ⑱ are (docs/CONTROLS.md open questions); V tries a real pad (list in MEMORY.md).
+
 1. [ ] **M5 research: enemy AI (V: later).** How street fighters decide to attack, guard, circle and take turns, read from `decomp/` and documented in `docs/` (new section or `docs/AI.md`, symbols in `symbols.tsv`). Pure research, no Godot files, so it can't conflict with anything. M5 needs it.
 2. [x] **Game text: done 2026-10-15** (`tools/textkit.py`, `remake/tools/conv_text.py` -> `assets_ripped/text/`, `GameText`; docs/FORMATS.md, "Text"). Left for later: the game's colour palette, the font, which buttons icons ①-⑥ are.
 3. [ ] **M7 prep: negotiation and recruiting.** The post-fight menu (RECRUIT / ROB / INTERROGATE / BEATDOWN) as Godot UI and logic, with the Pride gauge and formulas from `docs/MECHANICS.md`, tested in the dev arena.
 
 ## After the running work lands
 
-- [ ] **Running since 2026-10-16 (visible sessions):** "Fight feel: reactions, grabs, walk" (M4 follow-ups), "Fight HUD with the game's font and colours", "Controller controls like the PS2 game". Each updates MEMORY.md as it goes.
+- [ ] **Running since 2026-10-16 (visible sessions):** "Fight feel: reactions, grabs, walk" (M4 follow-ups), "Fight HUD with the game's font and colours", "Controller controls like the PS2 game" (done 2026-10-16). Each updates MEMORY.md as it goes.
 - [ ] **More playable heroes:** export the other heroes' models and styles, a character pick in the dev arena.
 - [ ] **Sound and music research:** find and decode the music, sound effect and voice formats; a converter.
 

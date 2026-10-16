@@ -10,7 +10,7 @@ A private, never-distributed hobby remake of Beat Down: Fists of Vengeance in Go
 | `godot/` | The Godot project (open `godot/project.godot`) |
 | `godot/dev/` | Developer arena (the main scene): test level, debug overlay, smoke test; model viewer; stage test |
 | `godot/levels/` | Playable levels: the subway and Downtown with doors between them (`level.gd`, `level_test.gd`) |
-| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/`, `stage/` (`GameArea`: an area from the disc), `text/` (`GameText`: the game's text by id, from `assets_ripped/text/`) |
+| `godot/game/` | The game: `fighter/` (fighter scene and state machine, move resources, player and dummy brains), `moves/` (one `.tres` per move, plus the style), `camera/`, `input/` (`GameInput`: controls, pads, layouts, rebinding, rumble, glyphs; the F8 controls screen; `input_test`), `stage/` (`GameArea`: an area from the disc), `text/` (`GameText`: the game's text by id, from `assets_ripped/text/`) |
 | `godot/assets_ripped/` | Assets extracted from the disc; generated, never committed |
 | `tools/` | `remake_assets.py` (rebuilds every asset from `ISO/`; checks the disc MD5s first), its converters (`conv_models.py`: character models, `conv_moves.py`: fighting styles, `conv_text.py`: text banks and dialogue as JSON) and `gltf_writer.py`; `test_moves.py` checks the generated moves, `test_text.py` the text (`python remake/tools/test_text.py ISO remake/godot/assets_ripped`) |
 
@@ -30,7 +30,31 @@ Then open `remake/godot/project.godot` in the editor and press F5, or run it dir
 __external_tools/godot/Godot_v4.7.2-stable_win64.exe --path remake/godot
 ```
 
-Controls and dev keys are listed on screen (Tab hides them). The F-keys: F1 hitboxes, F2 slow motion, F3 pause, F4 step one frame, F5 spawn a dummy, F6 dummy mode (stand, guard, counter-jab, fight), F7 reset.
+Controls and dev keys are listed on screen (Tab hides them), with the buttons of the device you're using.
+
+## Playing with a controller
+
+Plug in an Xbox, PlayStation or Switch pad before or after starting; the on-screen help switches to its buttons when you touch it. The layout is Beat Down's (docs/CONTROLS.md), by button position:
+
+| PS2 | Xbox | Job |
+|---|---|---|
+| □ | X | Punch |
+| △ | Y | Kick |
+| × | A | Guard (hold); with a direction: Weaving / Sway Back |
+| ○ | B | Special (Aaron's ○ move; Devastator / threaten later) |
+| L1 | LB | Run (not wired to the fighter yet) |
+| R1 | RB | Grab / pick up / use a door (levels) |
+| L2 / R2 | LT / RT | Items 1 / 2 (no items yet) |
+| R3 | RS click | Taunt (no taunt yet) |
+| Left stick / d-pad | | Move; directions in moves are relative to the opponent (→ = toward) |
+| Right stick | | Camera |
+| START / SELECT | Menu / View | Menu / select (nothing yet) |
+
+Keyboard and mouse: WASD move, mouse camera (click to capture), J or left click punch, K or right click kick, L or Space guard, I or middle click special, Shift run, E grab / use, Q / R items, T taunt.
+
+**F8** opens the controls screen: CONTROL CONFIG TYPE 1-6 (the game's six face-button layouts), vibration, stick dead zone (0.2; the PS2 game used 0.5), camera X / Y reverse, and rebinding (click a keyboard or pad slot, press the new button; Esc cancels). It's saved in `user://controls.cfg` (on Windows `%APPDATA%/Godot/app_userdata/Beat Down Remake/`). The pad rumbles lightly on every hit that lands, like the game.
+
+Check: `... _console.exe --headless --path remake/godot res://game/input/input_test.tscn` (exit 0 = pass) injects pad, stick and key events and checks the codes and moves (□ P, △ K, ○ special, × guard, toward / away + button, →→P inside and outside the game's 19-frame limit, TYPE 2, rebinding, dead zone, glyphs, rumble). The F-keys: F1 hitboxes, F2 slow motion, F3 pause, F4 step one frame, F5 spawn a dummy, F6 dummy mode (stand, guard, counter-jab, fight), F7 reset.
 
 ## Model viewer
 
