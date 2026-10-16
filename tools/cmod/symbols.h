@@ -223,8 +223,10 @@ int Person_IsBoss(Fighter *fighter);  /* 0x002f9f30 */
 int Fighter_IsAttacking(Fighter *fighter);  /* 0x002fa150 */
 int Fighter_IsReeling(Fighter *fighter);  /* 0x002fa170 */
 int Fighter_IsHolding(Fighter *fighter);  /* 0x002fa180 */
+int Fighter_CanSee(Fighter *a, Fighter *b);  /* 0x002fa8c0 */
 int Fighter_IsStandGuard(Fighter *fighter);  /* 0x002fab40 */
 int Fighter_IsCrouchGuard(Fighter *fighter);  /* 0x002fab80 */
+int Fighter_IsStanding(Fighter *fighter);  /* 0x002fabb0 */
 int Fighter_IsDown(Fighter *fighter);  /* 0x002fabc0 */
 int Fighter_HasPride(Fighter *fighter);  /* 0x002fb120 */
 void Fighter_SetGuard(Fighter *fighter, int max, f32 value);  /* 0x002fb780 */

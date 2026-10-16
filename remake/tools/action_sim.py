@@ -34,14 +34,16 @@ def simulate(e, act, length_of):
       release   game frame control returns (op 0x3C release r: motion frame r - 1 of its clip), -1 = none
       guard     game frame the GUARD control bit is set (op 0x3C guard frame), -1 = none
       invincible [(first, last)] game frames with status MATCHLESS
-      throws    game frames of op 0x2B (throw damage on the held target)
+      throws    op 0x2B (throw damage on the held target): {g: game frame, record: hit record index (op 0x30), arg}
+      place     op 0x17 (REVISION POS: where this fighter goes relative to its partner, timeline +0x43CC-0x43E0):
+                [x, y, z in game units (0.1 m), angle in degrees, frames], or None
       then      the action the motion script continues with (goto / start), None
       loops     the motion script loops forever (lying)
     """
     script = codemap.motion_script(e, act)
     stream = codemap.action_stream(e, act)
     out = dict(clips=[], clip_at=[], frame_at=[], frames=0, windows=[], cancel=[], combo=False, release=-1,
-               guard=-1, invincible=[], throws=[], then=None, loops=False, notes=[])
+               guard=-1, invincible=[], throws=[], place=None, then=None, loops=False, notes=[])
     if not script:
         out["notes"].append("no motion script in the ELF")
         return out
@@ -124,7 +126,9 @@ def simulate(e, act, length_of):
                 if args[1]:
                     pend_guard = (clip, args[1] - 1)
             elif name == "throwhit":
-                out["throws"].append(g)
+                out["throws"].append(dict(g=g, record=hit_index, arg=args[0]))
+            elif name == "move17" and out["place"] is None:
+                out["place"] = [args[0] / 100, args[1] / 100, args[2] / 100, args[3] / 100, args[4] & 0xFF]
             elif name == "status":
                 v = (args[1] & 0xFFFF) << 16 | (args[2] & 0xFFFF)
                 if v & 1:                     # MATCHLESS: takes no damage

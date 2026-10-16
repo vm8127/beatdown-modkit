@@ -44,7 +44,7 @@ extends CharacterBody3D
 ## hits: no damage, no reaction. After control returns the rest of the animation plays out (the "tail")
 ## unless the fighter does something else.
 
-enum State { IDLE, MOVE, ATTACK, GUARD, HITSTUN, BLOCKSTUN, KNOCKDOWN, GETUP }
+enum State { IDLE, MOVE, ATTACK, GUARD, HITSTUN, BLOCKSTUN, KNOCKDOWN, GETUP, HOLD, HELD }
 
 const DT := 1.0 / 60.0
 const GRAVITY := 20.0
@@ -65,6 +65,7 @@ const DIR_BEHIND := 0
 const DIR_FRONT := 1
 const DIR_LEFT := 2
 const DIR_RIGHT := 3
+const HOLD_FRAMES := 150        ## remake: how long a hold lasts without a throw before letting go (the game's escape isn't traced)
 const WALL_RANGE := 1.1         ## Combat_TakeHit's wall test radius, 11 units
 
 @export var move_set: MoveSet       ## the fighting style (placeholder; replaced by `ripped_style`)
@@ -85,6 +86,11 @@ const WALL_RANGE := 1.1         ## Combat_TakeHit's wall test radius, 11 units
 @export var combo_limit := 5        ## chains allowed: person +0x384 + 1 (stat not identified)
 
 var hp := 0
+var holding: Fighter = null          ## the fighter this one holds (grab, throw)
+var held_by: Fighter = null          ## the fighter holding this one
+var _hold_rear := false              ## the hold was taken from behind (throws use REAR GRAB P / K)
+var _held_action := 0                ## held: the partner action being played (catch, hold, a throw's victim side)
+var _held_loop := false
 var state := State.IDLE
 var state_frame := 0
 var move: MoveData                   ## current move while attacking
@@ -203,6 +209,10 @@ func _physics_process(_delta: float) -> void:
 			_tick_knockdown()
 		State.GETUP:
 			_tick_getup()
+		State.HOLD:
+			_tick_hold()
+		State.HELD:
+			_tick_held()
 
 	_animate()
 	if model and _root_motion_state():
@@ -224,7 +234,7 @@ func _enter(new_state: State) -> void:
 ## States whose animation carries the body (root motion); idle only while a tail plays.
 func _root_motion_state() -> bool:
 	match state:
-		State.ATTACK, State.HITSTUN, State.BLOCKSTUN, State.KNOCKDOWN, State.GETUP:
+		State.ATTACK, State.HITSTUN, State.BLOCKSTUN, State.KNOCKDOWN, State.GETUP, State.HOLD, State.HELD:
 			return true
 		State.IDLE:
 			return not _tail.is_empty()
@@ -330,6 +340,9 @@ func _tick_attack() -> void:
 	for i in windows.size():
 		if (windows[i] as MoveHit).is_active(f):
 			_do_hits(i, windows[i])
+	for th in move.throw_hits:
+		if (th as MoveHit).start == f and holding:
+			holding.take_throw(self, th)   # timeline op 0x2B: the hit record lands on the held fighter
 	_read_inputs()
 	# Cancel point: history + the last press must be a whole command of the style.
 	if move.cancel_open(f) and last_input != "" and combo_count < combo_limit:
@@ -341,6 +354,7 @@ func _tick_attack() -> void:
 			return
 		history.remove_at(history.size() - 1)   # (the game leaves it; it checks only once)
 	if f >= move.control_frame():
+		_let_go()
 		_leftover = last_input   # pressed too late for the chain: may start a move from neutral
 		var tail := {"move": move, "key": move_id, "from": f} if f < move.frames else {}
 		_enter(State.IDLE)
@@ -455,6 +469,13 @@ func _do_hits(index: int, h: MoveHit) -> void:
 			if o and not o in found:
 				found.append(o)
 	var done: Array = _hit_done.get(index, [])
+	if move.attack_kind & 4 and holding == null:
+		# A grab attempt (category HOLD, Combat_ResolveHit's HOLD branch): the window catches instead of hitting.
+		for other: Fighter in found:
+			if other != self and other.can_be_grabbed():
+				_catch(other)
+				return
+		return
 	for other: Fighter in found:
 		if other == self or other in done:
 			continue
@@ -509,6 +530,9 @@ func _in_damage_state() -> bool:
 func take_hit(attacker: Fighter, h: MoveHit) -> String:
 	if state == State.ATTACK and move.is_invincible(state_frame):
 		return "miss"
+	if state == State.HELD or held_by:
+		return "miss"   # remake: a held fighter only takes its holder's throw damage
+	_let_go()   # hit while holding: the hold breaks
 	var lying := _is_lying()
 	if lying and not (h.level & 8):
 		return "miss"   # remake: the hurtbox is a standing capsule, so on the floor only low hits connect
@@ -864,6 +888,20 @@ func _animate() -> void:
 				_show_action(_down_action, "down%d" % _react_count, state_frame - n)
 		State.GETUP:
 			_show_track(_getup_action, "getup%d" % _react_count, state_frame)
+		State.HOLD:
+			var grab: Dictionary = model.meta.get("grab", {})
+			var catch_a := int(grab.get("catch", [126])[0])
+			var n := int(model.action_info(catch_a).get("frames", 0))
+			if state_frame < n:
+				_show_track(catch_a, "catch%d" % _react_count, state_frame)
+			else:
+				var hold_a := int(grab.get("hold", [124])[0])
+				var m := maxi(1, int(model.action_info(hold_a).get("frames", 1)))
+				_show_track(hold_a, "hold%d" % _react_count, (state_frame - n) % m)
+		State.HELD:
+			var info := model.action_info(_held_action)
+			var m := maxi(1, int(info.get("frames", 1)))
+			_show_track(_held_action, "held%d:%d" % [_react_count, _held_action], (state_frame % m) if _held_loop else state_frame)
 
 
 ## The rest of a move, reaction or getup after control came back; false (and the tail ends) once it's over.
@@ -917,3 +955,151 @@ func _show_move(m: MoveData, id: String, f: int) -> void:
 	var k := clampi(int(cf[0]), 0, m.clips.size() - 1)
 	var c: PackedInt32Array = m.clips[k]
 	model.show_clip("%s:%d" % [id, k], "a%d" % c[0], float(cf[1]), c[3])
+
+
+# --- Grabs (read from Fighter_HandleCommand, Fighter_PickWeaponMove, Combat_ResolveHit; docs/ANIMATION.md "Grabs") ---
+
+## Standing and free to be caught: Combat_ResolveHit only lets a HOLD-category window catch a standing fighter
+## (posture bit 1, Fighter_IsStandGuard counts) without NOT THROW (getting up), and in line of sight.
+func can_be_grabbed() -> bool:
+	return state in [State.IDLE, State.MOVE, State.ATTACK, State.GUARD, State.HITSTUN, State.BLOCKSTUN] \
+		and holding == null and held_by == null and _hurtbox.collision_layer != 0
+
+
+## The grab window touched `v`: the catch pair starts (attacker 126, victim 127), then the hold loop (124 / 125).
+func _catch(v: Fighter) -> void:
+	holding = v
+	_hold_rear = v.hit_direction(self) == DIR_BEHIND
+	v.held_by = self
+	add_collision_exception_with(v)
+	v.add_collision_exception_with(self)
+	_react_count += 1
+	_enter(State.HOLD)
+	var grab: Dictionary = model.meta.get("grab", {}) if model else {}
+	v._be_held(self, int(grab.get("catch", [126, 127])[1]), false)
+	last_event = "%s grabs %s%s" % [display_name, v.display_name, " from behind" if _hold_rear else ""]
+
+
+## Holding: the catch, then the hold loop; P / K throw (GRAB P / GRAB K, or REAR GRAB P / K from behind).
+func _tick_hold() -> void:
+	if holding == null or holding.held_by != self:
+		_let_go()
+		_enter(State.IDLE)
+		return
+	var grab: Dictionary = model.meta.get("grab", {}) if model else {}
+	var catch_n := int(model.action_info(int(grab.get("catch", [126])[0])).get("frames", 30)) if model else 30
+	if state_frame == catch_n:
+		holding._be_held(self, int(grab.get("hold", [124, 125])[1]), _hold_rear, true)
+	var code := _next_input()
+	if code != "" and state_frame >= catch_n:
+		var b := code.right(1)
+		if b in ["P", "K"]:
+			var found := move_set.match_single(("REAR GRAB " if _hold_rear else "GRAB ") + b)
+			if not found.is_empty():
+				var m: MoveData = found[0]
+				var rear := _hold_rear
+				var v := holding
+				_start_move(m)
+				v._be_held(self, m.pair_action, rear)
+				return
+	if state_frame >= catch_n + HOLD_FRAMES:
+		_release_hold()
+
+
+## Lets go without a throw: the remake's guess at the release pair (132 / 133).
+func _release_hold() -> void:
+	var v := holding
+	_let_go()
+	var grab: Dictionary = model.meta.get("grab", {}) if model else {}
+	var pair: Array = grab.get("release", [132, 133])
+	_enter(State.IDLE)
+	if model:
+		_tail = {"action": int(pair[0]), "key": "release%d" % _react_count, "from": 0}
+	if v and v.model:
+		v._react_action = int(pair[1])
+		v._react = v.model.action_info(v._react_action)
+		v._react_count += 1
+		v.stun = int(v._react.get("frames", 30))
+		v._enter(State.HITSTUN)
+
+
+## Ends this fighter's hold (the victim keeps playing its side until its own end).
+func _let_go() -> void:
+	if holding:
+		if holding.held_by == self and holding.state != State.HELD:
+			holding.held_by = null
+		remove_collision_exception_with(holding)
+		holding.remove_collision_exception_with(self)
+		holding = null
+
+
+## Starts the partner action `action` for the holder `a`, placed like timeline op 0x17 (REVISION POS: x, y, z in game
+## units relative to the holder, the angle added to its facing). A rear hold keeps the victim facing away.
+func _be_held(a: Fighter, action: int, rear: bool, loop := false) -> void:
+	held_by = a
+	_held_action = action
+	_held_loop = loop
+	_react_count += 1
+	_enter(State.HELD)
+	_tail = {}
+	var place: Array = model.action_info(action).get("place", []) if model else []
+	if place == null or place.is_empty():
+		place = [0.0, 0.0, 6.0, 180.0, 5]
+	var ang := float(place[3])
+	if rear and loop:
+		ang = 0.0   # remake: no rear hold animation is loaded for Aaron's body, so the front hold faces away
+	# The game's frame turned 180° into the fighter's (forward -Z): x -> -X, z -> -Z.
+	var off := a.global_transform.basis * Vector3(-float(place[0]), 0.0, -float(place[2])) * 0.1
+	global_position = Vector3(a.global_position.x + off.x, global_position.y, a.global_position.z + off.z)
+	rotation.y = a.rotation.y + deg_to_rad(ang)
+
+
+## Held: plays the partner action; a throw's side ends lying (its goto 19 / 20) or standing.
+func _tick_held() -> void:
+	if held_by == null or not is_instance_valid(held_by):
+		_end_held(1)
+		return
+	if held_by.holding == self and held_by.state == State.HOLD:
+		return   # the holder drives the catch and the hold loop
+	var info := model.action_info(_held_action) if model else {}
+	if _held_loop or held_by.holding != self and held_by.state == State.HOLD:
+		_end_held(1)   # let go before a throw
+	elif state_frame >= int(info.get("frames", 60)):
+		_end_held(int(info.get("then", 1)))
+
+
+func _end_held(then: int) -> void:
+	var a := held_by
+	held_by = null
+	if a:
+		remove_collision_exception_with(a)
+		a.remove_collision_exception_with(self)
+		if a.holding == self:
+			a.holding = null
+	if model and then in [19, 20]:
+		# Thrown: lie down (the throw's clips were the fall), then get up like after a knockdown.
+		_react_action = _held_action
+		_react = {"frames": 0}
+		_down_action = then
+		_getup_action = int(model.action_info(then).get("then", 22))
+		var g := model.action_info(_getup_action)
+		_getup_frames = int(g["release"]) if int(g.get("release", -1)) > 0 else int(g.get("frames", GETUP_FRAMES))
+		_enter(State.KNOCKDOWN)
+		state_frame = 1
+		return
+	_enter(State.IDLE)
+
+
+## Throw damage (timeline op 0x2B): the attacker's current hit record, through the damage formula.
+func take_throw(attacker: Fighter, h: MoveHit) -> void:
+	var dmg := damage_from(attacker, h) if attacker.real_style() else h.damage
+	if dmg <= 0:
+		return
+	hp -= dmg
+	last_damage = dmg
+	combo_taken += 1
+	_start_flash(Color.WHITE)
+	_shake_camera(0.4)
+	attacker.combo_hits += 1
+	attacker.combo_damage += dmg
+	attacker.last_event = "%s throws %s (%d)" % [attacker.move.move_name, display_name, dmg]

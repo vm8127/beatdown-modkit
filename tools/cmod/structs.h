@@ -226,7 +226,9 @@ struct Fighter {
     u8 _4395[0x13];
     s16 release_frame;  /* +0x43a8 timeline op 0x3C: Fighter_ReturnControl at motion frame - 1 (0 = none) */
     s16 guard_frame;  /* +0x43aa timeline op 0x3C: sets flags4388 bit 1 (GUARD) at motion frame - 1 */
-    u8 _43AC[0x68];
+    u8 _43AC[0x20];
+    f32 revision_pos[0x3];  /* +0x43cc timeline op 0x17 (REVISION POS): x, y, z / 100 game units relative to the partner (grabs, throws); +0x43E0 f32 angle (degrees), +0x43DC / +0x43DD bytes (frames) */
+    u8 _43D8[0x3c];
     f32 attack_mul;  /* +0x4414 attack multiplier */
     f32 defense_mul;  /* +0x4418 defense multiplier, normally 1.0 */
     s16 hp;  /* +0x441c */
@@ -260,7 +262,9 @@ struct Fighter {
     s16 rev_max;  /* +0x451e */
     u8 _4520[0x50];
     u8 hit_index;  /* +0x4570 current hit within the action */
-    u8 _4571[0x112];
+    u8 _4571[0x1];
+    s16 code_actions[0x88];  /* +0x4572 per input code: a generic action (g_ActionRemap index) the command handler uses when the style has none; cleared at spawn; indexes 99-104 = catch directions (Combat_ResolveHit); who fills it is not traced */
+    u8 _4682[0x1];
     u8 target;  /* +0x4683 target fighter slot */
     u8 _4684[0x3c];
     s32 class_row;  /* +0x46c0 class row (type id - 1); picks the remap table */
@@ -302,6 +306,7 @@ _Static_assert(__builtin_offsetof(Fighter, target_dir) == 0x4393, "Fighter.targe
 _Static_assert(__builtin_offsetof(Fighter, target_in_front) == 0x4394, "Fighter.target_in_front");
 _Static_assert(__builtin_offsetof(Fighter, release_frame) == 0x43a8, "Fighter.release_frame");
 _Static_assert(__builtin_offsetof(Fighter, guard_frame) == 0x43aa, "Fighter.guard_frame");
+_Static_assert(__builtin_offsetof(Fighter, revision_pos) == 0x43cc, "Fighter.revision_pos");
 _Static_assert(__builtin_offsetof(Fighter, attack_mul) == 0x4414, "Fighter.attack_mul");
 _Static_assert(__builtin_offsetof(Fighter, defense_mul) == 0x4418, "Fighter.defense_mul");
 _Static_assert(__builtin_offsetof(Fighter, hp) == 0x441c, "Fighter.hp");
@@ -329,6 +334,7 @@ _Static_assert(__builtin_offsetof(Fighter, last_input) == 0x4510, "Fighter.last_
 _Static_assert(__builtin_offsetof(Fighter, rev) == 0x451c, "Fighter.rev");
 _Static_assert(__builtin_offsetof(Fighter, rev_max) == 0x451e, "Fighter.rev_max");
 _Static_assert(__builtin_offsetof(Fighter, hit_index) == 0x4570, "Fighter.hit_index");
+_Static_assert(__builtin_offsetof(Fighter, code_actions) == 0x4572, "Fighter.code_actions");
 _Static_assert(__builtin_offsetof(Fighter, target) == 0x4683, "Fighter.target");
 _Static_assert(__builtin_offsetof(Fighter, class_row) == 0x46c0, "Fighter.class_row");
 _Static_assert(__builtin_offsetof(Fighter, body) == 0x46c8, "Fighter.body");

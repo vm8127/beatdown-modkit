@@ -283,8 +283,10 @@
 002FA150 Fighter_IsAttacking
 002FA170 Fighter_IsReeling
 002FA180 Fighter_IsHolding
+002FA8C0 Fighter_CanSee
 002FAB40 Fighter_IsStandGuard
 002FAB80 Fighter_IsCrouchGuard
+002FABB0 Fighter_IsStanding
 002FABC0 Fighter_IsDown
 002FB120 Fighter_HasPride
 002FB780 Fighter_SetGuard

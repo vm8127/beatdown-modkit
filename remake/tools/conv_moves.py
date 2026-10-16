@@ -38,6 +38,8 @@ STYLES = [
 ]
 
 INPUT_FALLBACK = 0x005CD9B0     # u32 per input code: the code Cmd_MatchSingle tries next, -1 = none
+ACTION_EVENTS = 0x00582990      # g_ActionEvents: per action a record; +8 s16 = the partner's action (grabs and throws)
+GRAB_CODE = "#1E"               # R1: Fighter_HandleCommand -> Fighter_PickWeaponMove -> generic action 10 (9 for styles 0x12, 2)
 ATTACK_SPHERES = codemap.ATTACK_PARTS
 SPHERE_SIZE = 20                # {s8 node, pad, f32 offset xyz, f32 radius}
 UNIT = 0.1                      # game units are decimetres (docs/ANIMATION.md, "Animation file format")
@@ -176,7 +178,9 @@ def build_move(e, lib, groups, act, name, sph, pick=None):
     m["release"] = sim["release"]
     m["anim_guard"] = tl["guard"]
     m["invincible"] = sim["invincible"]
-    m["throws"] = sim["throws"]
+    m["throws"] = [t["g"] for t in sim["throws"]]
+    m["pair"] = pair_action(e, act)
+    m["place"] = sim["place"]
     m["then"] = sim["then"] if sim["then"] is not None else -1
     m["root_z"] = hip_z_track(pick, sim) if sim["clips"] else []
     m["hits"] = []
@@ -186,7 +190,20 @@ def build_move(e, lib, groups, act, name, sph, pick=None):
         radius = max((sph[p]["radius"] for p in w["parts"] if 0 <= p < len(sph)), default=1.0) * UNIT
         m["hits"].append(dict(anim_start=w["anim_start"], anim_end=w["anim_end"], start=w["start"], end=w["end"],
                               parts=w["parts"], record=w["record"], radius=round(radius, 4), **r))
+    # Throw damage (op 0x2B) uses the hit record current at that point, on the held target
+    m["throw_hits"] = []
+    for t in sim["throws"]:
+        r = recs[t["record"]] if t["record"] < len(recs) else dict(damage=0, pride=0, strength=0, detail=0, level=0,
+                                                                     reaction=0)
+        m["throw_hits"].append(dict(anim_start=0, anim_end=0, start=t["g"], end=t["g"], parts=[], record=t["record"],
+                                    radius=0.0, **r))
     return m
+
+
+def pair_action(e, act):
+    """The partner's action (g_ActionEvents[act] +8): the victim's side of a grab or throw; 0 = none."""
+    p = e.u32(ACTION_EVENTS + 4 * act)
+    return max(e.s16(p + 8), 0) if 0x00100000 <= p < 0x00600000 else 0
 
 
 def style_names(e, iso):
@@ -213,6 +230,12 @@ def build_style(e, lib, iso, style, groups):
         if act not in moves:
             moves[act] = build_move(e, lib, groups, act, nm, sph, pick)
         commands.append(dict(seq=seq, action=act, condition=bool(cond)))
+    if not any(c["seq"] == [GRAB_CODE] for c in commands):
+        # R1 from neutral: the generic grab attempt (Fighter_PickWeaponMove's default; Fighter_RemapAction(10) = 10)
+        act = 9 if style in (0x12, 0x02) else 10
+        if act not in moves:
+            moves[act] = build_move(e, lib, groups, act, "Grab", sph, pick)
+        commands.append(dict(seq=[GRAB_CODE], action=act, condition=False))
     fallback = {}
     for c in codemap.INPUTS:
         to = e.u32(INPUT_FALLBACK + 4 * c)
@@ -250,10 +273,10 @@ def write_tres(path, title, style, commands, moves, fallback):
     hit_lines, move_lines = [], []
     for act in sorted(moves):
         m = moves[act]
-        hit_ids = []
-        for k, h in enumerate(m["hits"]):
+        hit_ids, throw_ids = [], []
+        for k, h in enumerate(m["hits"] + m["throw_hits"]):
             hid = f"hit_{act}_{k}"
-            hit_ids.append(hid)
+            (hit_ids if k < len(m["hits"]) else throw_ids).append(hid)
             down = bool(h["reaction"] & KNOCKDOWN_BITS)
             hit_lines += [f'[sub_resource type="Resource" id="{hid}"]', 'script = ExtResource("3_hit")',
                           f"start = {h['start']}", f"end = {h['end']}",
@@ -284,6 +307,9 @@ def write_tres(path, title, style, commands, moves, fallback):
                  f"frame_clip = PackedInt32Array({', '.join(map(str, m['frame_clip']))})",
                  f"frame_anim = PackedFloat32Array({', '.join(gd(float(x)) for x in m['frame_anim'])})",
                  f"throws = PackedInt32Array({', '.join(map(str, m['throws']))})", f"then_action = {m['then']}",
+                 f"throw_hits = [{', '.join(f'SubResource({q(h)})' for h in throw_ids)}]",
+                 f"pair_action = {m['pair']}",
+                 f"place = PackedFloat32Array({', '.join(gd(float(x)) for x in (m['place'] or []))})",
                  f"attack_kind = {m['kind']}", f"cost = {m['cost']}",
                  f"notes = PackedStringArray({', '.join(q(n) for n in m['notes'])})", ""]
         move_lines += lines

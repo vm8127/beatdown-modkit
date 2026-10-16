@@ -14,7 +14,7 @@ var _queue: Array[String] = []
 
 func think(f: Fighter) -> void:
 	_timer += 1
-	if f.state in [Fighter.State.HITSTUN, Fighter.State.KNOCKDOWN, Fighter.State.GETUP]:
+	if f.state in [Fighter.State.HITSTUN, Fighter.State.KNOCKDOWN, Fighter.State.GETUP, Fighter.State.HELD]:
 		_queue.clear()
 		_timer = 0
 		return

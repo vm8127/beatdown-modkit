@@ -48,6 +48,10 @@ LOOPING_ACTIONS = (1, 2, 3, 19, 20, 821, 814)
 # g_GuardActions 0x005166C0: per weapon class (0 none, 1 class 3, 2 class 10) {standing list, crouching list}, each
 # s16[6] = guard loop, then the guard-hit (blocked) actions 1-5 (the guard tasks 0x0030FF20 / 0x00310690 pick one)
 GUARD_ACTIONS = 0x005166C0
+# Generic grab pairs (attacker, victim), medium body: the catch and hold Combat_ResolveHit starts for a front grab
+# (g_ActionRemap_M 0x181 / 0x182 -> 126 / 124, partners via g_ActionEvents +8: 127 / 125); the release pair 132 / 133
+# is a remake guess (hold category, partner placed 5 units in front)
+GRAB = {"catch": [126, 127], "hold": [124, 125], "release": [132, 133]}
 
 # Output name -> (outfit preset whose body skeleton to use, style name in conv_moves.STYLES, the class row's
 # animation groups in load order: the group each anim id is taken from, after the style's own preference list)
@@ -120,6 +124,7 @@ def plan(e, lib, iso, style_name, class_groups):
         for c in m["clips"]:
             want.setdefault(c[0], []).append(f"action {act}")
     actions = {}
+    pairs = [m["pair"] for m in moves.values() if m.get("pair")]
     lengths = {}
 
     def length_of(aid):
@@ -137,7 +142,8 @@ def plan(e, lib, iso, style_name, class_groups):
             # Every clip in order, game frames, control back (action_sim.py): hitstun = release or the end
             sim = action_sim.simulate(e, act, length_of)
             a.update(clips=sim["clips"], frames=sim["frames"], release=sim["release"], guard=sim["guard"],
-                     clip_at=sim["clip_at"], frame_at=[round(x, 3) for x in sim["frame_at"]])
+                     clip_at=sim["clip_at"], frame_at=[round(x, 3) for x in sim["frame_at"]], place=sim["place"],
+                     throws=[t["g"] for t in sim["throws"]])
             for c in sim["clips"]:
                 want.setdefault(c[0], []).append(role)
         actions[act] = a
@@ -148,6 +154,11 @@ def plan(e, lib, iso, style_name, class_groups):
 
     for role, act in GENERIC.items():
         add_action(act, role)
+    for role, acts in GRAB.items():
+        for act in acts:
+            add_action(act, f"grab {role}")
+    for act in pairs:
+        add_action(act, "grab partner")
     guard = guard_tables(e)
     for kind, acts in guard.items():
         for i, act in enumerate(acts):
@@ -203,7 +214,7 @@ def convert(iso, out, log=print):
             f.write(g.glb())
         meta = dict(clips=clips, generic=GENERIC, actions={str(k): v for k, v in sorted(actions.items())},
                     reactions={str(s): {str(k): v for k, v in kinds.items()} for s, kinds in reactions.items()},
-                    guard=guard,
+                    guard=guard, grab=GRAB,
                     attack_parts=attack_parts(e), missing=missing)
         with open(os.path.join(out, "anims", name + ".json"), "w", encoding="utf-8", newline="\n") as f:
             json.dump(meta, f, indent=1, sort_keys=True)

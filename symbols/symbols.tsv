@@ -76,6 +76,8 @@
 002fabc0	func	Fighter_IsDown	flags4390 bit 4: on the floor (Combat_TakeHit: hits on a lying fighter use reaction kinds 9 / 10; reaction bit 0x80 misses them)	int (Fighter *fighter)
 002fab40	func	Fighter_IsStandGuard	state 0x400 (guarding) and not crouching: Combat_ResolveHit lets low hits (level 8) through it	int (Fighter *fighter)
 002fab80	func	Fighter_IsCrouchGuard	state 0x400 and flags4390 bit 2 (crouching): mid hits (level 4) get through	int (Fighter *fighter)
+002fabb0	func	Fighter_IsStanding	flags4390 bit 1 (standing posture): Combat_ResolveHit lets a HOLD-category window catch only a standing (or crouch-guarding) fighter	int (Fighter *fighter)
+002fa8c0	func	Fighter_CanSee	(a, b) line of sight: two collision rays between the fighters (feet, 60 % height); 0 when a wall is between. Grabs need it	int (Fighter *a, Fighter *b)
 00378120	func	Camera_HitPunch	(frames in, frames back, strength): the fight camera moves toward the fighters for `in` frames and back over `back`; Combat_TakeHit calls (5, 15, 0.7) when the damage is over 14. The only impact effect found: no hitstop in the hit code	void (float frames_in, float frames_back, float strength)
 0030ff20	func	Fighter_TaskGuard	standing guard task: starts the guard loop (g_GuardActions entry 0, unarmed 821), on status HIT (a blocked hit) plays a guard-hit action 1-5 by target side / hit detail bits (+0x4564 & 0x3C: 0x10 -> 2, 0x20 -> 3, 4 -> 4, 8 -> 5, else 1), goes to the crouching guard (remap 0x214) or the stance (remap 1) when the guard is let go	void (int *task)
 00310690	func	Fighter_TaskGuardLow	crouching guard task, same shape as Fighter_TaskGuard with the crouching lists; back to standing guard (remap 0x1F1) without ↓	void (int *task)

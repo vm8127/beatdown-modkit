@@ -38,6 +38,8 @@ func _run() -> void:
 	await _test_reaction(p, d, "side", PI / 2, "")
 	await _test_block(p, d)
 	await _test_knockdown(p, d)
+	await _test_grab(p, d, false, "fight_grab.png")
+	await _test_grab(p, d, true, "")
 	var ok := _fails.is_empty()
 	print("RESULT fight: %d checks passed, %d failed %s -> %s" % [_passes, _fails.size(), _fails, "PASS" if ok else "FAIL"])
 	get_tree().quit(0 if ok else 1)
@@ -136,6 +138,50 @@ func _test_knockdown(p: Fighter, d: Fighter) -> void:
 	_check(g == d._getup_frames, "knockdown: getup %d frames = action %d release %d" % [g, d._getup_action, d._getup_frames])
 
 
+## R1 (#1E, the grab attempt: action 10) on Dummy 1, then P: the catch and hold, then GRAB P (or REAR GRAB P from
+## behind: Sleeper Hold) with the victim playing the throw's partner action, damage from the throw op, and the victim
+## ends on the floor or standing as the partner action says.
+func _test_grab(p: Fighter, d: Fighter, rear: bool, shot: String) -> void:
+	var t := "rear grab" if rear else "grab"
+	_place(p, d, 0.0 if rear else PI, DummyBrain.Mode.STAND)
+	p.global_position = Vector3(0, 0, 1.9)
+	await _frames(10)
+	var hp := d.hp
+	(p.brain as PlayerBrain).presses.append({"code": "#1E", "frame": Dev.frame})
+	var got := await _until(func(): return p.state == Fighter.State.HOLD, 60)
+	_check(got and d.state == Fighter.State.HELD and d.held_by == p, "%s: R1 catches Dummy 1 (%s / %s)" % [
+		t, Fighter.State.keys()[p.state], Fighter.State.keys()[d.state]])
+	if not got:
+		return
+	_check(p._hold_rear == rear, "%s: hold taken %s" % [t, "from behind" if p._hold_rear else "from the front"])
+	await _frames(50)
+	_check(p.state == Fighter.State.HOLD and d._held_loop, "%s: holding after the catch" % t)
+	(p.brain as PlayerBrain).press("P", "")
+	var thrown := await _until(func(): return p.state == Fighter.State.ATTACK, 20)
+	var want := "REAR GRAB P" if rear else "GRAB P"
+	var m: MoveData = p.move_set.match_single(want)[0]
+	_check(thrown and p.move == m and d._held_action == m.pair_action, "%s: P throws (%s: action %d, victim %d)" % [
+		t, want, p.move.action_id if p.move else -1, d._held_action])
+	var n := 0
+	var shot_done := false
+	while d.state == Fighter.State.HELD and n < 400:
+		await _frames(1)
+		n += 1
+		if shot != "" and not shot_done and n == 40:
+			shot_done = true
+			await _shot(shot)
+	var dmg := 0
+	for h in m.throw_hits:
+		dmg += (h as MoveHit).damage
+	_check(d.hp < hp or dmg == 0, "%s: throw damage %d (records %d)" % [t, hp - d.hp, dmg])
+	var then := int(d.model.action_info(m.pair_action).get("then", 1))
+	var end_state := Fighter.State.KNOCKDOWN if then in [19, 20] else Fighter.State.IDLE
+	_check(d.state == end_state, "%s: victim ends %s after %d frames (partner goto %d)" % [
+		t, Fighter.State.keys()[d.state], n, then])
+	await _until(func(): return d.state == Fighter.State.IDLE and p.state == Fighter.State.IDLE, 400)
+	_check(d.held_by == null and p.holding == null, "%s: both free again" % t)
+
+
 ## The first one-input command of the style whose move has a knockdown hit (reaction 0x20).
 func _knockdown_code(p: Fighter) -> String:
 	for c in p.move_set.commands:
@@ -196,6 +242,7 @@ func _shot(file: String) -> void:
 
 func _side_camera() -> void:
 	Dev.show_hurtboxes = false
+	Dev.show_boxes = false
 	if arena.get("overlay"):
 		arena.overlay.visible = false
 	var cam := Camera3D.new()

@@ -53,6 +53,9 @@ extends Resource
 @export var frame_anim := PackedFloat32Array()   ## per game frame: animation frame shown
 @export var throws := PackedInt32Array()         ## game frames of timeline op 0x2B (throw damage on the held target)
 @export var then_action := -1       ## the action the motion script continues with (1 = stance)
+@export var throw_hits: Array = []  ## MoveHit per throw-damage op (0x2B): `start` = game frame, the hit record then current
+@export var pair_action := 0        ## the partner's action (g_ActionEvents +8): what the held victim plays during this throw
+@export var place := PackedFloat32Array()   ## op 0x17 REVISION POS: x, y, z (game units), angle (degrees), frames
 @export var attack_kind := 0        ## hit table header kind bits
 @export var cost := 0               ## TIRED meter cost (hit table header +4)
 @export var notes := PackedStringArray()
