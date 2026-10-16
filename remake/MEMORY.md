@@ -11,6 +11,7 @@ All done and tested headless, none yet played by V (status; details; next):
 - **Controller controls (GameInput, TYPE 1-6, F8 screen):** CONTROLS.md. Next: V tries a real pad.
 - **Fight HUD, game text and font:** HUD.md, FORMATS.md "Text"; hud_test.tscn, test_text.py. Next: TODO.md "HUD follow-ups"; compare positions with the game.
 - **Bug:** `game/input/input_test.tscn` fails 1 check: Blade Cut whiffs from 1.2 m since 629519d/694709d (TODO.md has the trace). Fix first.
+- **Running (2026-10-16):** session "combat-feel" (Opus, high): Blade Cut bug + game-vs-remake measurement table only (notes folder combat-feel.md); then a Sonnet session fixes the listed differences. V played: moves don't act 100% like the game; HUD mostly right but has artefacts (details not yet given). V's priority: combat feel first.
 - **Next candidates (V picks):** that bug, M7 negotiation + recruiting, more heroes, sound research. Later: M5 enemy AI, other areas.
 
 
