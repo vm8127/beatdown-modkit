@@ -18,7 +18,7 @@ Entries used by the fight HUD and text (name = what the code asks for):
 | 375-378 | UNICODEFONT_KANJI01-04 | 1024x1024x4 (378: 512) | font pages 1-4, kanji; loaded only when the language is Japanese |
 | 32 | BUTTON | 256x128x8 | page 5: button and stick icons for the text (33-37 `BUTTON_XBOX*` are the Xbox version's) |
 | 305 | MURDER_01 | 64x64x8 | page 6: ⑰ ⑱ (a sheriff's star and a skull with a knife), only while `0x002D86E0` has it loaded |
-| 355 | SYSFONT02 | 256x256x4 | the HP bar's name font (RenderWare RtCharset grid, 16 x 16 cells from code 0x20, ASCII then Latin-1 from row 8; gold metal look) |
+| 355 | SYSFONT02 | 256x256x4 | the HP bar's name font: 16 columns x 14 rows, so cells are 16 x 18.3 px (256 / 14; checked by the ink rows), codes 0x20-0x7F in rows 0-5, rows 6-7 a few Latin Extended letters and dots, Latin-1 0xA0-0xFF in rows 8-13; gold metal look. Drawn 22 x 30 per glyph |
 | 173 | GD_HPG_01 | 128x32x4 | HP bar frame |
 | 174 | GD_HPG_02 | 64x32x4 | HP bar fill (white, tinted per layer) |
 | 131 | FONT_TEX_02 (`_ESP` `_FRA` `_GER` `_ITA` 132-135) | 256x256x8 | READY, YOU LOSE, big digits, the Pride gauge's lighter and fuse, flame frames 0-3 |
@@ -147,3 +147,8 @@ Animation over its 40 frames f: the whole counter fades `alpha = (1 - 0.025 f) x
 - `0x002DE500` (NEGOTIATION vs NEGOTIATION OK!).
 - The combo counter's exact positions (half the sprite's w / h are used as offsets; not checked on screen).
 - The text box default colour (box `+0x34`) per box kind.
+- The name font's glyph spacing (the remake uses each glyph's ink width + 1 px at 22 / 16 scale).
+
+## In the remake
+
+`remake/tools/conv_ui.py` writes the art and the tables above to `assets_ripped/ui/`; `remake/godot/game/ui/` draws them: `GameFont` (a bitmap FontFile from `g_FontGlyphs` + the icon sheets, so the game's button glyphs are plain characters; colours from `g_TextPalette`), `HudHpBar`, `HudPrideGauge`, `HudCombo`, `HudName`, `FightHud`; `FighterMeters` keeps Pride and TIRED. Godot note: a bitmap FontFile samples the texture with the glyph's size, so glyph size must equal its UV size (no per-glyph stretch: the game's 0.95 squeeze is dropped, the advance keeps it).

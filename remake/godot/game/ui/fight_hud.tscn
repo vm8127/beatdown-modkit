@@ -1,0 +1,101 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://game/ui/fight_hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://game/ui/hud_hp_bar.gd" id="2_hp"]
+[ext_resource type="Script" path="res://game/ui/hud_pride_gauge.gd" id="3_pride"]
+[ext_resource type="Script" path="res://game/ui/hud_combo.gd" id="4_combo"]
+[ext_resource type="Script" path="res://game/ui/hud_name.gd" id="5_name"]
+
+[node name="FightHud" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_hud")
+
+[node name="Screen" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 640.0
+offset_bottom = 448.0
+mouse_filter = 2
+
+[node name="PrideLeft" type="Control" parent="Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("3_pride")
+
+[node name="PrideRight" type="Control" parent="Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("3_pride")
+side = 1
+
+[node name="HpLeft" type="Control" parent="Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("2_hp")
+
+[node name="HpRight" type="Control" parent="Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("2_hp")
+side = 1
+
+[node name="NameLeft" type="Control" parent="Screen"]
+layout_mode = 0
+offset_left = 46.0
+offset_top = 60.0
+offset_right = 346.0
+offset_bottom = 90.0
+mouse_filter = 2
+script = ExtResource("5_name")
+text = "Aaron"
+
+[node name="NameRight" type="Control" parent="Screen"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -346.0
+offset_top = 60.0
+offset_right = -46.0
+offset_bottom = 90.0
+grow_horizontal = 0
+mouse_filter = 2
+script = ExtResource("5_name")
+side = 1
+text = "Enemy"
+
+[node name="Combo" type="Control" parent="Screen"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("4_combo")
+
+[node name="Negotiation" type="RichTextLabel" parent="Screen"]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -440.0
+offset_top = 103.0
+offset_right = -40.0
+offset_bottom = 131.0
+grow_horizontal = 0
+mouse_filter = 2
+bbcode_enabled = true
+scroll_active = false
+autowrap_mode = 0

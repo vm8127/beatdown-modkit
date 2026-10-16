@@ -23,13 +23,13 @@ import scriptkit  # noqa: E402
 
 GODOT = os.path.join(ROOT, "__external_tools", "godot", "Godot_v4.7.2-stable_win64_console.exe")
 # bdkit's text (NFKC) button characters -> the glyphs GameText draws for the default controller layout
-GLYPH = {"〆": "□", "◎": "△", "◇": "×", "▽": "○", "∫∫": "[rapid]"}
+GLYPH = {"〆": "□", "◎": "△", "◇": "×", "▽": "○", "∫∫": "∬"}
 
 
 def glyphs(s):
     for k, v in GLYPH.items():
         s = s.replace(k, v)
-    return re.sub(r"(?<![0-9])4(?![0-9])", "[4]", s)   # NFKC turned the ④ icon (action button) into "4"
+    return re.sub(r"(?<![0-9])4(?![0-9])", "④", s)   # NFKC turned the ④ icon (action button) into "4"
 
 
 def main():

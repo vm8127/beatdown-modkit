@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="Script" path="res://dev/dev_arena.gd" id="1_arena"]
 [ext_resource type="PackedScene" path="res://game/fighter/fighter.tscn" id="2_fighter"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://game/camera/third_person_camera.tscn" id="5_camera"]
 [ext_resource type="Script" path="res://dev/debug_overlay.gd" id="6_overlay"]
 [ext_resource type="Shader" path="res://dev/checker.gdshader" id="7_checker"]
+[ext_resource type="PackedScene" path="res://game/ui/fight_hud.tscn" id="8_fight_hud"]
 
 [sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
 
@@ -307,3 +308,5 @@ offset_top = 10.0
 theme_override_fonts/font = SubResource("mono")
 theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("overlay_bg")
+
+[node name="FightHud" parent="." instance=ExtResource("8_fight_hud")]

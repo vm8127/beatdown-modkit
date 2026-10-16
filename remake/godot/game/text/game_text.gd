@@ -22,8 +22,11 @@ const BUTTONS := {
 	"circle": "○", "triangle": "△", "square": "□", "cross": "×",
 	"circle_on": "●", "triangle_on": "▲", "square_on": "■", "cross_on": "Ⅹ",
 }
-## Placeholder colours for {c1}..{c9} until the game's palette is found (open question in docs/FORMATS.md).
-const COLORS := ["", "#ffffff", "#ff4040", "#40ff40", "#4080ff", "#ffff40", "#ff40ff", "#40ffff", "#ffa040", "#c0c0c0"]
+## Icon glyphs per {icon:...} token (GameFont draws them as the game's button pictures: docs/HUD.md).
+const ICONS := {
+	"1": "①", "2": "②", "3": "③", "4": "④", "5": "⑤", "6": "⑥", "17": "⑰", "18": "⑱",
+	"rapid": "∬", "alpha": "α", "beta": "β",
+}
 
 static var language := "en"
 static var _text := {}
@@ -104,8 +107,10 @@ static func render(id: int, vars := {}, bbcode := false) -> String:
 	return render_markup(text(id), vars, bbcode)
 
 
-## Fill markup: placeholders from `vars` (missing ones stay as {name}), buttons as glyphs, {lb}/{rb} as braces,
-## colours as [color] BBCode when `bbcode` is true, else dropped.
+## Fill markup: placeholders from `vars` (missing ones stay as {name}), buttons and icons as their glyphs
+## (GameFont draws them as the game's pictures), {lb}/{rb} as braces, colours as [color] BBCode with the game's
+## palette (g_TextPalette, GameFont.color) when `bbcode` is true, else dropped. In BBCode, buttons and icons
+## are forced white like the game draws them (Text_Encode gives them colour 1).
 static func render_markup(s: String, vars := {}, bbcode := false) -> String:
 	var out := ""
 	var i := 0
@@ -133,12 +138,13 @@ static func render_markup(s: String, vars := {}, bbcode := false) -> String:
 					open_color = false
 				var n := int(tok[1])
 				if n > 0:
-					out += "[color=%s]" % COLORS[n]
+					out += "[color=#%s]" % GameFont.color(n).to_html()
 					open_color = true
 		elif tok.begins_with("btn:"):
-			out += BUTTONS.get(tok.substr(4), "[%s]" % tok.substr(4))
+			out += _glyph(BUTTONS.get(tok.substr(4), "?"), bbcode)
 		elif tok.begins_with("icon:"):
-			out += "[%s]" % tok.substr(5) if not bbcode else "[lb]%s[rb]" % tok.substr(5)
+			var k := tok.substr(5)
+			out += _glyph(ICONS.get(k, char(k.hex_to_int()) if k.length() == 4 else "?"), bbcode)
 		elif tok == "money" and vars.has(tok):   # "$" (text 10202) + amount; German puts the amount first
 			out += (str(vars[tok]) + text(10202)) if language == "de" else (text(10202) + str(vars[tok]))
 		elif vars.has(tok):
@@ -148,3 +154,7 @@ static func render_markup(s: String, vars := {}, bbcode := false) -> String:
 	if open_color:
 		out += "[/color]"
 	return out
+
+
+static func _glyph(g: String, bbcode: bool) -> String:
+	return "[color=#ffffff]%s[/color]" % g if bbcode else g

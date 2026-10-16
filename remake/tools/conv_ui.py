@@ -7,7 +7,7 @@ Writes, under <out>/ui/ (never commit; it is the game's art):
   font_page0.png   UNICODEFONT (GRAPH.XAF 374): Latin, Latin-1, Latin Extended-A, punctuation, kana
   font_icons.png   BUTTON (GRAPH 32): face buttons, shoulder buttons, sticks, d-pad
   font_crime.png   MURDER_01 (GRAPH 305): the two crime icons
-  name_font.png    SYSFONT02 (GRAPH 355): the HP bar's name font, 16 x 16 cells from code 0x20
+  name_font.png    SYSFONT02 (GRAPH 355): the HP bar's name font, 16 columns x 14 rows (cells 16 x 18.3) from 0x20
   hp_frame.png     GD_HPG_01 (173), hp_fill.png GD_HPG_02 (174): HP bar frame and fill
   hud_tex02.png    FONT_TEX_02 (131), hud_tex03.png FONT_TEX_03 (136): Pride gauge, combo counter (English ones)
   font.json        glyphs {code point: [page, u, v, w, h, y nudge]}, pages, advance factor, the @N colour palette
@@ -115,16 +115,18 @@ def rgba(e, addr):
 
 def font_json(e, sizes):
     g = {}
+    # Text_Layout checks the icon codes before the Latin table, so an icon wins (× is a button, not Latin ×)
     for page, addr, tex in GLYPH_TABLES:
         for code, u, v, w, h in glyphs(e, addr):
-            g.setdefault(str(code), [page, u, v, w, h, NUDGE.get(code, 0)])
+            if page != 0 or str(code) not in g:
+                g[str(code)] = [page, u, v, w, h, NUDGE.get(code, 0)]
     pal = [list(e.d[e.v2o(TEXT_PALETTE) + 4 * i:e.v2o(TEXT_PALETTE) + 4 * i + 4]) for i in range(10)]
     pages = {str(p): {"texture": t + ".png", "size": sizes[t]} for p, _, t in GLYPH_TABLES}
     return {"source": "g_FontGlyphs 0x005B8840, g_FontIconGlyphs 0x005CA210, g_FontCrimeGlyphs 0x005CA1F0, "
                       "g_TextPalette 0x005CA320 (docs/HUD.md)",
             "line_height": 24, "advance": GLYPH_ADVANCE, "pages": pages, "palette": pal, "glyphs": g,
-            "name_font": {"texture": "name_font.png", "cell": 16, "first": 0x20, "columns": 16,
-                          "draw_size": [22, 30], "rows": [[0, 6, 0x20], [8, 16, 0xA0]]}}
+            "name_font": {"texture": "name_font.png", "cell": [16, 256 / 14], "columns": 16,
+                          "draw_size": [22, 30], "rows": [[0, 6, 0x20], [8, 14, 0xA0]]}}
 
 
 def hud_json(e):
