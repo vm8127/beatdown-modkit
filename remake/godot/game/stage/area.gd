@@ -260,6 +260,7 @@ func _draw_markers() -> void:
 		l.font_size = 32
 		l.pixel_size = 0.005
 		l.no_depth_test = true
+		l.visibility_range_begin = 2.5   # not in the camera's face when standing in the doorway
 		var zb: Dictionary = d["zone_box"]
 		var mn: Array = zb["min"]
 		var mx: Array = zb["max"]

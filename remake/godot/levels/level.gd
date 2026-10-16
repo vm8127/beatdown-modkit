@@ -15,7 +15,8 @@ extends Node3D
 ##
 ## Command line (after `--`): `--area=N` and `--entrance=N` (`--from=A`) start elsewhere, `--variant=E` picks
 ## a FSTAGE variant, `--stage=N` the story stage, `--shot=<file.png>` saves a screenshot and quits
-## (`--view=player|overview|door|fight`), `--test` runs levels/level_test.gd (exit code 0 = pass).
+## (`--view=player|overview|door|fight`; `through` uses the first door to a converted area and shoots after the arrival,
+## `fading` halfway through the fade out), `--test` runs levels/level_test.gd (exit code 0 = pass).
 
 const FIGHTER_SCENE := preload("res://game/fighter/fighter.tscn")
 const FADE_FRAMES := 20
@@ -116,10 +117,37 @@ func enter_area(id: int, entrance: int, from := -1) -> void:
 	else:
 		at = area.arrival(entrance, from)
 	place(player, at["pos"], at["angle_deg"])
-	cam.yaw = player.rotation.y
+	cam.yaw = _clear_camera_yaw(player.rotation.y)
 	cam.snap_to_target()
 	_walk_in = 0
 	_spawn_dummies()
+
+
+## A camera yaw near `yaw` whose arm isn't cut short by a wall: door arrivals stand in doorways and
+## stairwells, where the camera straight behind the player would sit in their back. Tries 0, +-30 ... +-150
+## degrees and takes the first with the full arm free, else the freest (remake choice).
+func _clear_camera_yaw(yaw: float) -> float:
+	var head := player.global_position + Vector3(0, 1.5, 0)
+	var space := get_world_3d().direct_space_state
+	var probe := SphereShape3D.new()   # the spring arm's probe (third_person_camera.tscn)
+	probe.radius = 0.2
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = probe
+	q.collision_mask = GameArea.LAYER_WORLD | GameArea.LAYER_CAMERA
+	var best := yaw
+	var best_len := -1.0
+	for off in [0.0, 30.0, -30.0, 60.0, -60.0, 90.0, -90.0, 120.0, -120.0, 150.0, -150.0]:
+		var y := yaw + deg_to_rad(off)
+		var dir := Basis(Vector3.UP, y) * Basis(Vector3.RIGHT, cam.pitch) * Vector3.BACK
+		q.transform = Transform3D(Basis(), head)
+		q.motion = dir * cam.distance
+		var free := cam.distance * float(space.cast_motion(q)[0])
+		if free >= cam.distance - 0.01:
+			return y
+		if free > best_len + 0.25:
+			best_len = free
+			best = y
+	return best
 
 
 ## Puts a fighter at `pos` (on the floor) facing the game angle `angle_deg`.
@@ -182,6 +210,8 @@ func _physics_process(_delta: float) -> void:
 		_message_frames -= 1
 	if _fade != 0:
 		_tick_fade()
+		if _shot != "":
+			_shot_tick()
 		return
 	if fight.is_empty():
 		_check_fight_start()
@@ -335,7 +365,13 @@ func _process(_delta: float) -> void:
 func _shot_tick() -> void:
 	if _view == "fight" and _frames == 5 and not dummies.is_empty():
 		start_fight(dummies[0])
-	if _frames == (100 if _view == "fight" else 45):
+	if _view in ["through", "fading"] and _frames == 5:
+		for d in area.doors:   # the first door that leads to a converted area
+			if d["dest_area"] != null and GameArea.available(int(d["dest_area"])):
+				use_door(d)
+				break
+	var at := {"fight": 100, "through": 5 + FADE_FRAMES * 2 + 40, "fading": 5 + FADE_FRAMES / 2}
+	if _frames == at.get(_view, 45):
 		_take_shot()
 
 
