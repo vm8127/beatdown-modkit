@@ -77,6 +77,8 @@
 002fab40	func	Fighter_IsStandGuard	state 0x400 (guarding) and not crouching: Combat_ResolveHit lets low hits (level 8) through it	int (Fighter *fighter)
 002fab80	func	Fighter_IsCrouchGuard	state 0x400 and flags4390 bit 2 (crouching): mid hits (level 4) get through	int (Fighter *fighter)
 00378120	func	Camera_HitPunch	(frames in, frames back, strength): the fight camera moves toward the fighters for `in` frames and back over `back`; Combat_TakeHit calls (5, 15, 0.7) when the damage is over 14. The only impact effect found: no hitstop in the hit code	void (float frames_in, float frames_back, float strength)
+0030ff20	func	Fighter_TaskGuard	standing guard task: starts the guard loop (g_GuardActions entry 0, unarmed 821), on status HIT (a blocked hit) plays a guard-hit action 1-5 by target side / hit detail bits (+0x4564 & 0x3C: 0x10 -> 2, 0x20 -> 3, 4 -> 4, 8 -> 5, else 1), goes to the crouching guard (remap 0x214) or the stance (remap 1) when the guard is let go	void (int *task)
+00310690	func	Fighter_TaskGuardLow	crouching guard task, same shape as Fighter_TaskGuard with the crouching lists; back to standing guard (remap 0x1F1) without ↓	void (int *task)
 00317bc0	func	Style_GetCommandList	(style) -> g_StyleCommands[style]	Command *(int style)
 00317be0	func	Style_GetWeaponCommandList	(weapon kind 0..27) -> command list	Command *(int weapon_kind)
 00317e50	func	MoveList_IsLearned	(fighter, style, line) -> 0 if a command gated on this line isn't learned yet	int (Fighter *fighter, int style, int line)
@@ -740,6 +742,7 @@
 0022ffd0	func	RpWorldStreamRead	RenderWare: reads a world (chunk 0x0B: struct, material list, plane sectors 0x0A and atomic sectors 0x09); Stage_Parse section 1	void *(void *stream)
 005fe260	data	g_ReactionSets	hit reaction sets used by Combat_TakeHit: [0] 0x5161C0 normal, [1] 0x516300 heavy (low HP, counter hit, held); fighter +0x4554 picks; each = 0x16 kinds -> 4 x {s16 action, s16 angle} (behind, front, left, right); [2] 0x5163A0 / [3] 0x5163B0 are the wall-hit rows (kind 0xC: above / at most half HP; Combat_TakeHit uses &[2] as a row list); docs/ANIMATION.md "Hit reactions"	u32[4]
 00516390	data	g_KnockdownReactions	Combat_TakeHit's rows for a knockdown hit (reaction 0x20) or a KO: [0] knocked down 649 behind / 650 front / 651 / 652, [1] KO 5 / 680 / 681 / 682, [2] KO while lying 230 (face up) / 231 (face down); each 4 x {s16 action, s16 angle}	u32[3]
+005166c0	data	g_GuardActions	per weapon class (0 none, 1 class 3, 2 class 10) {standing, crouching} lists of s16[6]: guard loop, guard-hit actions 1-5. Unarmed: standing 821 / 822 826 825 823 824, crouching 814 / 815 819 817 815 815	u32[3][2]
 005161c0	data	g_ReactionSet0	normal hit reactions: 0x16 pointers (one per reaction kind) to 4 x {s16 action, s16 angle}; kind 0 front = action 703	u32[22]
 00516300	data	g_ReactionSet1	heavier hit reactions (set 1), same layout as g_ReactionSet0; kind 0 front = action 643	u32[22]
 005d0630	data	g_HitSituationSet	reaction set per hit situation, returned by Combat_SituationFactor: normal 0, HP<1000 1, HP<300 1, counter 1, reeling 0, held 1	u32[6]

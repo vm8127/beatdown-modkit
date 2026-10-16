@@ -21,6 +21,10 @@ func _ready() -> void:
 		var test := preload("res://dev/smoke_test.gd").new()
 		test.arena = self
 		add_child(test)
+	elif "--fight" in OS.get_cmdline_user_args():
+		var fight := preload("res://dev/fight_test.gd").new()
+		fight.arena = self
+		add_child(fight)
 
 
 func _unhandled_input(event: InputEvent) -> void:

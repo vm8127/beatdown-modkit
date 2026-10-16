@@ -29,18 +29,25 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 import animkit  # noqa: E402
 import bdkit  # noqa: E402
 import codemap  # noqa: E402
+import action_sim  # noqa: E402
 import conv_moves  # noqa: E402
 from conv_models import Disc, body_clump  # noqa: E402
 from gltf_writer import Gltf  # noqa: E402
 from skeleton import BONE_NAMES, MOVING_NODES, SCALE, Skeleton
 
-REACTION_SETS = 0x005FE260      # u32[4] -> reaction set: u32[0x16] -> 4 x {s16 action, s16 angle}
+REACTION_SETS = 0x005FE260      # u32[2] -> reaction set: u32[0x16] -> 4 x {s16 action, s16 angle}; then u32[2] -> the
+                                # wall-hit rows (Combat_TakeHit uses &g_ReactionSets[2] as a row list: kind 0xC)
 REACTION_KINDS = 0x16
+KNOCKDOWN_ROWS = 0x00516390     # u32[3] -> 4 x {s16 action, s16 angle}: knocked down, KO, KO while lying (Combat_TakeHit)
 DIRECTIONS = ("behind", "front", "left", "right")   # entry order; the angle word says 180, 0, -90, 90
-# Generic actions (docs/ANIMATION.md): stance (action 1), walk (action 2), run (action 3, Fighter_TaskWalk)
-GENERIC = {"stance": 1, "walk": 2, "run": 3, "guard": 10}
-# Lying actions (reached by "goto" from the knockdown reactions) -> their getup action (the script's own goto)
-LOOPING_ACTIONS = (1, 2, 3, 19, 20)
+# Generic actions (docs/ANIMATION.md): stance (action 1), walk (action 2), run (action 3, Fighter_TaskWalk), the
+# unarmed standing and crouching guard loops (g_GuardActions [0] / [1] entry 0) and action 10 (the SPECIAL move)
+GENERIC = {"stance": 1, "walk": 2, "run": 3, "guard": 821, "guard_low": 814, "special": 10}
+# Actions whose motion script loops forever: stance, walk, run, lying face down / up, the guard loops
+LOOPING_ACTIONS = (1, 2, 3, 19, 20, 821, 814)
+# g_GuardActions 0x005166C0: per weapon class (0 none, 1 class 3, 2 class 10) {standing list, crouching list}, each
+# s16[6] = guard loop, then the guard-hit (blocked) actions 1-5 (the guard tasks 0x0030FF20 / 0x00310690 pick one)
+GUARD_ACTIONS = 0x005166C0
 
 # Output name -> (outfit preset whose body skeleton to use, style name in conv_moves.STYLES, the class row's
 # animation groups in load order: the group each anim id is taken from, after the style's own preference list)
@@ -79,16 +86,19 @@ def first_play(e, act):
     return (play[0] if play else None), (play[3] if play else 0), then, loops
 
 
+def _row(e, p):
+    return {d: e.s16(p + 4 * i) for i, d in enumerate(DIRECTIONS)}
+
+
 def reaction_tables(e):
-    """{set: {kind: {direction: action}}} for the sets Combat_TakeHit uses (0 normal, 1 heavy)."""
+    """{set: {kind: {direction: action}}} for the sets Combat_TakeHit uses (0 normal, 1 heavy), plus "knockdown"
+    (rows 0 knocked down, 1 KO, 2 KO while lying) and "wall" (rows 0 above half HP, 1 at or below half)."""
     out = {}
     for s in range(2):
         top = e.u32(REACTION_SETS + 4 * s)
-        kinds = {}
-        for k in range(REACTION_KINDS):
-            p = e.u32(top + 4 * k)
-            kinds[k] = {d: e.s16(p + 4 * i) for i, d in enumerate(DIRECTIONS)}
-        out[s] = kinds
+        out[s] = {k: _row(e, e.u32(top + 4 * k)) for k in range(REACTION_KINDS)}
+    out["knockdown"] = {k: _row(e, e.u32(KNOCKDOWN_ROWS + 4 * k)) for k in range(3)}
+    out["wall"] = {k: _row(e, e.u32(REACTION_SETS + 8 + 4 * k)) for k in range(2)}
     return out
 
 
@@ -110,13 +120,27 @@ def plan(e, lib, iso, style_name, class_groups):
         for c in m["clips"]:
             want.setdefault(c[0], []).append(f"action {act}")
     actions = {}
+    lengths = {}
+
+    def length_of(aid):
+        if aid not in lengths:
+            loc = pick_group(lib, aid, prefs, class_groups)
+            lengths[aid] = animkit.Anim(lib.entry(loc[1])[loc[2]]).frames if loc else None
+        return lengths[aid]
 
     def add_action(act, role):
         if act in actions or act <= 0:
             return
         aid, blend, then, loops = first_play(e, act)
-        actions[act] = dict(anim=aid if aid is not None else -1, blend=blend, then=then if then is not None else -1,
-                            loop=loops)
+        a = dict(anim=aid if aid is not None else -1, blend=blend, then=then if then is not None else -1, loop=loops)
+        if not loops:
+            # Every clip in order, game frames, control back (action_sim.py): hitstun = release or the end
+            sim = action_sim.simulate(e, act, length_of)
+            a.update(clips=sim["clips"], frames=sim["frames"], release=sim["release"], guard=sim["guard"],
+                     clip_at=sim["clip_at"], frame_at=[round(x, 3) for x in sim["frame_at"]])
+            for c in sim["clips"]:
+                want.setdefault(c[0], []).append(role)
+        actions[act] = a
         if aid is not None:
             want.setdefault(aid, []).append(role)
         if then is not None and then not in (1, -1):
@@ -124,12 +148,21 @@ def plan(e, lib, iso, style_name, class_groups):
 
     for role, act in GENERIC.items():
         add_action(act, role)
+    guard = guard_tables(e)
+    for kind, acts in guard.items():
+        for i, act in enumerate(acts):
+            add_action(act, f"guard {kind} {i}")
     reactions = reaction_tables(e)
     for s, kinds in reactions.items():
         for k, dirs in kinds.items():
             for d, act in dirs.items():
-                add_action(act, f"reaction set {s} kind {k:#x} {d}")
-    return prefs, want, actions, reactions
+                add_action(act, f"reaction {s} {k:#x} {d}")
+    return prefs, want, actions, reactions, guard
+
+
+def guard_tables(e):
+    """Unarmed guard actions: {"stand": [loop, hit 1-5], "crouch": [...]} from g_GuardActions."""
+    return {k: [e.s16(e.u32(GUARD_ACTIONS + 4 * i) + 2 * j) for j in range(6)] for i, k in enumerate(("stand", "crouch"))}
 
 
 def pick_group(lib, aid, prefs, class_groups):
@@ -152,7 +185,7 @@ def convert(iso, out, log=print):
     os.makedirs(os.path.join(out, "anims"), exist_ok=True)
     written = []
     for name, preset, style_name, class_groups in SETS:
-        prefs, want, actions, reactions = plan(e, lib, iso, style_name, class_groups)
+        prefs, want, actions, reactions, guard = plan(e, lib, iso, style_name, class_groups)
         loop_anims = {a["anim"] for act, a in actions.items() if a["loop"] and act in LOOPING_ACTIONS}
         g = Gltf()
         joints, _ = Skeleton(body_clump(disc, presets, preset)).add_to(g)
@@ -170,6 +203,7 @@ def convert(iso, out, log=print):
             f.write(g.glb())
         meta = dict(clips=clips, generic=GENERIC, actions={str(k): v for k, v in sorted(actions.items())},
                     reactions={str(s): {str(k): v for k, v in kinds.items()} for s, kinds in reactions.items()},
+                    guard=guard,
                     attack_parts=attack_parts(e), missing=missing)
         with open(os.path.join(out, "anims", name + ".json"), "w", encoding="utf-8", newline="\n") as f:
             json.dump(meta, f, indent=1, sort_keys=True)

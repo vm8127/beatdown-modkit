@@ -14,10 +14,11 @@ and the animation lengths and hip translation (root motion) from STAGE.XAF (tool
 
 Timing: the timeline counts animation frames, played at the speed ops' rate. The converter steps the move one game
 frame (1/60 s) at a time with exact fractions and writes every event as the first game frame whose (whole) animation
-frame reaches it, the same rule as Action_Timeline's wait (motion frame >= n). The animation frame values are kept
-too (`anim_*` fields) for checking against `codemap.py framedata`. Deterministic; writes only into the output folder.
+frame reaches it, the same rule as Action_Timeline's wait (motion frame >= n). action_sim.py runs the motion script
+and the timeline together, so moves with several clips (REAR GRAB P: 3) play every clip; `frame_clip` / `frame_anim`
+give the clip and animation frame on each game frame. The first clip's animation frame values are kept too (`anim_*`
+fields) for checking against `codemap.py framedata`. Deterministic; writes only into the output folder.
 """
-import math
 import os
 import struct
 import sys
@@ -26,6 +27,7 @@ from fractions import Fraction
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "tools"))
 
+import action_sim  # noqa: E402
 import animkit  # noqa: E402
 import bdkit  # noqa: E402
 import codemap  # noqa: E402
@@ -47,40 +49,6 @@ KNOCKDOWN_BITS = 0x20 | 0x10 | 0x100 | 0x200 | 0x400 | 0x800 | 0x1000
 
 def code_name(c):
     return codemap.INPUTS.get(c, f"#{c:02X}")
-
-
-class Timing:
-    """Game frame <-> animation frame for one motion, given the timeline's speed changes."""
-
-    def __init__(self, speeds, end):
-        self.a = []                       # animation frame (Fraction) at each game frame
-        a, g, sp = Fraction(0), 0, Fraction(1)
-        speeds = sorted(speeds, key=lambda s: s[0])
-        while True:
-            self.a.append(a)
-            for at, s in speeds:          # timeline ops waiting on a frame <= the current one have run
-                if at <= math.floor(a):
-                    sp = s
-            if a >= end or g > 2000:
-                break
-            a += sp
-            g += 1
-        self.frames = g                   # game frame on which the motion has reached its end
-
-    def first(self, n):
-        """First game frame whose whole animation frame is >= n."""
-        for g, a in enumerate(self.a):
-            if math.floor(a) >= n:
-                return g
-        return self.frames
-
-    def last(self, n):
-        """Last game frame whose whole animation frame is <= n."""
-        best = 0
-        for g, a in enumerate(self.a):
-            if math.floor(a) <= n:
-                best = g
-        return best
 
 
 def timeline(e, act):
@@ -144,63 +112,80 @@ def spheres(e):
     return out
 
 
-def hip_z(anim, timing):
-    """Node 1's forward (+Z) translation at each game frame, metres from frame 0 (root motion of the move)."""
+def anim_picker(lib, groups):
+    """(anim id -> (group, Anim) or None) using the style's group preference list, cached."""
+    cache = {}
+
+    def pick(aid):
+        if aid not in cache:
+            locs = lib.where(aid)
+            loc = next((l for g in groups for l in locs if l[0] == g), locs[0] if locs else None)
+            cache[aid] = (loc[0], animkit.Anim(lib.entry(loc[1])[loc[2]])) if loc else None
+        return cache[aid]
+    return pick
+
+
+def hip_z_track(pick, sim):
+    """Node 1's forward (+Z) translation per game frame over every clip, metres, continuous across clip changes
+    (each new clip continues from where the last one left the hips: the capsule's root motion)."""
+    out, base, last_clip, prev = [], 0.0, -1, 0.0
+    for k, a in zip(sim["clip_at"], sim["frame_at"]):
+        got = pick(sim["clips"][k][0])
+        z = hip_at(got[1], a / 60.0) if got else 0.0
+        if k != last_clip:
+            base = (out[-1] if out else 0.0) - z * UNIT
+            last_clip = k
+        out.append(round(base + z * UNIT, 4))
+    return out
+
+
+def hip_at(anim, t):
     keys = anim.tracks()[1]
-    def at(t):
-        if t <= keys[0][0]:
-            return keys[0][2][2]
-        for a, b in zip(keys, keys[1:]):
-            if a[0] <= t <= b[0]:
-                u = (t - a[0]) / (b[0] - a[0]) if b[0] > a[0] else 0.0
-                return a[2][2] + u * (b[2][2] - a[2][2])
-        return keys[-1][2][2]
-    z0 = at(0.0)
-    return [round((at(float(a) / 60.0) - z0) * UNIT, 4) for a in timing.a]
+    if t <= keys[0][0]:
+        return keys[0][2][2]
+    for a, b in zip(keys, keys[1:]):
+        if a[0] <= t <= b[0]:
+            u = (t - a[0]) / (b[0] - a[0]) if b[0] > a[0] else 0.0
+            return a[2][2] + u * (b[2][2] - a[2][2])
+    return keys[-1][2][2]
 
 
-def build_move(e, lib, groups, act, name, sph):
-    script = codemap.motion_script(e, act)
-    plays = [args for op, args in script if op == "play"]
+def build_move(e, lib, groups, act, name, sph, pick=None):
+    pick = pick or anim_picker(lib, groups)
     tl = timeline(e, act)
     recs, (kind, cost) = records(e, act)
     m = dict(action=act, name=name or f"Action {act}", clips=[], kind=kind, cost=cost, notes=list(tl["ops"]))
-    anim = None
-    if plays:
-        aid, s0, s1, blend = plays[0]
-        locs = lib.where(aid)
-        pick = next((l for g in groups for l in locs if l[0] == g), locs[0] if locs else None)
-        length = None
-        if pick:
-            anim = animkit.Anim(lib.entry(pick[1])[pick[2]])
-            length = anim.frames
-        end = length if s1 == -1 else (min(s1, length) if length is not None else s1)
-        m.update(anim_id=aid, anim_group=pick[0] if pick else -1, anim_start=s0, anim_end=end if end is not None else -1,
-                 blend=blend)
-        for p in plays:
-            m["clips"].append(list(p))
+    sim = action_sim.simulate(e, act, lambda aid: pick(aid)[1].frames if pick(aid) else None)
+    if sim["clips"]:
+        aid, s0, end, blend = sim["clips"][0]
+        got = pick(aid)
+        m.update(anim_id=aid, anim_group=got[0] if got else -1, anim_start=s0, anim_end=end, blend=blend)
+        m["clips"] = [list(c) for c in sim["clips"]]
+        m["frames"] = sim["frames"]
+        m["frame_clip"] = sim["clip_at"]
+        m["frame_anim"] = [round(x, 4) for x in sim["frame_at"]]
     else:
-        m.update(anim_id=-1, anim_group=-1, anim_start=0, anim_end=60, blend=8)
+        m.update(anim_id=-1, anim_group=-1, anim_start=0, anim_end=60, blend=8, frames=60, frame_clip=[],
+                 frame_anim=[])
         m["notes"].append("no motion script in the ELF")
-    tm = Timing(tl["speeds"], max(m["anim_end"], 1))
-    m["frames"] = tm.frames
     m["speeds"] = [(at, float(s)) for at, s in tl["speeds"]]
     m["combo_window"] = tl["combo"]
     m["anim_cancel"] = tl["cancel"][0] if tl["cancel"] else -1
-    m["cancel"] = tm.first(m["anim_cancel"]) if tl["cancel"] else -1
+    m["cancel"] = sim["cancel"][0] if sim["cancel"] else -1
     m["anim_release"] = tl["release"]
-    m["release"] = tm.first(tl["release"]) if tl["release"] >= 0 else -1
+    m["release"] = sim["release"]
     m["anim_guard"] = tl["guard"]
-    m["invincible"] = [(tm.first(a), tm.last(b) if b < 9999 else 9999) for a, b in tl["invincible"]]
-    m["root_z"] = hip_z(anim, tm) if anim else []
+    m["invincible"] = sim["invincible"]
+    m["throws"] = sim["throws"]
+    m["then"] = sim["then"] if sim["then"] is not None else -1
+    m["root_z"] = hip_z_track(pick, sim) if sim["clips"] else []
     m["hits"] = []
-    for w in tl["attacks"]:
+    for w in sim["windows"]:
         r = recs[w["record"]] if w["record"] < len(recs) else dict(damage=0, pride=0, strength=0, detail=0, level=0,
                                                                      reaction=0)
         radius = max((sph[p]["radius"] for p in w["parts"] if 0 <= p < len(sph)), default=1.0) * UNIT
-        m["hits"].append(dict(anim_start=w["start"], anim_end=w["end"], start=tm.first(w["start"]),
-                              end=tm.last(w["end"]), parts=w["parts"], record=w["record"], radius=round(radius, 4),
-                              **r))
+        m["hits"].append(dict(anim_start=w["anim_start"], anim_end=w["anim_end"], start=w["start"], end=w["end"],
+                              parts=w["parts"], record=w["record"], radius=round(radius, 4), **r))
     return m
 
 
@@ -217,6 +202,7 @@ def build_style(e, lib, iso, style, groups):
     for nm, inp in names:
         by_input.setdefault(inp, nm)
     sph = spheres(e)
+    pick = anim_picker(lib, groups)
     commands, moves = [], {}
     for cond, codes, act in codemap.style_commands(e, style):
         if not codes or act <= 0:
@@ -225,7 +211,7 @@ def build_style(e, lib, iso, style, groups):
         key = "".join(seq)
         nm = by_input.get(key) or next((n for n, s in names if key in s.split("/")), "")
         if act not in moves:
-            moves[act] = build_move(e, lib, groups, act, nm, sph)
+            moves[act] = build_move(e, lib, groups, act, nm, sph, pick)
         commands.append(dict(seq=seq, action=act, condition=bool(cond)))
     fallback = {}
     for c in codemap.INPUTS:
@@ -295,6 +281,9 @@ def write_tres(path, title, style, commands, moves, fallback):
                  f"anim_cancel = {m['anim_cancel']}", f"anim_release = {m['anim_release']}",
                  f"speeds = PackedVector2Array({', '.join(f'{a}, {gd(s)}' for a, s in m['speeds'])})",
                  f"clips = [{', '.join('PackedInt32Array(' + ', '.join(map(str, c)) + ')' for c in m['clips'])}]",
+                 f"frame_clip = PackedInt32Array({', '.join(map(str, m['frame_clip']))})",
+                 f"frame_anim = PackedFloat32Array({', '.join(gd(float(x)) for x in m['frame_anim'])})",
+                 f"throws = PackedInt32Array({', '.join(map(str, m['throws']))})", f"then_action = {m['then']}",
                  f"attack_kind = {m['kind']}", f"cost = {m['cost']}",
                  f"notes = PackedStringArray({', '.join(q(n) for n in m['notes'])})", ""]
         move_lines += lines

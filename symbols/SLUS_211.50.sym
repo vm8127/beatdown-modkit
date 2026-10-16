@@ -319,6 +319,8 @@
 0030BC40 Fighter_ReturnControl
 0030CA90 Fighter_TaskWalk
 0030DFD0 Combat_TakeHit
+0030FF20 Fighter_TaskGuard
+00310690 Fighter_TaskGuardLow
 00313F90 Fighter_PrideRegen
 00314D30 Combat_SituationFactor
 00317BC0 Style_GetCommandList
@@ -682,6 +684,7 @@
 00516300 g_ReactionSet1
 00516390 g_KnockdownReactions
 00516560 g_WalkModes
+005166C0 g_GuardActions
 005168C0 g_HpBarPulse
 00516930 g_HpBarNamePos
 00516960 g_HpBarRowY

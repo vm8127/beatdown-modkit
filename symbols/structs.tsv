@@ -95,7 +95,11 @@ Fighter	0x4348	s16	hit_action	attack action used for the hit lookup
 Fighter	0x4378	u32	state	2 = ATTACK, 4 = HOLD, 0x1E0 = damage states
 Fighter	0x4388	u32	flags4388	control bits (overlay PCTRL names): 1 CONTROL, 2 GUARD, 4 NOT CONTROL, 0x20 ATTACK, 0x4000 WEAPON (holding a weapon); timeline op 0x2E
 Fighter	0x438C	u32	status	status bits (overlay names): 1 MATCHLESS, 8 NOT THROW, 0x40 BEFORE ATTACK, 0x200 STIFF, 0x400 HIT, 0x2000 NOT HORMING, 0x8000 REVERSAL, 0x20000 GUARD...; timeline op 0x2D
-Fighter	0x4390	u8	flags4390	bit 2: armour or special state (no counter/combo scaling)
+Fighter	0x4390	u8	flags4390	posture, set by timeline op 0x35 (Action_Timeline): 1 standing, 2 crouching, 4 on the floor (Fighter_IsDown; also no counter / combo scaling), 8 face up, 0x10 face down, 0x20 in the air (big reactions); lying action 20 sets 12, 19 sets 20
+Fighter	0x4391	u8	target_side	Fighter_UpdateTargetDir: 2 = target on the positive-angle side, 1 = the other
+Fighter	0x4392	u8	target_octant	Fighter_UpdateTargetDir: bits 4 (within 67.5° of the front), 1, 2 (sides), 8 (within 67.5° of the back)
+Fighter	0x4393	u8	target_dir	Fighter_UpdateTargetDir: where the target stands: 4 front (within 45°), 1 (45-135°), 2 (-135..-45°), 8 behind; Combat_TakeHit maps 4 -> reaction entry 1 (front), 8 -> 0 (behind), 1 -> 3, 2 -> 2; a hit is only blocked with bit 4
+Fighter	0x4394	u8	target_in_front	Fighter_UpdateTargetDir: 1 = target in the front half
 Fighter	0x43A8	s16	release_frame	timeline op 0x3C: Fighter_ReturnControl at motion frame - 1 (0 = none)
 Fighter	0x43AA	s16	guard_frame	timeline op 0x3C: sets flags4388 bit 1 (GUARD) at motion frame - 1
 Fighter	0x4414	f32	attack_mul	attack multiplier

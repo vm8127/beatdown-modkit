@@ -14,10 +14,12 @@ extends Node3D
 ## that moment is frozen and the new clip is blended in from it over the blend frames (linear weight,
 ## slerp per bone). Blend 0 snaps.
 ##
-## Root motion: the fighter's body moves by the move's hip travel (MoveData.root_z), so the model
-## pins the hips' forward travel to the body (this node shifts back by it): the hips stay over the
-## capsule, and the capsule's collision decides where the fighter really is. Sideways and vertical
-## hip motion stays in the animation.
+## Root motion: in the game the hips carry the travel of moves and hit reactions (a stagger pushes the
+## victim 0.33 m back, a knockdown up to 4 m: that is the game's knockback, there is no separate push).
+## Each shown frame, `root_delta` is how far the clip's hips moved on the floor (x/z) since the last
+## frame of the same clip, in world space; the Fighter turns it into velocity so the capsule carries it
+## (and collision stops it). The model pins the hips' floor position to the body (this node shifts by
+## it), so the hips stay over the capsule. Vertical hip motion stays in the animation.
 
 const MODEL_DIR := "res://assets_ripped/models/%s.glb"
 const ANIM_DIR := "res://assets_ripped/anims/%s"
@@ -35,7 +37,11 @@ var _since := 0                     ## game frames since the key changed
 var _from_rot: Array[Quaternion] = []
 var _from_pos: Array[Vector3] = []
 var _hips := -1
-var _hips_ref := 0.0                ## hips' forward position in the stance's first frame
+var _hips_ref := Vector3.ZERO       ## hips' floor position (x, z) in the stance's first frame
+var _root_prev := Vector3.ZERO      ## this clip's raw hips floor position on the last shown frame
+var _root_frame := -1.0
+var _shown_tick := -1               ## physics frame of the last show_clip (a second call in a frame changes nothing)
+var root_delta := Vector3.ZERO      ## world-space floor travel of the hips on the last shown frame
 var _parts := {}                    ## attack part -> {"bone": index, "offset": Vector3, "radius": float}
 
 
@@ -77,7 +83,8 @@ func setup(model_name: String, anim_set: String) -> bool:
 			"radius": float(p["radius"])}
 	var stance := clip_for_action(int(meta.get("generic", {}).get("stance", 1)))
 	if has_clip(stance) and _hips >= 0:
-		_hips_ref = _sample_pos(stance, _hips, 0.0).z
+		_hips_ref = _sample_pos(stance, _hips, 0.0)
+		_hips_ref.y = 0.0
 	return not _anims.is_empty()
 
 
@@ -105,19 +112,28 @@ func action_info(action: int) -> Dictionary:
 	return meta.get("actions", {}).get(str(action), {})
 
 
-## The reaction action for a reaction set (0 normal, 1 heavy) and kind, hit from the front.
-func reaction_action(reaction_set: int, kind: int) -> int:
-	var s: Dictionary = meta.get("reactions", {}).get(str(reaction_set), {})
-	var k: Dictionary = s.get(str(kind), {})
-	return int(k.get("front", 0))
+## The reaction action from the game's tables (conv_anims.py): `table` "0" / "1" (reaction sets by kind),
+## "knockdown" (rows 0 down, 1 KO, 2 KO while lying) or "wall" (rows 0, 1), `row` the kind or row, and the
+## direction entry "behind", "front", "left" or "right". 0 if unknown.
+func reaction_action(table: String, row: int, direction: String = "front") -> int:
+	var s: Dictionary = meta.get("reactions", {}).get(table, {})
+	var k: Dictionary = s.get(str(row), {})
+	return int(k.get(direction, 0))
 
 
 ## Shows `clip` at animation frame `frame`. A new `key` (move, clip index, reaction...) freezes the
-## current pose and blends into the clip over `blend` game frames. Called once per game frame.
+## current pose and blends into the clip over `blend` game frames. Called every game frame; a second call
+## in the same physics frame re-poses without advancing the blend or adding root motion.
 func show_clip(key: String, clip: String, frame: float, blend: int) -> void:
 	if not _anims.has(clip):
 		return
+	var tick := Engine.get_physics_frames()
+	var again := tick == _shown_tick and key == _key
+	_shown_tick = tick
+	var raw := _floor_pos(clip, frame)
 	if key != _key:
+		_root_prev = raw
+		_root_frame = frame
 		for i in skeleton.get_bone_count():
 			_from_rot[i] = skeleton.get_bone_pose_rotation(i)
 			_from_pos[i] = skeleton.get_bone_pose_position(i)
@@ -125,8 +141,15 @@ func show_clip(key: String, clip: String, frame: float, blend: int) -> void:
 		_clip = clip
 		_blend = blend
 		_since = 0
-	else:
+	elif not again:
 		_since += 1
+	# Floor travel of the clip's own hips since its last shown frame (none when a loop wraps).
+	var d := Vector3.ZERO if frame < _root_frame else raw - _root_prev
+	if not again:
+		root_delta = skeleton.global_transform.basis * d if skeleton else Vector3.ZERO
+		root_delta.y = 0.0
+	_root_prev = raw
+	_root_frame = frame
 	var anim: Animation = _anims[clip]
 	var t := frame / 60.0
 	if clip_loops(clip) and anim.length > 0.0:
@@ -141,9 +164,12 @@ func show_clip(key: String, clip: String, frame: float, blend: int) -> void:
 		if tr[2] >= 0:
 			var p := anim.position_track_interpolate(tr[2], t)
 			skeleton.set_bone_pose_position(b, _from_pos[b].lerp(p, w) if w < 1.0 else p)
-	# Pin the hips' forward travel to the body (the capsule carries it; see the header).
+	# Pin the hips' floor position to the body (the capsule carries it; see the header). The model is
+	# turned 180° (rotation.y = PI), so its local x/z offsets go the other way in the parent.
 	if _hips >= 0:
-		position.z = skeleton.get_bone_pose_position(_hips).z - _hips_ref
+		var hp := skeleton.get_bone_pose_position(_hips) - _hips_ref
+		position.x = hp.x
+		position.z = hp.z
 
 
 ## The current clip key (for the overlay).
@@ -180,6 +206,16 @@ func _tracks_of(clip: String) -> Array:
 		by_bone[b] = e
 	_tracks[clip] = by_bone.values()
 	return _tracks[clip]
+
+
+## The clip's raw hips position on the floor (x, z; skeleton space) at an animation frame.
+func _floor_pos(clip: String, frame: float) -> Vector3:
+	if _hips < 0:
+		return Vector3.ZERO
+	var anim: Animation = _anims[clip]
+	var p := _sample_pos(clip, _hips, clampf(frame / 60.0, 0.0, anim.length))
+	p.y = 0.0
+	return p
 
 
 func _sample_pos(clip: String, bone: int, t: float) -> Vector3:

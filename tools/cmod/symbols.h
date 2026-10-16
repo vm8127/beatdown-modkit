@@ -252,6 +252,8 @@ void Fighter_TaskAction(void *task);  /* 0x0030aeb0 */
 void Fighter_ReturnControl(Fighter *fighter);  /* 0x0030bc40 */
 void Fighter_TaskWalk(void *task);  /* 0x0030ca90 */
 void Combat_TakeHit(Fighter *fighter);  /* 0x0030dfd0 */
+void Fighter_TaskGuard(int *task);  /* 0x0030ff20 */
+void Fighter_TaskGuardLow(int *task);  /* 0x00310690 */
 Command *Style_GetCommandList(int style);  /* 0x00317bc0 */
 Command *Style_GetWeaponCommandList(int weapon_kind);  /* 0x00317be0 */
 int MoveList_IsLearned(Fighter *fighter, int style, int line);  /* 0x00317e50 */
@@ -553,6 +555,7 @@ extern u32 g_ReactionSet0[22];  /* 0x005161c0 */
 extern u32 g_ReactionSet1[22];  /* 0x00516300 */
 extern u32 g_KnockdownReactions[3];  /* 0x00516390 */
 extern u32[14] g_WalkModes[6];  /* 0x00516560 */
+extern u32[3] g_GuardActions[2];  /* 0x005166c0 */
 extern u8[4] g_HpBarPulse[4];  /* 0x005168c0 */
 extern f32[6] g_HpBarNamePos[2];  /* 0x00516930 */
 extern f32 g_HpBarRowY[3];  /* 0x00516960 */

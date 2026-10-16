@@ -34,6 +34,15 @@ extends CharacterBody3D
 ## speeds with its blend frames, the game's hit reaction for the hit taken, knockdown, lying and
 ## getting up. Hit spheres then sit on the bones of each hit window's attack parts (MoveHit.parts,
 ## g_AttackSpheres); the capsule's fixed sphere is the fallback.
+##
+## Hits as the game takes them (Combat_ResolveHit / Combat_TakeHit, docs/ANIMATION.md "Hit reactions"):
+## the reaction action comes from the game's tables by hit kind, reaction set (heavier below 1000 HP or
+## when hit while attacking) and the attacker's direction (front / behind / left / right of the victim's
+## facing; the victim doesn't turn). Hitstun is that action's release frame (op 0x3C) or its end, a
+## knockdown lasts until its clips end, and the knockback is the reaction's own hip travel (root motion):
+## the game has no separate push. A guarding fighter facing the attacker (within 45°) blocks high and mid
+## hits: no damage, no reaction. After control returns the rest of the animation plays out (the "tail")
+## unless the fighter does something else.
 
 enum State { IDLE, MOVE, ATTACK, GUARD, HITSTUN, BLOCKSTUN, KNOCKDOWN, GETUP }
 
@@ -41,7 +50,7 @@ const DT := 1.0 / 60.0
 const GRAVITY := 20.0
 const WALK_FRICTION := 30.0     ## m/s² of slow-down when not walking
 const KNOCK_FRICTION := 14.0    ## m/s² while sliding from a hit
-const DOWN_FRAMES := 45         ## frames lying on the floor after a knockdown
+const DOWN_FRAMES := 45         ## frames lying on the floor after a knockdown (remake: the game's lying loop isn't timed by data)
 const GETUP_FRAMES := 24        ## invulnerable frames getting up
 const BUFFER := 10              ## frames a press made late in a move is kept for the next one
 const LAYER_WORLD := 1
@@ -50,6 +59,13 @@ const LAYER_HURTBOXES := 4
 const RIPPED_MOVES := "res://assets_ripped/moves/%s.tres"
 ## g_AttackRankMul 0x005D04D0 (docs/MECHANICS.md): attack multiplier by attack rank 0-6
 const ATTACK_RANK_MUL := [0.5, 1.0, 1.3, 1.6, 1.8, 1.9, 2.0]
+## Reaction table entries in the game's order (g_ReactionSets rows): index = Combat_TakeHit's direction
+const DIRECTIONS := ["behind", "front", "left", "right"]
+const DIR_BEHIND := 0
+const DIR_FRONT := 1
+const DIR_LEFT := 2
+const DIR_RIGHT := 3
+const WALL_RANGE := 1.1         ## Combat_TakeHit's wall test radius, 11 units
 
 @export var move_set: MoveSet       ## the fighting style (placeholder; replaced by `ripped_style`)
 @export var ripped_style := "aaron" ## style to load from assets_ripped/moves/ when present ("" keeps move_set)
@@ -98,9 +114,14 @@ var _flash := 0
 var _flash_color := Color.WHITE
 var model: FighterModel              ## the animated look, null with the capsule
 var _react_action := 0               ## hit reaction action being played (Combat_TakeHit's choice)
+var _react := {}                     ## its info from the anim set (clips per frame, frames, release, then)
 var _react_count := 0                ## hits taken so far (a new hit restarts the reaction)
-var _down_action := 20               ## lying action the knockdown continues with (19 or 20)
+var _down_action := 20               ## lying action the knockdown continues with (19 face down, 20 face up)
+var _getup_action := 22              ## getup after lying (the lying action's goto: 20 -> 22, 19 -> 21)
 var _getup_frames := GETUP_FRAMES
+var _tail := {}                      ## the rest of an animation after control returned: key, move or action, from
+var _block_action := 822            ## guard-hit action being played (blocked hit)
+var last_reaction := ""              ## the last reaction picked (overlay, tests), e.g. "a703 front kind 0 set 0" 
 var _hit_views: Array[MeshInstance3D] = []
 
 @onready var _pivot: Node3D = $Pivot
@@ -183,15 +204,31 @@ func _physics_process(_delta: float) -> void:
 		State.GETUP:
 			_tick_getup()
 
+	_animate()
+	if model and _root_motion_state():
+		# The clip's hip travel moves the body (moves, reactions, knockdowns, getups); collision stops it.
+		velocity.x = model.root_delta.x / DT
+		velocity.z = model.root_delta.z / DT
 	velocity.y -= GRAVITY * DT
 	move_and_slide()
-	_animate()
 
 
 func _enter(new_state: State) -> void:
 	state = new_state
 	state_frame = 0
 	_landed = -1
+	if new_state != State.IDLE:
+		_tail = {}
+
+
+## States whose animation carries the body (root motion); idle only while a tail plays.
+func _root_motion_state() -> bool:
+	match state:
+		State.ATTACK, State.HITSTUN, State.BLOCKSTUN, State.KNOCKDOWN, State.GETUP:
+			return true
+		State.IDLE:
+			return not _tail.is_empty()
+	return false
 
 
 ## The next input code from neutral: a press left over from the last move, or the brain's.
@@ -276,8 +313,10 @@ func _read_inputs() -> void:
 func _tick_attack() -> void:
 	var f := state_frame
 	_animate()   # this frame's pose first: the hit spheres sit on its bones
-	if move.root_z.size() > 1:
-		# Root motion: the hips' forward travel in the animation moves the capsule.
+	if model:
+		pass   # root motion from the clips (_physics_process)
+	elif move.root_z.size() > 1:
+		# Capsule only: the hips' forward travel in the animation moves the capsule.
 		var v := forward() * move.root_step(f) / DT
 		velocity.x = v.x
 		velocity.z = v.z
@@ -303,18 +342,47 @@ func _tick_attack() -> void:
 		history.remove_at(history.size() - 1)   # (the game leaves it; it checks only once)
 	if f >= move.control_frame():
 		_leftover = last_input   # pressed too late for the chain: may start a move from neutral
+		var tail := {"move": move, "key": move_id, "from": f} if f < move.frames else {}
 		_enter(State.IDLE)
+		_tail = tail
 
 
 func _tick_stun() -> void:
-	_apply_friction(KNOCK_FRICTION)
+	if model == null:
+		_apply_friction(KNOCK_FRICTION)
 	stun -= 1
 	if stun <= 0:
 		combo_taken = 0
+		var tail := {}
+		if model and state == State.HITSTUN and state_frame < int(_react.get("frames", 0)):
+			tail = {"action": _react_action, "key": "hit%d" % _react_count, "from": state_frame}
 		_enter(State.GUARD if brain.wants_guard(self) else State.IDLE)
+		if state == State.IDLE:
+			_tail = tail
+
+
+## On the floor after a knockdown (the fall is over).
+func _is_lying() -> bool:
+	if state != State.KNOCKDOWN:
+		return false
+	if model:
+		return state_frame >= int(_react.get("frames", 0))
+	return _landed >= 0
 
 
 func _tick_knockdown() -> void:
+	if model:
+		# The fall plays the reaction's clips (MATCHLESS in the game), then the lying loop.
+		var n := int(_react.get("frames", 0))
+		if state_frame == n:
+			_set_invulnerable(false)   # lying: low hits still connect (take_hit)
+		if state_frame >= n + DOWN_FRAMES:
+			if hp <= 0:
+				hp = max_hp
+				last_event = "KO! hp refilled"
+			_enter(State.GETUP)
+			_set_invulnerable(true)   # the getups set MATCHLESS (status bit 1) from their first frame
+		return
 	if state_frame > 3 and is_on_floor():
 		_apply_friction(KNOCK_FRICTION * 1.5)
 		if _landed < 0:
@@ -328,11 +396,17 @@ func _tick_knockdown() -> void:
 
 
 func _tick_getup() -> void:
-	_apply_friction(WALK_FRICTION)
+	if model == null:
+		_apply_friction(WALK_FRICTION)
 	if state_frame >= _getup_frames:
 		_set_invulnerable(false)
 		combo_taken = 0
+		var info := model.action_info(_getup_action) if model else {}
+		var tail := {}
+		if state_frame < int(info.get("frames", 0)):
+			tail = {"action": _getup_action, "key": "getup%d" % _react_count, "from": state_frame}
 		_enter(State.IDLE)
+		_tail = tail
 
 
 # --- Hits ----------------------------------------------------------------------------
@@ -427,7 +501,7 @@ func damage_from(attacker: Fighter, h: MoveHit) -> int:
 
 
 func _in_damage_state() -> bool:
-	return state == State.HITSTUN or (state == State.KNOCKDOWN and _landed < 0)
+	return state == State.HITSTUN or (state == State.KNOCKDOWN and not _is_lying())
 
 
 ## Called by the attacker. Returns "blocked", "hit" (fresh hit), "combo" (the victim was
@@ -435,21 +509,30 @@ func _in_damage_state() -> bool:
 func take_hit(attacker: Fighter, h: MoveHit) -> String:
 	if state == State.ATTACK and move.is_invincible(state_frame):
 		return "miss"
-	var to_attacker := attacker.global_position - global_position
-	to_attacker.y = 0
+	var lying := _is_lying()
+	if lying and not (h.level & 8):
+		return "miss"   # remake: the hurtbox is a standing capsule, so on the floor only low hits connect
+	var entry := hit_direction(attacker)
 	var push := attacker.forward()
 	var real := attacker.real_style()
 	var dmg := damage_from(attacker, h) if real else h.damage
 	var guarding := state in [State.GUARD, State.BLOCKSTUN]
-	if guarding and forward().dot(to_attacker.normalized()) > 0.3:
-		last_damage = dmg / 10
-		hp = maxi(1, hp - last_damage)   # chip damage (remake placeholder)
+	if guarding and entry == DIR_FRONT and not (h.level & 8):
+		# Combat_ResolveHit: guarding (state 0x400) with the attacker within 45° in front blocks high and
+		# mid hits: no damage and no hit reaction; a standing guard doesn't stop low hits. The guard task
+		# (0x0030FF20) then plays a guard-hit action (g_GuardActions) that returns to the guard loop.
+		last_damage = 0
 		hitstop = int(h.get_hitstop() * 0.75)
-		stun = int(h.get_hitstun() * 0.7)
-		pending_knockback = push * h.get_knockback() * 0.6
+		stun = 1
+		pending_knockback = Vector3.ZERO if model else push * h.get_knockback() * 0.6
+		if model:
+			_react_count += 1
+			_block_action = guard_hit_action(h)
+			stun = maxi(1, int(model.action_info(_block_action).get("frames", 1)))
 		_start_flash(Color(0.6, 0.8, 1.0))
 		_enter(State.BLOCKSTUN)
 		_shake_camera(0.15)
+		last_reaction = "blocked"
 		return "blocked"
 
 	var combo := _in_damage_state()
@@ -457,10 +540,13 @@ func take_hit(attacker: Fighter, h: MoveHit) -> String:
 	hp -= dmg
 	last_damage = dmg
 	combo_taken += 1
-	_face_now(to_attacker)
 	hitstop = h.get_hitstop()
 	_start_flash(Color.WHITE)
-	_pick_reaction(h, heavy, h.knockdown or hp <= 0)
+	if model:
+		_react_to(attacker, h, heavy, entry, lying)
+		return "combo" if combo else "hit"
+	# Capsule only (no animations): placeholder stun and push.
+	_face_now(attacker.global_position - global_position)
 	if h.knockdown or hp <= 0:
 		stun = 0
 		pending_knockback = push * h.get_knockback() + Vector3.UP * h.launch
@@ -472,6 +558,76 @@ func take_hit(attacker: Fighter, h: MoveHit) -> String:
 		_enter(State.HITSTUN)
 		_shake_camera(0.25)
 	return "combo" if combo else "hit"
+
+
+## Where the attacker stands, as Combat_TakeHit's table entry (FUN_00308ec0 keeps it every frame at +0x4393):
+## the game angle atan2(x, z) of the attacker in the victim's own frame (forward +Z): -45..45 front,
+## 45..135 entry 3, -135..-45 entry 2, else behind.
+func hit_direction(attacker: Fighter) -> int:
+	var l := global_transform.basis.inverse() * (attacker.global_position - global_position)
+	var ang := rad_to_deg(atan2(-l.x, -l.z))   # the fighter's forward is -Z: turn 180° into the game's frame
+	if ang > -45.0 and ang <= 45.0:
+		return DIR_FRONT
+	if ang > 45.0 and ang <= 135.0:
+		return DIR_RIGHT
+	if ang > -135.0 and ang <= -45.0:
+		return DIR_LEFT
+	return DIR_BEHIND
+
+
+## Picks and starts the game's reaction (Combat_TakeHit 0x0030DFD0): a knockdown hit (reaction 0x20) or a
+## KO uses the knockdown rows; otherwise the kind from the hit, in the heavier set when `heavy`, or the wall
+## rows when a wall is right behind the victim. The action's goto decides: lying (19/20) = knockdown.
+func _react_to(attacker: Fighter, h: MoveHit, heavy: bool, entry: int, lying: bool) -> void:
+	var ko := hp <= 0
+	var action := 0
+	var e := entry
+	if ko or (h.reaction & 0x20 and not lying):
+		var row := (2 if lying else 1) if ko else 0
+		if row == 2:
+			e = DIR_LEFT if _down_action == 19 else DIR_BEHIND   # KO on the floor: face down 231, face up 230
+		action = model.reaction_action("knockdown", row, DIRECTIONS[e])
+		last_reaction = "a%d %s knockdown row %d" % [action, DIRECTIONS[e], row]
+	else:
+		var kind := reaction_kind(h, lying, _down_action == 19)
+		e = turned_entry(kind, entry, h.reaction_detail)
+		if not lying and not kind in [8, 0x15, 0xE, 0x14, 6, 0xB] and _wall_behind(attacker):
+			var row := 1 if hp <= max_hp / 2 else 0
+			action = model.reaction_action("wall", row, DIRECTIONS[e])
+			last_reaction = "a%d %s wall row %d" % [action, DIRECTIONS[e], row]
+		else:
+			action = model.reaction_action(str(1 if heavy else 0), kind, DIRECTIONS[e])
+			last_reaction = "a%d %s kind %d set %d" % [action, DIRECTIONS[e], kind, 1 if heavy else 0]
+	_react_action = action
+	_react = model.action_info(action)
+	_react_count += 1
+	var then := int(_react.get("then", 1))
+	pending_knockback = Vector3.ZERO   # the knockback is the reaction's own hip travel
+	if then in [19, 20]:
+		_down_action = then
+		_getup_action = int(model.action_info(then).get("then", 22))
+		var g := model.action_info(_getup_action)
+		_getup_frames = int(g["release"]) if int(g.get("release", -1)) > 0 else int(g.get("frames", GETUP_FRAMES))
+		stun = 0
+		_enter(State.KNOCKDOWN)
+		_set_invulnerable(true)   # the falls set MATCHLESS (status bit 1) on their first frame
+		_shake_camera(0.6)
+	else:
+		var rel := int(_react.get("release", -1))
+		stun = rel if rel > 0 else int(_react.get("frames", 30))
+		_enter(State.HITSTUN)
+		_shake_camera(0.25)
+
+
+## Combat_TakeHit's wall test: a wall within 11 units (1.1 m) of the victim, facing the attacker (the game
+## compares the wall's normal with the attacker's facing within 60°). Remake: one ray along the push.
+func _wall_behind(attacker: Fighter) -> bool:
+	var from := global_position + Vector3.UP
+	var q := PhysicsRayQueryParameters3D.create(from, from + attacker.forward() * WALL_RANGE, LAYER_WORLD, [get_rid()])
+	var r := get_world_3d().direct_space_state.intersect_ray(q)
+	if r.is_empty():
+		return false
+	return -(r["normal"] as Vector3).dot(attacker.forward()) >= 0.5
 
 
 func _set_invulnerable(on: bool) -> void:
@@ -590,7 +746,7 @@ func _process(delta: float) -> void:
 		_pose_limb(limb, ext, move.hit_height(h0) if h0 else move.height)
 		_leg.visible = move.limb == "leg" and model == null
 
-	_shield.visible = state in [State.GUARD, State.BLOCKSTUN]
+	_shield.visible = model == null and state in [State.GUARD, State.BLOCKSTUN]
 	_mat.albedo_color = _flash_color if _flash > 0 else color
 
 	_show_hit_spheres(lives)
@@ -625,14 +781,16 @@ func _pose_limb(limb: Node3D, ext: float, height: float) -> void:
 
 # --- Animation (M4): which clip the state shows -------------------------------------
 
-## Reaction kind for a hit, in Combat_TakeHit 0x0030DFD0's order (docs/ANIMATION.md, "Hit reactions"):
-## the big reaction bits first, then a knockdown, then the hit level, then the stagger detail bits.
-static func reaction_kind(h: MoveHit, knocked_down: bool) -> int:
+## Reaction kind for a hit, in Combat_TakeHit 0x0030DFD0's order (docs/ANIMATION.md, "Hit reactions"): hit on the
+## floor (9 face up, 10 face down), the big reaction bits, then the hit level, then the stagger detail bits.
+## Knockdowns (reaction 0x20) and KOs use the knockdown rows instead (_react_to). Not modelled: kinds 4-7,
+## 0x12, 0x13 (same team, special states, weapon hits) and the class-row reactions 0x3E3-0x3E6 (reaction 0x40).
+static func reaction_kind(h: MoveHit, lying := false, face_down := false) -> int:
+	if lying:
+		return 10 if face_down else 9
 	for pair in [[0x800, 0x14], [0x1000, 0x15], [0x100, 8], [0x10, 0xE], [0x200, 0xD], [0x400, 0xF]]:
 		if h.reaction & pair[0]:
 			return pair[1]
-	if knocked_down:
-		return 9
 	if h.level & 4:
 		return 3
 	if h.level & 8:
@@ -643,18 +801,37 @@ static func reaction_kind(h: MoveHit, knocked_down: bool) -> int:
 	return 0
 
 
-## Picks the reaction action (set 1 when the victim was below 1000 HP or attacking: the set is
-## Combat_SituationFactor's return value) and, for a knockdown, the lying action it continues with.
-func _pick_reaction(h: MoveHit, heavy: bool, knocked_down: bool) -> void:
-	_react_count += 1
-	if model == null:
-		return
-	_react_action = model.reaction_action(1 if heavy else 0, reaction_kind(h, knocked_down))
-	var then := int(model.action_info(_react_action).get("then", 1))
-	_down_action = then if then in [19, 20] else 20
-	var getup := int(model.action_info(_down_action).get("then", 22))
-	var frames := model.clip_frames(model.clip_for_action(getup))
-	_getup_frames = frames if frames > 0 else GETUP_FRAMES
+## The guard-hit action for a blocked hit (the guard task 0x0030FF20): g_GuardActions' unarmed standing list,
+## entry 2 / 3 when the target is to a side (never, while blocking needs it in front) or by the hit's detail bits
+## (+0x4564 & 0x3C): 0x10 -> 2, 0x20 -> 3, 4 -> 4, 8 -> 5, else 1.
+func guard_hit_action(h: MoveHit) -> int:
+	var acts: Array = model.meta.get("guard", {}).get("stand", [821, 822, 826, 825, 823, 824])
+	var i := 1
+	match h.reaction_detail & 0x3C:
+		0x10:
+			i = 2
+		0x20:
+			i = 3
+		4:
+			i = 4
+		8:
+			i = 5
+	return int(acts[i])
+
+
+## Combat_TakeHit turns kinds 0xD, 0xF (big reactions) and 9, 10 (on the floor) sideways by the detail bits when
+## hit from the front or behind: front 0x10 -> entry 2, 0x20 -> entry 3; behind the other way round. On the
+## floor detail bit 4 means the front entry.
+static func turned_entry(kind: int, entry: int, detail: int) -> int:
+	if not kind in [0xD, 0xF, 9, 10]:
+		return entry
+	if kind in [9, 10] and detail & 4:
+		return DIR_FRONT
+	if entry == DIR_FRONT:
+		return DIR_LEFT if detail & 0x10 else (DIR_RIGHT if detail & 0x20 else entry)
+	if entry == DIR_BEHIND:
+		return DIR_RIGHT if detail & 0x10 else (DIR_LEFT if detail & 0x20 else entry)
+	return entry
 
 
 ## Poses the model for the current state and frame (every game frame, and before the hit checks of
@@ -665,27 +842,49 @@ func _animate() -> void:
 	var generic: Dictionary = model.meta.get("generic", {})
 	match state:
 		State.IDLE:
+			if not _tail.is_empty() and _show_tail():
+				return
 			_show_action(int(generic.get("stance", 1)), "stance", state_frame)
 		State.MOVE:
 			_show_action(int(generic.get("walk", 2)), "walk", state_frame)
-		State.GUARD, State.BLOCKSTUN:
-			# Action 10 plays frames 0-36 of its anim; the remake holds the last one while guarding.
-			_show_action(int(generic.get("guard", 10)), "guard", mini(state_frame, 36))
+		State.GUARD:
+			# The unarmed standing guard loop (action 821), blending in over its 10 frames.
+			_show_action(int(generic.get("guard", 821)), "guard", state_frame)
+		State.BLOCKSTUN:
+			_show_track(_block_action, "block%d" % _react_count, state_frame)
 		State.ATTACK:
-			_show_move()
+			_show_move(move, move_id, state_frame)
 		State.HITSTUN:
-			_show_action(_react_action, "hit%d" % _react_count, state_frame)
+			_show_track(_react_action, "hit%d" % _react_count, state_frame)
 		State.KNOCKDOWN:
-			var n := model.clip_frames(model.clip_for_action(_react_action))
+			var n := int(_react.get("frames", 0))
 			if state_frame < n:
-				_show_action(_react_action, "hit%d" % _react_count, state_frame)
+				_show_track(_react_action, "hit%d" % _react_count, state_frame)
 			else:
 				_show_action(_down_action, "down%d" % _react_count, state_frame - n)
 		State.GETUP:
-			_show_action(int(model.action_info(_down_action).get("then", 22)), "getup%d" % _react_count, state_frame)
+			_show_track(_getup_action, "getup%d" % _react_count, state_frame)
 
 
-## Shows an action's first clip (stance, walk, a reaction...) with that action's blend.
+## The rest of a move, reaction or getup after control came back; false (and the tail ends) once it's over.
+func _show_tail() -> bool:
+	var f := int(_tail["from"]) + state_frame
+	if _tail.has("move"):
+		var m: MoveData = _tail["move"]
+		if f >= m.frames:
+			_tail = {}
+			return false
+		_show_move(m, _tail["key"], f)
+		return true
+	var info := model.action_info(int(_tail["action"]))
+	if f >= int(info.get("frames", 0)):
+		_tail = {}
+		return false
+	_show_track(int(_tail["action"]), _tail["key"], f)
+	return true
+
+
+## Shows an action's first clip (stance, walk, lying...) with that action's blend.
 func _show_action(action: int, key: String, frame: int) -> void:
 	var clip := model.clip_for_action(action)
 	if clip == "":
@@ -694,21 +893,27 @@ func _show_action(action: int, key: String, frame: int) -> void:
 	model.show_clip(key, clip, frame, blend)
 
 
-## A move's clips in order (its motion script's play ops): the animation frame runs at the
-## timeline's speeds; each clip covers [start, end] (end -1 or past the clip = its length) and
-## blends in with its own blend frames.
-func _show_move() -> void:
-	if move.clips.is_empty():
-		_show_action(1, "stance", state_frame)
+## Shows game frame `f` of an action with every clip of its motion script (reactions, knockdowns, getups;
+## conv_anims.py simulates them like the game with action_sim.py).
+func _show_track(action: int, key: String, f: int) -> void:
+	var info := model.action_info(action)
+	var at: Array = info.get("clip_at", [])
+	if at.is_empty():
+		_show_action(action, key, f)
 		return
-	var a := move.anim_frame_at(state_frame)
-	for i in move.clips.size():
-		var c: PackedInt32Array = move.clips[i]
-		var clip := "a%d" % c[0]
-		var n := model.clip_frames(clip)
-		var end := float(n if c[2] < 0 or c[2] > n else c[2])
-		var length := maxf(end - c[1], 1.0)
-		if a < length or i == move.clips.size() - 1:
-			model.show_clip("%s:%d" % [move_id, i], clip, c[1] + minf(a, length), c[3])
-			return
-		a -= length
+	var i := clampi(f, 0, at.size() - 1)
+	var k := int(at[i])
+	var c: Array = info["clips"][k]
+	model.show_clip("%s:%d" % [key, k], "a%d" % int(c[0]), float(info["frame_at"][i]), int(c[3]))
+
+
+## A move's clips in order (its motion script's play ops, MoveData.clip_frame), each blending in with its
+## own blend frames.
+func _show_move(m: MoveData, id: String, f: int) -> void:
+	if m.clips.is_empty():
+		_show_action(1, "stance", f)
+		return
+	var cf := m.clip_frame(f)
+	var k := clampi(int(cf[0]), 0, m.clips.size() - 1)
+	var c: PackedInt32Array = m.clips[k]
+	model.show_clip("%s:%d" % [id, k], "a%d" % c[0], float(cf[1]), c[3])

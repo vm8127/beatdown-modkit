@@ -49,6 +49,10 @@ extends Resource
 @export var anim_release := -1
 @export var speeds := PackedVector2Array()   ## (animation frame, playback speed) changes
 @export var clips: Array = []       ## every play op: PackedInt32Array(anim id, start, end, blend)
+@export var frame_clip := PackedInt32Array()     ## per game frame: index in `clips` (action_sim.py: every clip, in order)
+@export var frame_anim := PackedFloat32Array()   ## per game frame: animation frame shown
+@export var throws := PackedInt32Array()         ## game frames of timeline op 0x2B (throw damage on the held target)
+@export var then_action := -1       ## the action the motion script continues with (1 = stance)
 @export var attack_kind := 0        ## hit table header kind bits
 @export var cost := 0               ## TIRED meter cost (hit table header +4)
 @export var notes := PackedStringArray()
@@ -117,6 +121,15 @@ func anim_frame_at(f: int) -> float:
 					sp = s.y
 			a += sp
 	return _anim_frames[clampi(f, 0, _anim_frames.size() - 1)]
+
+
+## [clip index, animation frame] on game frame `f` (every clip of the motion script, in order); placeholder
+## moves and old resources fall back to the first clip at the timeline's speeds.
+func clip_frame(f: int) -> Array:
+	if frame_clip.size() > 0:
+		var i := clampi(f, 0, frame_clip.size() - 1)
+		return [frame_clip[i], frame_anim[i]]
+	return [0, anim_start + anim_frame_at(f)]
 
 
 ## Forward root motion between two frames (metres); 0 for placeholder moves.

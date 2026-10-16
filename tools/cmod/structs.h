@@ -218,8 +218,12 @@ struct Fighter {
     u8 _437C[0xc];
     u32 flags4388;  /* +0x4388 control bits (overlay PCTRL names): 1 CONTROL, 2 GUARD, 4 NOT CONTROL, 0x20 ATTACK, 0x4000 WEAPON (holding a weapon); timeline op 0x2E */
     u32 status;  /* +0x438c status bits (overlay names): 1 MATCHLESS, 8 NOT THROW, 0x40 BEFORE ATTACK, 0x200 STIFF, 0x400 HIT, 0x2000 NOT HORMING, 0x8000 REVERSAL, 0x20000 GUARD...; timeline op 0x2D */
-    u8 flags4390;  /* +0x4390 bit 2: armour or special state (no counter/combo scaling) */
-    u8 _4391[0x17];
+    u8 flags4390;  /* +0x4390 posture, set by timeline op 0x35 (Action_Timeline): 1 standing, 2 crouching, 4 on the floor (Fighter_IsDown; also no counter / combo scaling), 8 face up, 0x10 face down, 0x20 in the air (big reactions); lying action 20 sets 12, 19 sets 20 */
+    u8 target_side;  /* +0x4391 Fighter_UpdateTargetDir: 2 = target on the positive-angle side, 1 = the other */
+    u8 target_octant;  /* +0x4392 Fighter_UpdateTargetDir: bits 4 (within 67.5° of the front), 1, 2 (sides), 8 (within 67.5° of the back) */
+    u8 target_dir;  /* +0x4393 Fighter_UpdateTargetDir: where the target stands: 4 front (within 45°), 1 (45-135°), 2 (-135..-45°), 8 behind; Combat_TakeHit maps 4 -> reaction entry 1 (front), 8 -> 0 (behind), 1 -> 3, 2 -> 2; a hit is only blocked with bit 4 */
+    u8 target_in_front;  /* +0x4394 Fighter_UpdateTargetDir: 1 = target in the front half */
+    u8 _4395[0x13];
     s16 release_frame;  /* +0x43a8 timeline op 0x3C: Fighter_ReturnControl at motion frame - 1 (0 = none) */
     s16 guard_frame;  /* +0x43aa timeline op 0x3C: sets flags4388 bit 1 (GUARD) at motion frame - 1 */
     u8 _43AC[0x68];
@@ -292,6 +296,10 @@ _Static_assert(__builtin_offsetof(Fighter, state) == 0x4378, "Fighter.state");
 _Static_assert(__builtin_offsetof(Fighter, flags4388) == 0x4388, "Fighter.flags4388");
 _Static_assert(__builtin_offsetof(Fighter, status) == 0x438c, "Fighter.status");
 _Static_assert(__builtin_offsetof(Fighter, flags4390) == 0x4390, "Fighter.flags4390");
+_Static_assert(__builtin_offsetof(Fighter, target_side) == 0x4391, "Fighter.target_side");
+_Static_assert(__builtin_offsetof(Fighter, target_octant) == 0x4392, "Fighter.target_octant");
+_Static_assert(__builtin_offsetof(Fighter, target_dir) == 0x4393, "Fighter.target_dir");
+_Static_assert(__builtin_offsetof(Fighter, target_in_front) == 0x4394, "Fighter.target_in_front");
 _Static_assert(__builtin_offsetof(Fighter, release_frame) == 0x43a8, "Fighter.release_frame");
 _Static_assert(__builtin_offsetof(Fighter, guard_frame) == 0x43aa, "Fighter.guard_frame");
 _Static_assert(__builtin_offsetof(Fighter, attack_mul) == 0x4414, "Fighter.attack_mul");

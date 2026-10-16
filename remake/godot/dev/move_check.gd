@@ -43,7 +43,15 @@ func _initialize() -> void:
 		_eq(t + " blend", m.blend, int(e["blend"]))
 		if e["end"] != null:
 			_eq(t + " anim end", m.anim_end, int(e["end"]))
-			_near(t + " end (game frames)", m.frames, int(e["end_g"]))
+			# framedata knows the first clip only: a multi-clip move (Sleeper Hold) is checked where clip 1 starts
+			var first_end := m.frames
+			for g in m.frame_clip.size():
+				if m.frame_clip[g] > 0:
+					first_end = g
+					break
+			if first_end != m.frames:
+				_notes.append("%s plays %d clips: %d game frames in all, the first ends at %d" % [t, m.clips.size(), m.frames, first_end])
+			_near(t + " end (game frames)", first_end, int(e["end_g"]))
 		var sp := []
 		for v in m.speeds:
 			sp.append([int(v.x), snappedf(v.y, 0.001)])
